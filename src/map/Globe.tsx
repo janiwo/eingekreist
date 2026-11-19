@@ -41,7 +41,8 @@ declare global {
 
 interface GlobeProps {
   showBorders: boolean
-  onMapReady?: (map: MapLibreMap) => void
+  /** Called with the map once it has loaded, and with `null` when it is removed. */
+  onMapReady?: (map: MapLibreMap | null) => void
 }
 
 export function Globe({ showBorders, onMapReady }: GlobeProps) {
@@ -71,6 +72,7 @@ export function Globe({ showBorders, onMapReady }: GlobeProps) {
     // Access for browser tests (dev server only).
     if (import.meta.env.DEV) window.__eingekreist = { map }
     return () => {
+      onReadyRef.current?.(null)
       map.remove()
       mapRef.current = null
       if (import.meta.env.DEV) delete window.__eingekreist

@@ -1,6 +1,6 @@
 import type { LineString, Polygon, Position } from 'geojson'
 import { MIN_RADIUS_KM, type Circle, type LngLat } from '../game/types'
-import { EARTH_RADIUS_KM, HALF_CIRCUMFERENCE_KM, destination, normalizeLng } from './sphere'
+import { HALF_CIRCUMFERENCE_KM, destination, distanceKm, normalizeLng } from './sphere'
 
 /** Just under half the circumference; a larger circle would cover the whole Earth. */
 export const MAX_RADIUS_KM = 20_000
@@ -10,10 +10,10 @@ export const MAX_RADIUS_KM = 20_000
  * significant digits, so the stored radius is exactly what the player sees.
  */
 export function roundRadiusKm(km: number): number {
-  const clamped = Math.min(MAX_RADIUS_KM, Math.max(MIN_RADIUS_KM, km))
-  if (clamped < 10) return Math.round(clamped * 10) / 10
-  const step = clamped < 1000 ? 1 : clamped < 10_000 ? 10 : 100
-  return Math.min(MAX_RADIUS_KM, Math.max(MIN_RADIUS_KM, Math.round(clamped / step) * step))
+  const step = km < 1000 ? 1 : km < 10_000 ? 10 : 100
+  // Below 10 km keep one decimal; multiplying avoids float noise like 3.1000000000000005.
+  const rounded = km < 10 ? Math.round(km * 10) / 10 : Math.round(km / step) * step
+  return Math.min(MAX_RADIUS_KM, Math.max(MIN_RADIUS_KM, rounded))
 }
 
 /**
@@ -23,10 +23,6 @@ export function roundRadiusKm(km: number): number {
 export function initialRadiusKm(kmPerPixel: number, viewportPx: number): number {
   return roundRadiusKm(kmPerPixel * viewportPx * 0.1)
 }
-
-/** Distance (km) from a latitude to the north (+1) or south (-1) pole. */
-const poleDistanceKm = (lat: number, pole: 1 | -1) =>
-  (((90 - pole * lat) * Math.PI) / 180) * EARTH_RADIUS_KM
 
 /** Ring of points on the circle, with longitudes unwrapped so neighbours differ by < 180°. */
 function unwrappedRing(center: LngLat, radiusKm: number, steps: number): Position[] {
@@ -52,8 +48,8 @@ function unwrappedRing(center: LngLat, radiusKm: number, steps: number): Positio
  * expressed as the whole world minus the circle around the antipode.
  */
 export function circlePolygon({ center, radiusKm }: Circle, steps = 128): Polygon {
-  const north = poleDistanceKm(center[1], 1) < radiusKm
-  const south = poleDistanceKm(center[1], -1) < radiusKm
+  const north = distanceKm(center, [0, 90]) < radiusKm
+  const south = distanceKm(center, [0, -90]) < radiusKm
 
   if (north && south) {
     const antipode: LngLat = [normalizeLng(center[0] + 180), -center[1]]

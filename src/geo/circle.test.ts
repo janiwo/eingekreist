@@ -1,4 +1,4 @@
-import { booleanPointInPolygon, point } from '@turf/turf'
+import { booleanClockwise, booleanPointInPolygon, point } from '@turf/turf'
 import type { Position } from 'geojson'
 import { describe, expect, it } from 'vitest'
 import { MIN_RADIUS_KM, type Circle, type LngLat } from '../game/types'
@@ -64,10 +64,7 @@ describe('circlePolygon', () => {
 
   it('winds the exterior ring counter-clockwise', () => {
     const [ring] = circlePolygon({ center: [0, 0], radiusKm: 100 }).coordinates
-    let area = 0
-    for (let i = 0; i < ring.length - 1; i++)
-      area += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1]
-    expect(area).toBeGreaterThan(0)
+    expect(booleanClockwise(ring)).toBe(false)
   })
 
   it('keeps an antimeridian circle as one continuous ring', () => {

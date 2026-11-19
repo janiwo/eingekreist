@@ -19,25 +19,37 @@ async function handleCenter(page: Page, kind: 'center' | 'radius') {
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
 }
 
-async function mouseDrag(page: Page, from: { x: number; y: number }, dx: number, dy: number) {
+type Point = { x: number; y: number }
+type Drag = (page: Page, from: Point, dx: number, dy: number) => Promise<void>
+
+/** Presses at `from`, moves by (dx, dy) in ten steps and releases. */
+async function stepwise(from: Point, dx: number, dy: number, move: (x: number, y: number) => Promise<unknown>) {
+  for (let i = 1; i <= 10; i++) await move(from.x + (dx * i) / 10, from.y + (dy * i) / 10)
+}
+
+const mouseDrag: Drag = async (page, from, dx, dy) => {
   await page.mouse.move(from.x, from.y)
   await page.mouse.down()
-  for (let i = 1; i <= 10; i++) await page.mouse.move(from.x + (dx * i) / 10, from.y + (dy * i) / 10)
+  await stepwise(from, dx, dy, (x, y) => page.mouse.move(x, y))
   await page.mouse.up()
 }
 
 /** Real touch events via CDP (Playwright's touchscreen only supports taps). */
-async function touchDrag(page: Page, from: { x: number; y: number }, dx: number, dy: number) {
+const touchDrag: Drag = async (page, from, dx, dy) => {
   const cdp = await page.context().newCDPSession(page)
-  const touch = (type: string, x: number, y: number) =>
-    cdp.send('Input.dispatchTouchEvent', {
-      type,
-      touchPoints: type === 'touchEnd' ? [] : [{ x, y }],
-    })
-  await touch('touchStart', from.x, from.y)
-  for (let i = 1; i <= 10; i++) await touch('touchMove', from.x + (dx * i) / 10, from.y + (dy * i) / 10)
-  await touch('touchEnd', 0, 0)
+  const touch = (type: string, points: Point[]) =>
+    cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points })
+  await touch('touchStart', [from])
+  await stepwise(from, dx, dy, (x, y) => touch('touchMove', [{ x, y }]))
+  await touch('touchEnd', [])
   await cdp.detach()
+}
+
+/** Drags the radius handle onto the center handle, `nudgeX` px to its right. */
+async function dragRadiusOntoCenter(page: Page, drag: Drag, nudgeX = 0) {
+  const c = await handleCenter(page, 'center')
+  const r = await handleCenter(page, 'radius')
+  await drag(page, r, c.x - r.x + nudgeX, c.y - r.y)
 }
 
 test('places a circle and changes its radius', async ({ page }, testInfo) => {
@@ -65,18 +77,15 @@ test('places a circle and changes its radius', async ({ page }, testInfo) => {
   expect(await mapCenter(page)).toEqual(centerBefore)
 
   // Moving the center keeps the radius.
-  const radiusBefore = await radiusKm(page)
   const before = await handleCenter(page, 'center')
-  await drag(page, { x: before.x, y: before.y }, 0, -40)
-  expect(await radiusKm(page)).toBe(radiusBefore)
+  await drag(page, before, 0, -40)
+  expect(await radiusKm(page)).toBe(grown)
   const after = await handleCenter(page, 'center')
   expect(after.y).toBeLessThan(before.y - 30)
   expect(await mapCenter(page)).toEqual(centerBefore)
 
   // Dragging it onto the center shrinks the circle.
-  const c = await handleCenter(page, 'center')
-  const r = await handleCenter(page, 'radius')
-  await drag(page, r, c.x - r.x, c.y - r.y)
+  await dragRadiusOntoCenter(page, drag)
   expect(await radiusKm(page)).toBeLessThan(initial)
 
   expectNoErrors()
@@ -89,8 +98,6 @@ test('the radius never drops below 1 km', async ({ page }) => {
   const viewport = page.viewportSize()!
   await page.mouse.click(viewport.width / 2, viewport.height / 2)
   await expect(readout(page)).toContainText('Radius:')
-  const c = await handleCenter(page, 'center')
-  const r = await handleCenter(page, 'radius')
-  await mouseDrag(page, r, c.x - r.x + 1, c.y - r.y)
+  await dragRadiusOntoCenter(page, mouseDrag, 1)
   expect(await radiusKm(page)).toBe(1)
 })

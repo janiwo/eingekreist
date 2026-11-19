@@ -1,14 +1,12 @@
-import type { FeatureCollection, LineString, Polygon } from 'geojson'
 import { useEffect, useRef } from 'react'
 import type { Circle, LngLat } from '../game/types'
-import { circleOutline, circlePolygon, initialRadiusKm, roundRadiusKm } from '../geo/circle'
+import { initialRadiusKm, roundRadiusKm } from '../geo/circle'
 import { bearingDeg, destination, distanceKm } from '../geo/sphere'
 import { de } from '../i18n/de'
-import { Marker, type GeoJSONSource, type Map as MapLibreMap, type MapMouseEvent } from './maplibre'
+import { addCircleLayer } from './circleLayer'
+import { Marker, type Map as MapLibreMap, type MapMouseEvent } from './maplibre'
 
-const SOURCE = 'circle'
-const FILL = 'circle-fill'
-const LINE = 'circle-line'
+const LAYER_ID = 'edit-circle'
 
 /** Bearing of the radius handle when a circle is first placed: east. */
 const DEFAULT_HANDLE_BEARING = 90
@@ -20,9 +18,8 @@ interface CircleEditorProps {
   color?: string
 }
 
-function handleElement(kind: 'center' | 'radius', label: string, color: string): HTMLElement {
+function handleElement(kind: 'center' | 'radius', label: string): HTMLElement {
   const el = document.createElement('div')
-  el.style.setProperty('--handle-color', color)
   el.className = `handle handle--${kind}`
   el.setAttribute('role', 'button')
   el.setAttribute('aria-label', label)
@@ -30,26 +27,12 @@ function handleElement(kind: 'center' | 'radius', label: string, color: string):
   return el
 }
 
-/** Current map scale at the screen center, in km per CSS pixel. */
-function kmPerPixel(map: MapLibreMap): number {
+/** Starting radius for a new circle, based on the map scale at the screen center. */
+function initialRadiusFor(map: MapLibreMap): number {
   const { clientWidth: w, clientHeight: h } = map.getContainer()
   const a = map.unproject([w / 2, h / 2]).toArray() as LngLat
   const b = map.unproject([w / 2 + 10, h / 2]).toArray() as LngLat
-  return distanceKm(a, b) / 10
-}
-
-const empty: FeatureCollection = { type: 'FeatureCollection', features: [] }
-
-/** Fill area and outline as separate features: the area's rings may run along a pole. */
-function circleFeatures(circle: Circle): FeatureCollection<Polygon | LineString> {
-  return {
-    type: 'FeatureCollection',
-    features: [circlePolygon(circle), circleOutline(circle)].map((geometry) => ({
-      type: 'Feature',
-      properties: {},
-      geometry,
-    })),
-  }
+  return initialRadiusKm(distanceKm(a, b) / 10, Math.min(w, h))
 }
 
 /**
@@ -61,7 +44,11 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
   const onChangeRef = useRef(onChange)
   const bearingRef = useRef(DEFAULT_HANDLE_BEARING)
   const draggingRadius = useRef(false)
-  const markersRef = useRef<{ center: Marker; radius: Marker } | null>(null)
+  const editorRef = useRef<{
+    layer: ReturnType<typeof addCircleLayer>
+    center: Marker
+    radius: Marker
+  } | null>(null)
 
   useEffect(() => {
     circleRef.current = circle
@@ -70,32 +57,17 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
 
   // Layers, handles and the tap handler live as long as the editor.
   useEffect(() => {
-    map.addSource(SOURCE, { type: 'geojson', data: empty })
-    map.addLayer({
-      id: FILL,
-      type: 'fill',
-      source: SOURCE,
-      filter: ['==', ['geometry-type'], 'Polygon'],
-      // No antialias outline: it would trace the pole and seam edges. The line layer draws the edge.
-      paint: { 'fill-color': color, 'fill-opacity': 0.25, 'fill-antialias': false },
-    })
-    map.addLayer({
-      id: LINE,
-      type: 'line',
-      source: SOURCE,
-      filter: ['==', ['geometry-type'], 'LineString'],
-      paint: { 'line-color': color, 'line-width': 2.5 },
-    })
+    const layer = addCircleLayer(map, LAYER_ID)
 
     const center = new Marker({
-      element: handleElement('center', de.circle.moveCenter, color),
+      element: handleElement('center', de.circle.moveCenter),
       draggable: true,
     })
     const radius = new Marker({
-      element: handleElement('radius', de.circle.changeRadius, color),
+      element: handleElement('radius', de.circle.changeRadius),
       draggable: true,
     })
-    markersRef.current = { center, radius }
+    editorRef.current = { layer, center, radius }
 
     center.on('drag', () => {
       const current = circleRef.current
@@ -108,7 +80,9 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
       if (!current) return
       const pos = radius.getLngLat().toArray() as LngLat
       bearingRef.current = bearingDeg(current.center, pos)
-      onChangeRef.current({ ...current, radiusKm: roundRadiusKm(distanceKm(current.center, pos)) })
+      const radiusKm = roundRadiusKm(distanceKm(current.center, pos))
+      // Most pointer moves don't change the rounded radius; skip the re-render then.
+      if (radiusKm !== current.radiusKm) onChangeRef.current({ ...current, radiusKm })
     })
     radius.on('dragend', () => {
       draggingRadius.current = false
@@ -125,12 +99,8 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
       if (current) {
         onChangeRef.current({ ...current, center: tapped })
       } else {
-        const { clientWidth: w, clientHeight: h } = map.getContainer()
         bearingRef.current = DEFAULT_HANDLE_BEARING
-        onChangeRef.current({
-          center: tapped,
-          radiusKm: initialRadiusKm(kmPerPixel(map), Math.min(w, h)),
-        })
+        onChangeRef.current({ center: tapped, radiusKm: initialRadiusFor(map) })
       }
     }
     map.on('click', onClick)
@@ -139,38 +109,33 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
       map.off('click', onClick)
       center.remove()
       radius.remove()
-      markersRef.current = null
-      // The map may already be gone if the globe unmounted first.
-      if (map.getStyle()) {
-        map.removeLayer(LINE)
-        map.removeLayer(FILL)
-        map.removeSource(SOURCE)
-      }
+      editorRef.current = null
+      layer.remove()
     }
-  }, [map, color])
+  }, [map])
 
   // Sync geometry and handles with the circle.
   useEffect(() => {
-    const markers = markersRef.current
-    const source = map.getSource<GeoJSONSource>(SOURCE)
-    if (!markers || !source) return
+    const editor = editorRef.current
+    if (!editor) return
     if (!circle) {
-      source.setData(empty)
-      markers.center.remove()
-      markers.radius.remove()
+      editor.layer.setCircles([])
+      editor.center.remove()
+      editor.radius.remove()
       return
     }
-    source.setData(circleFeatures(circle))
+    editor.layer.setCircles([{ circle, color }])
     // addTo() re-attaches the marker and would cancel a running drag, so only call it once.
     const show = (marker: Marker, at: LngLat) => {
+      marker.getElement().style.setProperty('--handle-color', color)
       marker.setLngLat(at)
       if (!marker.getElement().isConnected) marker.addTo(map)
     }
-    show(markers.center, circle.center)
+    show(editor.center, circle.center)
     if (!draggingRadius.current) {
-      show(markers.radius, destination(circle.center, circle.radiusKm, bearingRef.current))
+      show(editor.radius, destination(circle.center, circle.radiusKm, bearingRef.current))
     }
-  }, [map, circle])
+  }, [map, circle, color])
 
   return null
 }
