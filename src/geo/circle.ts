@@ -1,4 +1,4 @@
-import type { Polygon, Position } from 'geojson'
+import type { LineString, Polygon, Position } from 'geojson'
 import { MIN_RADIUS_KM, type Circle, type LngLat } from '../game/types'
 import { EARTH_RADIUS_KM, HALF_CIRCUMFERENCE_KM, destination, normalizeLng } from './sphere'
 
@@ -71,18 +71,34 @@ export function circlePolygon({ center, radiusKm }: Circle, steps = 128): Polygo
     return { type: 'Polygon', coordinates: [outer, hole] }
   }
 
-  const ring = unwrappedRing(center, radiusKm, steps)
+  const ring = closedOutline(center, radiusKm, steps)
   if (north || south) {
+    // Around a pole the outline ends one full turn (±360°) from where it started.
+    // Return along the pole to close the area.
     const poleLat = north ? 90 : -90
-    // Unwrapped, the ring ends one full turn (±360°) from where it started. Repeat the
-    // first vertex at that shifted longitude, then return along the pole.
-    const [firstLng, firstLat] = ring[0]
-    const lastLng = ring[ring.length - 1][0]
-    const seamLng = firstLng + 360 * Math.round((lastLng - firstLng) / 360)
-    ring.push([seamLng, firstLat], [seamLng, poleLat], [firstLng, poleLat])
+    ring.push([ring[ring.length - 1][0], poleLat], [ring[0][0], poleLat], ring[0])
   }
-  ring.push(ring[0])
   // Increasing bearing runs clockwise; GeoJSON wants counter-clockwise exteriors.
   ring.reverse()
   return { type: 'Polygon', coordinates: [ring] }
+}
+
+/**
+ * The circle's ring repeated back to its first vertex. Around a pole, that last vertex
+ * sits one full turn (±360°) away from the first, so the ring stays continuous.
+ */
+function closedOutline(center: LngLat, radiusKm: number, steps: number): Position[] {
+  const ring = unwrappedRing(center, radiusKm, steps)
+  const [firstLng, firstLat] = ring[0]
+  const lastLng = ring[ring.length - 1][0]
+  ring.push([firstLng + 360 * Math.round((lastLng - firstLng) / 360), firstLat])
+  return ring
+}
+
+/**
+ * Just the circle's outline, for drawing. Unlike the polygon's rings it never runs
+ * along a pole or the edge of the world.
+ */
+export function circleOutline({ center, radiusKm }: Circle, steps = 128): LineString {
+  return { type: 'LineString', coordinates: closedOutline(center, radiusKm, steps) }
 }

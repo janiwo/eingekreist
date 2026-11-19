@@ -1,7 +1,7 @@
-import type { Feature, Polygon } from 'geojson'
+import type { FeatureCollection, LineString, Polygon } from 'geojson'
 import { useEffect, useRef } from 'react'
 import type { Circle, LngLat } from '../game/types'
-import { circlePolygon, initialRadiusKm, roundRadiusKm } from '../geo/circle'
+import { circleOutline, circlePolygon, initialRadiusKm, roundRadiusKm } from '../geo/circle'
 import { bearingDeg, destination, distanceKm } from '../geo/sphere'
 import { de } from '../i18n/de'
 import { Marker, type GeoJSONSource, type Map as MapLibreMap, type MapMouseEvent } from './maplibre'
@@ -38,10 +38,18 @@ function kmPerPixel(map: MapLibreMap): number {
   return distanceKm(a, b) / 10
 }
 
-const emptyFeature: Feature<Polygon> = {
-  type: 'Feature',
-  properties: {},
-  geometry: { type: 'Polygon', coordinates: [] },
+const empty: FeatureCollection = { type: 'FeatureCollection', features: [] }
+
+/** Fill area and outline as separate features: the area's rings may run along a pole. */
+function circleFeatures(circle: Circle): FeatureCollection<Polygon | LineString> {
+  return {
+    type: 'FeatureCollection',
+    features: [circlePolygon(circle), circleOutline(circle)].map((geometry) => ({
+      type: 'Feature',
+      properties: {},
+      geometry,
+    })),
+  }
 }
 
 /**
@@ -62,17 +70,20 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
 
   // Layers, handles and the tap handler live as long as the editor.
   useEffect(() => {
-    map.addSource(SOURCE, { type: 'geojson', data: emptyFeature })
+    map.addSource(SOURCE, { type: 'geojson', data: empty })
     map.addLayer({
       id: FILL,
       type: 'fill',
       source: SOURCE,
-      paint: { 'fill-color': color, 'fill-opacity': 0.25 },
+      filter: ['==', ['geometry-type'], 'Polygon'],
+      // No antialias outline: it would trace the pole and seam edges. The line layer draws the edge.
+      paint: { 'fill-color': color, 'fill-opacity': 0.25, 'fill-antialias': false },
     })
     map.addLayer({
       id: LINE,
       type: 'line',
       source: SOURCE,
+      filter: ['==', ['geometry-type'], 'LineString'],
       paint: { 'line-color': color, 'line-width': 2.5 },
     })
 
@@ -144,12 +155,12 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
     const source = map.getSource<GeoJSONSource>(SOURCE)
     if (!markers || !source) return
     if (!circle) {
-      source.setData(emptyFeature)
+      source.setData(empty)
       markers.center.remove()
       markers.radius.remove()
       return
     }
-    source.setData({ ...emptyFeature, geometry: circlePolygon(circle) })
+    source.setData(circleFeatures(circle))
     // addTo() re-attaches the marker and would cancel a running drag, so only call it once.
     const show = (marker: Marker, at: LngLat) => {
       marker.setLngLat(at)

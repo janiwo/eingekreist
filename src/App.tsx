@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { DEFAULT_SETTINGS, type Circle } from './game/types'
 import { de } from './i18n/de'
 import { CircleEditor } from './map/CircleEditor'
@@ -9,6 +9,10 @@ export default function App() {
   const [showBorders, setShowBorders] = useState(DEFAULT_SETTINGS.showBorders)
   const [map, setMap] = useState<MapLibreMap | null>(null)
   const [circle, setCircle] = useState<Circle | null>(null)
+
+  useEffect(() => {
+    if (import.meta.env.DEV && map && window.__eingekreist) window.__eingekreist.setCircle = setCircle
+  }, [map])
 
   return (
     <div className="app">

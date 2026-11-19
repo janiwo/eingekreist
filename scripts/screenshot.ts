@@ -4,13 +4,14 @@
  *   npm run screenshot                      → screenshots/desktop.png + screenshots/mobile.png
  *   npm run screenshot -- /pfad?x=1 name    → custom path / file name prefix
  *   npm run screenshot -- / arctic 0,80,2   → set camera to lng,lat,zoom
+ *   npm run screenshot -- / pole 0,80,2 0,85,1500 → also draw a circle at lng,lat with radius km
  */
 import { chromium, devices } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
 import { createServer } from 'vite'
 import { webglArgs } from '../playwright.config.ts'
 
-const [path = '/', prefix = '', view] = process.argv.slice(2)
+const [path = '/', prefix = '', view, circle] = process.argv.slice(2)
 const outDir = 'screenshots'
 mkdirSync(outDir, { recursive: true })
 
@@ -42,6 +43,18 @@ try {
             map.jumpTo({ center: [lng, lat], zoom })
           }),
         { lng, lat, zoom },
+      )
+    }
+    if (circle) {
+      const [lng, lat, radiusKm] = circle.split(',').map(Number)
+      await page.evaluate(
+        ({ lng, lat, radiusKm }) =>
+          new Promise<void>((resolve) => {
+            const { map, setCircle } = window.__eingekreist!
+            map.once('idle', () => resolve())
+            setCircle!({ center: [lng, lat], radiusKm })
+          }),
+        { lng, lat, radiusKm },
       )
     }
     await page.waitForTimeout(500)

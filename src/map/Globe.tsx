@@ -2,6 +2,7 @@ import { Map as MapLibreMap, type StyleSpecification } from './maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useEffect, useRef } from 'react'
 import { bordersGeoJson, landGeoJson } from './baseData'
+import type { Circle } from '../game/types'
 import { START_VIEW } from './view'
 
 const COLORS = {
@@ -33,7 +34,8 @@ const style: StyleSpecification = {
 
 declare global {
   interface Window {
-    __eingekreist?: { map: MapLibreMap }
+    /** Dev-only hooks for tests and the screenshot script. */
+    __eingekreist?: { map: MapLibreMap; setCircle?: (circle: Circle | null) => void }
   }
 }
 

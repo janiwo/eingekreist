@@ -2,7 +2,7 @@ import { booleanPointInPolygon, point } from '@turf/turf'
 import type { Position } from 'geojson'
 import { describe, expect, it } from 'vitest'
 import { MIN_RADIUS_KM, type Circle, type LngLat } from '../game/types'
-import { MAX_RADIUS_KM, circlePolygon, initialRadiusKm, roundRadiusKm } from './circle'
+import { MAX_RADIUS_KM, circleOutline, circlePolygon, initialRadiusKm, roundRadiusKm } from './circle'
 import { distanceKm, normalizeLng } from './sphere'
 
 /** Point-in-circle check that, like MapLibre, treats longitudes beyond ±180° as wrapped. */
@@ -114,5 +114,22 @@ describe('circlePolygon', () => {
     expect(inside(circle, [180, 0])).toBe(false) // antipode lies outside
     for (const p of poly.coordinates[1])
       expect(distanceKm(circle.center, p as LngLat)).toBeCloseTo(15_000, 4)
+  })
+})
+
+describe('circleOutline', () => {
+  it.each<[string, Circle]>([
+    ['equator', { center: [10, 0], radiusKm: 2000 }],
+    ['antimeridian', { center: [179, 10], radiusKm: 1200 }],
+    ['north pole', { center: [20, 82], radiusKm: 1500 }],
+    ['both poles', { center: [10, 20], radiusKm: 14_000 }],
+  ])('follows only the circle (%s)', (_, circle) => {
+    const ring = circleOutline(circle, 64).coordinates
+    expect(ring).toHaveLength(65)
+    for (const p of ring) {
+      expect(distanceKm(circle.center, [normalizeLng(p[0]), p[1]])).toBeCloseTo(circle.radiusKm, 4)
+    }
+    for (let i = 1; i < ring.length; i++)
+      expect(Math.abs(ring[i][0] - ring[i - 1][0])).toBeLessThan(180)
   })
 })
