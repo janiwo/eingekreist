@@ -1,0 +1,111 @@
+import type { BBox, Entry } from '../types.ts'
+
+/** Waters: Natural Earth marine polygons, lakes and river centerlines, by their NE `name`. */
+const sea = (id: string, name: string, ...names: string[]): Entry => ({
+  id,
+  name,
+  source: { kind: 'marine', names },
+})
+
+const lake = (id: string, name: string, ...names: string[]): Entry => ({
+  id,
+  name,
+  source: { kind: 'lake', names },
+})
+
+/** Rivers get a buffer, so a circle on the river bank counts. */
+const RIVER_BUFFER_KM = 5
+
+const river = (id: string, name: string, names: string[], bbox?: BBox): Entry => ({
+  id,
+  name,
+  source: { kind: 'river', names, ...(bbox && { bbox }), bufferKm: RIVER_BUFFER_KM },
+})
+
+export const waters: Entry[] = [
+  // Seas, gulfs, straits
+  sea(
+    'mediterranean-sea',
+    'Mittelmeer',
+    'Mediterranean Sea',
+    'Tyrrhenian Sea',
+    'Adriatic Sea',
+    'Ionian Sea',
+    'Aegean Sea',
+    'Balearic Sea',
+    'Ligurian Sea',
+    'Alboran Sea',
+    'Sea of Crete',
+    'Golfe du Lion',
+    'Gulf of Gabès',
+    'Gulf of Sidra',
+  ),
+  sea('north-sea', 'Nordsee', 'North Sea'),
+  sea('baltic-sea', 'Ostsee', 'Baltic Sea', 'Gulf of Bothnia', 'Gulf of Finland', 'Gulf of Riga', 'Mecklenburger Bucht'),
+  sea('black-sea', 'Schwarzes Meer', 'Black Sea'),
+  sea('caspian-sea', 'Kaspisches Meer', 'Caspian Sea'),
+  sea('red-sea', 'Rotes Meer', 'Red Sea'),
+  sea('adriatic-sea', 'Adria', 'Adriatic Sea'),
+  sea('aegean-sea', 'Ägäis', 'Aegean Sea'),
+  sea('tyrrhenian-sea', 'Tyrrhenisches Meer', 'Tyrrhenian Sea'),
+  sea('english-channel', 'Ärmelkanal', 'English Channel'),
+  sea('bay-of-biscay', 'Golf von Biskaya', 'Bay of Biscay'),
+  sea('irish-sea', 'Irische See', 'Irish Sea'),
+  sea('strait-of-gibraltar', 'Straße von Gibraltar', 'Strait of Gibraltar'),
+  sea('bosphorus', 'Bosporus', 'Bosporus'),
+  sea('sea-of-azov', 'Asowsches Meer', 'Sea of Azov'),
+  sea('white-sea', 'Weißes Meer', 'White Sea'),
+  sea('barents-sea', 'Barentssee', 'Barents Sea'),
+  sea('caribbean-sea', 'Karibisches Meer', 'Caribbean Sea'),
+  sea('gulf-of-mexico', 'Golf von Mexiko', 'Gulf of Mexico'),
+  sea('hudson-bay', 'Hudson Bay', 'Hudson Bay'),
+  sea('gulf-of-california', 'Golf von Kalifornien', 'Golfo de California'),
+  sea('persian-gulf', 'Persischer Golf', 'Persian Gulf'),
+  sea('gulf-of-aden', 'Golf von Aden', 'Gulf of Aden'),
+  sea('arabian-sea', 'Arabisches Meer', 'Arabian Sea'),
+  sea('bay-of-bengal', 'Golf von Bengalen', 'Bay of Bengal'),
+  sea('strait-of-malacca', 'Straße von Malakka', 'Strait of Malacca'),
+  sea('south-china-sea', 'Südchinesisches Meer', 'South China Sea'),
+  sea('east-china-sea', 'Ostchinesisches Meer', 'East China Sea'),
+  sea('yellow-sea', 'Gelbes Meer', 'Yellow Sea'),
+  sea('sea-of-japan', 'Japanisches Meer', 'Sea of Japan'),
+  sea('sea-of-okhotsk', 'Ochotskisches Meer', 'Sea of Okhotsk'),
+  sea('bering-sea', 'Beringmeer', 'Bering Sea'),
+  sea('tasman-sea', 'Tasmansee', 'Tasman Sea'),
+  sea('coral-sea', 'Korallenmeer', 'Coral Sea'),
+  // Lakes
+  lake('lake-constance', 'Bodensee', 'Bodensee'),
+  lake('lake-geneva', 'Genfersee', 'Lake Geneva'),
+  lake('lake-garda', 'Gardasee', 'Lago di Garda'),
+  lake('lake-balaton', 'Plattensee', 'Lake Balaton'),
+  lake('loch-ness', 'Loch Ness', 'Loch Ness'),
+  lake('lake-ladoga', 'Ladogasee', 'Lake Ladoga'),
+  lake('lake-baikal', 'Baikalsee', 'Lake Baikal'),
+  lake('dead-sea', 'Totes Meer', 'Dead Sea'),
+  lake('aral-sea', 'Aralsee', 'North Aral Sea', 'South Aral Sea'),
+  lake('lake-victoria', 'Victoriasee', 'Lake Victoria'),
+  lake('lake-tanganyika', 'Tanganjikasee', 'Lake Tanganyika'),
+  lake('lake-malawi', 'Malawisee', 'Lake Malawi'),
+  lake('lake-chad', 'Tschadsee', 'Lake Chad'),
+  lake('lake-nasser', 'Nassersee', 'Lake Nasser'),
+  lake('lake-titicaca', 'Titicacasee', 'Lago Titicaca'),
+  lake('lake-superior', 'Oberer See', 'Lake Superior'),
+  lake('lake-michigan', 'Michigansee', 'Lake Michigan'),
+  lake('lake-ontario', 'Ontariosee', 'Lake Ontario'),
+  lake('great-salt-lake', 'Großer Salzsee', 'Great Salt Lake'),
+  // Rivers
+  river('rhine', 'Rhein', ['Rhine', 'Rhein', 'Rhin'], [3, 46, 12, 53]),
+  river('danube', 'Donau', ['Danube', 'Donau'], [8, 42, 30, 50]),
+  river('elbe', 'Elbe', ['Elbe'], [8, 49, 16, 54.5]),
+  river('thames', 'Themse', ['Thames'], [-3, 51, 1.5, 52]),
+  river('seine', 'Seine', ['Seine'], [-1, 47, 5, 50]),
+  river('volga', 'Wolga', ['Volga'], [30, 44, 55, 60]),
+  river('nile', 'Nil', ['Nile', 'El Bahr el Abyad', 'Bahr el Jebel', 'Albert Nile', 'Victoria Nile', 'Rosetta Branch', 'Damietta Branch'], [25, -5, 40, 32]),
+  river('congo', 'Kongo', ['Congo', 'Lualaba'], [10, -15, 35, 5]),
+  river('amazon', 'Amazonas', ['Amazonas'], [-80, -10, -48, 3]),
+  river('mississippi', 'Mississippi', ['Mississippi'], [-100, 28, -85, 49]),
+  river('yangtze', 'Jangtsekiang', ['Yangtze', 'Chang Jiang', 'Jinsha', 'Tongtian'], [90, 24, 123, 36]),
+  river('ganges', 'Ganges', ['Ganges'], [77, 21, 92, 32]),
+  river('mekong', 'Mekong', ['Mekong', 'Lancang'], [93, 8, 110, 34]),
+  river('yellow-river', 'Gelber Fluss', ['Huang'], [94, 32, 120, 42]),
+]

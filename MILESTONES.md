@@ -25,7 +25,7 @@ A single player can place and adjust a circle on the globe.
 - An e2e test places a circle and changes its radius.
 - Screenshots of the equator, a pole and the antimeridian are clean.
 
-## [ ] M2 – Place dataset
+## [x] M2 – Place dataset
 
 A build script (`npm run build:places`) generates the curated place dataset from SPEC §4.
 

@@ -3,6 +3,7 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import { useEffect, useRef } from 'react'
 import { bordersGeoJson, landGeoJson } from './baseData'
 import type { Circle } from '../game/types'
+import { de } from '../i18n/de'
 import { START_VIEW } from './view'
 
 const COLORS = {
@@ -61,7 +62,8 @@ export function Globe({ showBorders, onMapReady }: GlobeProps) {
       style,
       center: START_VIEW.center,
       zoom: START_VIEW.zoom,
-      attributionControl: false,
+      // Compact (behind an ⓘ button) on narrow maps only; MapLibre decides by width.
+      attributionControl: { customAttribution: de.attribution },
       renderWorldCopies: false,
       dragRotate: false,
       // A tap places the circle, so a double tap must not also zoom.
@@ -70,7 +72,13 @@ export function Globe({ showBorders, onMapReady }: GlobeProps) {
     })
     map.touchZoomRotate.disableRotation()
     mapRef.current = map
-    map.once('load', () => onReadyRef.current?.(map))
+    map.once('load', () => {
+      // A compact attribution starts expanded and would cover the UI on phones; collapse it.
+      containerRef.current
+        ?.querySelector('.maplibregl-compact-show')
+        ?.classList.remove('maplibregl-compact-show')
+      onReadyRef.current?.(map)
+    })
     // Access for browser tests (dev server only).
     if (import.meta.env.DEV) window.__eingekreist = { map }
     return () => {

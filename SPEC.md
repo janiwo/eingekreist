@@ -91,8 +91,8 @@ Last updated: 2026-11-19
   - German name
   - optional name suffix
   - category
-  - geometry (simplified GeoJSON)
-  - optional buffer size
+  - geometry (simplified, buffer already applied)
+- The curated list stores per place the source reference (Natural Earth feature, OSM relation, coordinate), the optional buffer size and excluded parts; the build script applies them.
 - A **build script** fetches the geometries from Natural Earth and OSM and generates the dataset.
 - The initial list is proposed by Claude and maintained manually afterwards.
 

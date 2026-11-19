@@ -105,3 +105,35 @@ body,
   background: #fff;
   border: 3px solid var(--handle-color);
 }
+
+/* Dev-only place inspector (?debug=places) */
+.debug-panel {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  left: auto;
+  width: min(320px, calc(100% - 24px));
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--panel);
+  font-size: 14px;
+}
+
+.debug-panel input {
+  font: inherit;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #556;
+  background: #11182c;
+  color: var(--text);
+}
+
+@media (max-width: 600px) {
+  .debug-panel {
+    top: 96px;
+    left: 12px;
+  }
+}

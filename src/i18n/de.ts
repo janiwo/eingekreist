@@ -12,6 +12,19 @@ export const de = {
     changeRadius: 'Radius ändern',
   },
   formatKm: (km: number) => `${kmFormat.format(km)} km`,
+  /** Map data credits (shown in the map's attribution control; HTML). */
+  attribution: [
+    '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap-Mitwirkende</a>',
+    '<a href="https://www.naturalearthdata.com" target="_blank" rel="noopener">Natural Earth</a>',
+  ],
+  /** Dev-only place inspector (`?debug=places`). */
+  debugPlaces: {
+    search: 'Ort (Name oder ID)',
+    loading: 'Orte werden geladen …',
+    notFound: 'Kein Ort gefunden',
+    count: (n: number) => `${n} Orte`,
+    vertices: (n: number) => `${n} Punkte`,
+  },
   categories: {
     country: { label: 'Land', icon: '🏳️', color: '#c0392b' },
     city: { label: 'Stadt', icon: '🏙️', color: '#7f8c8d' },

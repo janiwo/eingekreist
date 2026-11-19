@@ -5,6 +5,7 @@
  *   npm run screenshot -- /pfad?x=1 name    → custom path / file name prefix
  *   npm run screenshot -- / arctic 0,80,2   → set camera to lng,lat,zoom
  *   npm run screenshot -- / pole 0,80,2 0,85,1500 → also draw a circle at lng,lat with radius km
+ *   npm run screenshot -- "/?debug=places&place=france" france → show a place (view fits to it)
  */
 import { chromium, devices } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
@@ -33,6 +34,11 @@ try {
     await page
       .waitForFunction(() => window.__eingekreist?.map.loaded(), null, { timeout: 30_000 })
       .catch(() => logs.push('timeout: globe not loaded'))
+    // Components that settle asynchronously mark themselves data-ready="false" until done.
+    await page.evaluate(() => new Promise(requestAnimationFrame))
+    await page
+      .waitForFunction(() => !document.querySelector('[data-ready="false"]'), null, { timeout: 30_000 })
+      .catch(() => logs.push('timeout: [data-ready="false"] still present'))
     if (view) {
       const [lng, lat, zoom] = view.split(',').map(Number)
       await page.evaluate(
