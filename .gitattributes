@@ -1,0 +1,2 @@
+# Generierte Kartendaten (npm run fetch:basemap)
+src/data/basemap/*.json linguist-generated=true -diff
