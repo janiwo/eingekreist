@@ -26,6 +26,8 @@ export function SetupScreen({ state, dispatch, onStart }: SetupScreenProps) {
   const [starting, setStarting] = useState(false)
   const [loadFailed, setLoadFailed] = useState(false)
   const problems = setupProblems(state)
+  const stepTarget = (delta: number) =>
+    dispatch({ type: 'updateSettings', settings: { targetScore: settings.targetScore + delta } })
 
   const start = () => {
     setStarting(true)
@@ -105,7 +107,7 @@ export function SetupScreen({ state, dispatch, onStart }: SetupScreenProps) {
             <button
               type="button"
               className="button button--secondary"
-              onClick={() => dispatch({ type: 'addPlayer', defaultName: t.defaultName })}
+              onClick={() => dispatch({ type: 'addPlayer' })}
             >
               + {t.addPlayer}
             </button>
@@ -122,7 +124,7 @@ export function SetupScreen({ state, dispatch, onStart }: SetupScreenProps) {
                 className="icon-button"
                 aria-label={t.decrease}
                 disabled={settings.targetScore <= MIN_TARGET_SCORE}
-                onClick={() => dispatch({ type: 'updateSettings', settings: { targetScore: settings.targetScore - 1 } })}
+                onClick={() => stepTarget(-1)}
               >
                 −
               </button>
@@ -134,7 +136,7 @@ export function SetupScreen({ state, dispatch, onStart }: SetupScreenProps) {
                 className="icon-button"
                 aria-label={t.increase}
                 disabled={settings.targetScore >= MAX_TARGET_SCORE}
-                onClick={() => dispatch({ type: 'updateSettings', settings: { targetScore: settings.targetScore + 1 } })}
+                onClick={() => stepTarget(1)}
               >
                 +
               </button>

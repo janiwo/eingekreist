@@ -1,7 +1,10 @@
 import type { GameState } from './state'
-import { CATEGORIES } from './types'
 
 export const STORAGE_KEY = 'eingekreist.game'
+/**
+ * Bump whenever the shape of `GameState` changes: saved games of another version are dropped
+ * rather than checked field by field.
+ */
 const VERSION = 1
 
 interface Stored {
@@ -9,35 +12,7 @@ interface Stored {
   state: GameState
 }
 
-/** Minimal shape check, so a stale or hand-edited entry can't crash the app. */
-function isGameState(s: unknown): s is GameState {
-  if (typeof s !== 'object' || s === null) return false
-  const g = s as Partial<GameState>
-  const settingsOk =
-    typeof g.settings === 'object' &&
-    g.settings !== null &&
-    typeof g.settings.targetScore === 'number' &&
-    (g.settings.turnSeconds === null || typeof g.settings.turnSeconds === 'number') &&
-    typeof g.settings.showBorders === 'boolean' &&
-    Array.isArray(g.settings.categories) &&
-    g.settings.categories.length > 0 &&
-    g.settings.categories.every((c) => CATEGORIES.includes(c))
-  const playersOk =
-    Array.isArray(g.players) &&
-    g.players.every((p) => typeof p?.id === 'string' && typeof p.name === 'string' && typeof p.color === 'string')
-  if (!settingsOk || !playersOk) return false
-  if (g.phase === 'setup') return true
-  if (g.phase !== 'playing') return false
-  const p = g as Partial<Extract<GameState, { phase: 'playing' }>>
-  return (
-    typeof p.rng === 'number' &&
-    Array.isArray(p.usedPlaceIds) &&
-    typeof p.round?.placeId === 'string' &&
-    typeof p.round.number === 'number' &&
-    CATEGORIES.includes(p.round.category) &&
-    p.players!.every((pl) => typeof pl.score === 'number')
-  )
-}
+const PHASES: readonly string[] = ['setup', 'playing'] satisfies GameState['phase'][]
 
 /** The saved game, or `null` if there is none or it can't be used. Never throws. */
 export function loadGame(storage: Pick<Storage, 'getItem'> | undefined = globalThis.localStorage): GameState | null {
@@ -45,7 +20,7 @@ export function loadGame(storage: Pick<Storage, 'getItem'> | undefined = globalT
     const raw = storage?.getItem(STORAGE_KEY)
     if (!raw) return null
     const stored = JSON.parse(raw) as Partial<Stored>
-    return stored.version === VERSION && isGameState(stored.state) ? stored.state : null
+    return stored.version === VERSION && PHASES.includes(stored.state?.phase as string) ? stored.state! : null
   } catch {
     return null
   }

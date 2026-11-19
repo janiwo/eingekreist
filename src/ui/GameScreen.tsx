@@ -1,5 +1,4 @@
 import { useEffect, useState, type CSSProperties } from 'react'
-import { loadPlaces } from '../data/places'
 import type { PlayingState } from '../game/state'
 import type { Circle, Place } from '../game/types'
 import { de } from '../i18n/de'
@@ -8,30 +7,16 @@ import type { Map as MapLibreMap } from '../map/maplibre'
 
 const t = de.game
 
-/** The place with this ID, once the dataset has loaded (`undefined` while loading or unknown). */
-function usePlace(id: string): Place | undefined {
-  const [places, setPlaces] = useState<Place[] | null>(null)
-  useEffect(() => {
-    let alive = true
-    loadPlaces()
-      .then((p) => alive && setPlaces(p))
-      .catch((e: unknown) => console.warn(e))
-    return () => {
-      alive = false
-    }
-  }, [])
-  return places?.find((p) => p.id === id)
-}
-
 interface GameScreenProps {
   state: PlayingState
+  /** The round's place; `undefined` while the dataset is still loading. */
+  place: Place | undefined
   map: MapLibreMap | null
   onNewGame: () => void
 }
 
-export function GameScreen({ state, map, onNewGame }: GameScreenProps) {
+export function GameScreen({ state, place, map, onNewGame }: GameScreenProps) {
   const { round, settings } = state
-  const place = usePlace(round.placeId)
   const category = de.categories[round.category]
   const [circle, setCircle] = useState<Circle | null>(null)
   const [confirming, setConfirming] = useState(false)

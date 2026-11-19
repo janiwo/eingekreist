@@ -28,11 +28,7 @@ export const MAX_TARGET_SCORE = 99
 /** Default name for player number `n` (1-based); supplied by the UI, which owns the texts. */
 export type DefaultName = (n: number) => string
 
-export interface PlayerDraft {
-  id: string
-  name: string
-  color: string
-}
+export type PlayerDraft = Omit<Player, 'score'>
 
 export interface SetupState {
   phase: 'setup'
@@ -61,7 +57,7 @@ export interface PlayingState {
 export type GameState = SetupState | PlayingState
 
 export type GameAction =
-  | { type: 'addPlayer'; defaultName: DefaultName }
+  | { type: 'addPlayer' }
   | { type: 'removePlayer'; id: string }
   | { type: 'renamePlayer'; id: string; name: string }
   | { type: 'setPlayerColor'; id: string; color: string }
@@ -69,12 +65,12 @@ export type GameAction =
   | { type: 'toggleCategory'; category: Category }
   | { type: 'start'; pool: PlacePool; seed: RngState }
   /** Abandons whatever is going on and returns to a fresh setup. */
-  | { type: 'newGame'; defaultName: DefaultName }
+  | { type: 'newGame' }
 
 export function createSetup(defaultName: DefaultName): SetupState {
   let players: PlayerDraft[] = []
   for (let i = 0; i < MIN_PLAYERS; i++) players = withNewPlayer(players, defaultName)
-  return { phase: 'setup', players, settings: { ...DEFAULT_SETTINGS, categories: [...CATEGORIES] } }
+  return { phase: 'setup', players, settings: { ...DEFAULT_SETTINGS } }
 }
 
 /** Adds a player with the lowest free number (ID `p<n>`, default name) and the first free color. */
@@ -92,19 +88,20 @@ export type SetupProblem = 'emptyName' | 'duplicateName'
 /** What keeps the setup from being started; empty when it can start. */
 export function setupProblems(setup: SetupState): SetupProblem[] {
   const names = setup.players.map((p) => p.name.trim().toLocaleLowerCase('de'))
+  const filled = names.filter(Boolean)
   const problems: SetupProblem[] = []
-  if (names.some((n) => n === '')) problems.push('emptyName')
-  if (new Set(names.filter(Boolean)).size < names.filter(Boolean).length) problems.push('duplicateName')
+  if (filled.length < names.length) problems.push('emptyName')
+  if (new Set(filled).size < filled.length) problems.push('duplicateName')
   return problems
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
 
-function reduceSetup(state: SetupState, action: GameAction): GameState {
+function reduceSetup(state: SetupState, action: GameAction, defaultName: DefaultName): GameState {
   switch (action.type) {
     case 'addPlayer':
       if (state.players.length >= MAX_PLAYERS) return state
-      return { ...state, players: withNewPlayer(state.players, action.defaultName) }
+      return { ...state, players: withNewPlayer(state.players, defaultName) }
 
     case 'removePlayer':
       if (state.players.length <= MIN_PLAYERS) return state
@@ -167,7 +164,13 @@ function reduceSetup(state: SetupState, action: GameAction): GameState {
   }
 }
 
-export function gameReducer(state: GameState, action: GameAction): GameState {
-  if (action.type === 'newGame') return createSetup(action.defaultName)
-  return state.phase === 'setup' ? reduceSetup(state, action) : state
+/**
+ * The game's state machine. `defaultName` names new players; it comes from the UI, which owns
+ * the texts, and is bound here so that actions stay plain data.
+ */
+export function createGameReducer(defaultName: DefaultName) {
+  return function gameReducer(state: GameState, action: GameAction): GameState {
+    if (action.type === 'newGame') return createSetup(defaultName)
+    return state.phase === 'setup' ? reduceSetup(state, action, defaultName) : state
+  }
 }

@@ -3,20 +3,20 @@
  *
  *   npm run screenshot                      → screenshots/desktop.png + screenshots/mobile.png
  *   npm run screenshot -- /pfad?x=1 name    → custom path / file name prefix
- *   npm run screenshot -- / arctic 0,80,2   → set camera to lng,lat,zoom
- *   npm run screenshot -- / pole 0,80,2 0,85,1500 → also draw a circle at lng,lat with radius km
+ *   npm run screenshot -- --game / game      → start a game (seed 1) first
+ *   npm run screenshot -- --game / arctic 0,80,2   → set camera to lng,lat,zoom
+ *   npm run screenshot -- --game / pole 0,80,2 0,85,1500 → also draw a circle at lng,lat with radius km
  *   npm run screenshot -- "/?debug=places&place=france" france → show a place (view fits to it)
- *   npm run screenshot -- "/?game" game                       → start a game (seed 1) first
- *
- * With a camera view or a circle (and outside the debug view), a game is started first, since
- * the globe is only interactive in a running game.
  */
 import { chromium, devices } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
 import { createServer } from 'vite'
 import { webglArgs } from '../playwright.config.ts'
 
-const [path = '/', prefix = '', view, circle] = process.argv.slice(2)
+const args = process.argv.slice(2)
+const game = args.includes('--game')
+const [path = '/', prefix = '', view, circle] = args.filter((a) => a !== '--game')
+if (circle && !game) throw new Error('drawing a circle needs --game (the circle editor is part of the game screen)')
 const outDir = 'screenshots'
 mkdirSync(outDir, { recursive: true })
 
@@ -38,20 +38,12 @@ try {
     await page
       .waitForFunction(() => window.__eingekreist?.map.loaded(), null, { timeout: 30_000 })
       .catch(() => logs.push('timeout: globe not loaded'))
+    if (game) await page.evaluate(() => window.__eingekreist!.startGame!(1))
     // Components that settle asynchronously mark themselves data-ready="false" until done.
     await page.evaluate(() => new Promise(requestAnimationFrame))
     await page
       .waitForFunction(() => !document.querySelector('[data-ready="false"]'), null, { timeout: 30_000 })
       .catch(() => logs.push('timeout: [data-ready="false"] still present'))
-    const debug = new URL(url).searchParams.has('debug')
-    if (!debug && (view || circle || new URL(url).searchParams.has('game'))) {
-      await page.evaluate(() => window.__eingekreist!.startGame!(1))
-      await page
-        .waitForFunction(() => document.querySelector('[data-testid="prompt"][data-ready="true"]'), null, {
-          timeout: 30_000,
-        })
-        .catch(() => logs.push('timeout: game not started'))
-    }
     if (view) {
       const [lng, lat, zoom] = view.split(',').map(Number)
       await page.evaluate(

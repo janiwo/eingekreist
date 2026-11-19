@@ -1,9 +1,10 @@
-import { lazy, Suspense, useCallback, useEffect, useReducer, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useState, type ReactNode } from 'react'
 import { loadPlaces } from './data/places'
+import { usePlaces } from './data/usePlaces'
 import { poolOf } from './game/draw'
 import { loadGame, saveGame } from './game/persistence'
 import { randomSeed } from './game/rng'
-import { createSetup, gameReducer, type GameState } from './game/state'
+import { createGameReducer, createSetup, type GameState } from './game/state'
 import { de } from './i18n/de'
 import { Globe } from './map/Globe'
 import type { Map as MapLibreMap } from './map/maplibre'
@@ -16,42 +17,53 @@ const PlaceDebug =
     ? lazy(() => import('./debug/PlaceDebug'))
     : null
 
+const gameReducer = createGameReducer(de.setup.defaultName)
 const initialState = (): GameState => loadGame() ?? createSetup(de.setup.defaultName)
 
 export default function App() {
   const [state, dispatch] = useReducer(gameReducer, undefined, initialState)
   const [map, setMap] = useState<MapLibreMap | null>(null)
+  // Loaded right away, so it is usually ready before the setup is done.
+  const places = usePlaces()
+  const placesById = useMemo(() => new Map(places?.map((p) => [p.id, p])), [places])
 
   useEffect(() => saveGame(state), [state])
 
   const startGame = useCallback(async (seed = randomSeed()) => {
-    const places = await loadPlaces()
-    dispatch({ type: 'start', pool: poolOf(places), seed })
+    // Resolves immediately once loaded; rejects (shown by the setup screen) if loading fails.
+    dispatch({ type: 'start', pool: poolOf(await loadPlaces()), seed })
   }, [])
 
   useEffect(() => {
     if (import.meta.env.DEV && map && window.__eingekreist) window.__eingekreist.startGame = startGame
   }, [map, startGame])
 
+  let screen: ReactNode
+  if (PlaceDebug) {
+    screen = map && (
+      // Not ready until loaded (the screenshot script waits for data-ready).
+      <Suspense fallback={<div data-ready="false" hidden />}>
+        <PlaceDebug map={map} />
+      </Suspense>
+    )
+  } else if (state.phase === 'setup') {
+    screen = <SetupScreen state={state} dispatch={dispatch} onStart={() => startGame()} />
+  } else {
+    screen = (
+      <GameScreen
+        key={state.round.number}
+        state={state}
+        place={placesById.get(state.round.placeId)}
+        map={map}
+        onNewGame={() => dispatch({ type: 'newGame' })}
+      />
+    )
+  }
+
   return (
     <div className="app">
       <Globe showBorders={state.settings.showBorders} onMapReady={setMap} />
-      {PlaceDebug ? (
-        map && (
-          // Not ready until loaded (the screenshot script waits for data-ready).
-          <Suspense fallback={<div data-ready="false" hidden />}>
-            <PlaceDebug map={map} />
-          </Suspense>
-        )
-      ) : state.phase === 'setup' ? (
-        <SetupScreen state={state} dispatch={dispatch} onStart={() => startGame()} />
-      ) : (
-        <GameScreen
-          state={state}
-          map={map}
-          onNewGame={() => dispatch({ type: 'newGame', defaultName: de.setup.defaultName })}
-        />
-      )}
+      {screen}
     </div>
   )
 }

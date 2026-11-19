@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import type { PlacePool } from './draw'
 import { loadGame, saveGame, STORAGE_KEY } from './persistence'
 import {
+  createGameReducer,
   createSetup,
-  gameReducer,
   MAX_TARGET_SCORE,
   PLAYER_COLORS,
   setupProblems,
@@ -15,6 +15,7 @@ import {
 import { CATEGORIES, MAX_PLAYERS, MIN_PLAYERS } from './types'
 
 const defaultName = (n: number) => `Spieler ${n}`
+const gameReducer = createGameReducer(defaultName)
 const pool: PlacePool = { country: ['france', 'japan'], city: ['paris'], water: ['nile'] }
 
 const run = (state: GameState, ...actions: GameAction[]) => actions.reduce(gameReducer, state)
@@ -23,7 +24,7 @@ const asSetup = (s: GameState) => {
   expect(s.phase).toBe('setup')
   return s as SetupState
 }
-const add: GameAction = { type: 'addPlayer', defaultName }
+const add: GameAction = { type: 'addPlayer' }
 
 describe('setup', () => {
   it('starts with two players, distinct colors and the default settings', () => {
@@ -141,7 +142,7 @@ describe('start', () => {
   })
 
   it('"new game" returns to a fresh setup', () => {
-    expect(run(setup(), add, start, { type: 'newGame', defaultName })).toEqual(setup())
+    expect(run(setup(), add, start, { type: 'newGame' })).toEqual(setup())
   })
 })
 
@@ -165,7 +166,7 @@ describe('persistence', () => {
   it('returns null for missing, corrupt or outdated entries', () => {
     const storage = memory()
     expect(loadGame(storage)).toBeNull()
-    for (const raw of ['{', '"x"', '{"version":0,"state":{}}', '{"version":1,"state":{"phase":"playing"}}']) {
+    for (const raw of ['{', '"x"', '{"version":0,"state":{}}', '{"version":1,"state":{"phase":"bogus"}}', '{"version":1}']) {
       storage.setItem(STORAGE_KEY, raw)
       expect(loadGame(storage)).toBeNull()
     }

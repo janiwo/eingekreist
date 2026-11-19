@@ -24,10 +24,10 @@ export interface Draw {
 export function drawPlace(
   pool: PlacePool,
   categories: readonly Category[],
-  used: ReadonlySet<string> | readonly string[],
+  used: readonly string[],
   rng: RngState,
 ): Draw | null {
-  const usedSet = used instanceof Set ? used : new Set(used)
+  const usedSet = new Set(used)
   const candidates = categories
     .map((category) => ({ category, ids: (pool[category] ?? []).filter((id) => !usedSet.has(id)) }))
     .filter((c) => c.ids.length > 0)
