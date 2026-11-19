@@ -1,4 +1,5 @@
 import type { GameState } from './state'
+import { CATEGORIES } from './types'
 
 export const STORAGE_KEY = 'eingekreist.game'
 /**
@@ -20,7 +21,11 @@ export function loadGame(storage: Pick<Storage, 'getItem'> | undefined = globalT
     const raw = storage?.getItem(STORAGE_KEY)
     if (!raw) return null
     const stored = JSON.parse(raw) as Partial<Stored>
-    return stored.version === VERSION && PHASES.includes(stored.state?.phase as string) ? stored.state! : null
+    const state = stored.state
+    if (stored.version !== VERSION || !state || !PHASES.includes(state.phase)) return null
+    // Categories index the UI's texts; an unknown one would crash every render.
+    const categories = state.phase === 'playing' ? [...state.settings.categories, state.round.category] : state.settings.categories
+    return categories.length > 0 && categories.every((c) => CATEGORIES.includes(c)) ? state : null
   } catch {
     return null
   }

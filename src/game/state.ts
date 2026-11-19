@@ -73,11 +73,12 @@ export function createSetup(defaultName: DefaultName): SetupState {
   return { phase: 'setup', players, settings: { ...DEFAULT_SETTINGS } }
 }
 
-/** Adds a player with the lowest free number (ID `p<n>`, default name) and the first free color. */
+/** Adds a player with the lowest free number (ID `p<n>` and default name both unused) and the first free color. */
 function withNewPlayer(players: PlayerDraft[], defaultName: DefaultName): PlayerDraft[] {
   const ids = new Set(players.map((p) => p.id))
+  const names = new Set(players.map((p) => p.name.trim().toLocaleLowerCase('de')))
   let n = 1
-  while (ids.has(`p${n}`)) n++
+  while (ids.has(`p${n}`) || names.has(defaultName(n).toLocaleLowerCase('de'))) n++
   const taken = new Set(players.map((p) => p.color))
   const color = PLAYER_COLORS.find((c) => !taken.has(c)) ?? PLAYER_COLORS[0]
   return [...players, { id: `p${n}`, name: defaultName(n), color }]

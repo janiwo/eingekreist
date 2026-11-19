@@ -6,11 +6,10 @@ export const de = {
   appName: 'Eingekreist',
   showBorders: 'Ländergrenzen anzeigen',
   setup: {
-    title: 'Neues Spiel',
     players: 'Spieler',
     defaultName: (n: number) => `Spieler ${n}`,
     playerName: (n: number) => `Name von Spieler ${n}`,
-    addPlayer: 'Spieler hinzufügen',
+    addPlayer: '+ Spieler hinzufügen',
     removePlayer: (name: string) => `${name || 'Spieler'} entfernen`,
     chooseColor: (name: string) => `Farbe von ${name || 'Spieler'} ändern`,
     /** Names of the player colors, in palette order (PLAYER_COLORS). */
@@ -18,7 +17,10 @@ export const de = {
     settings: 'Einstellungen',
     targetScore: 'Punkte zum Sieg',
     decrease: 'Weniger',
+    decreaseSymbol: '−',
     increase: 'Mehr',
+    increaseSymbol: '+',
+    removeSymbol: '✕',
     timer: 'Zeit pro Zug',
     timerOff: 'Ohne Zeitlimit',
     seconds: (n: number) => `${n} Sekunden`,
@@ -39,6 +41,9 @@ export const de = {
     confirmNewGame: 'Das laufende Spiel wird beendet.',
     confirm: 'Neues Spiel starten',
     cancel: 'Weiterspielen',
+    placeLoading: '…',
+    loadError: 'Der Ort konnte nicht geladen werden.',
+    retry: 'Erneut versuchen',
   },
   circle: {
     placeHint: 'Tippe auf den Globus, um deinen Kreis zu setzen',

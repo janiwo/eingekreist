@@ -79,7 +79,7 @@ export function SetupScreen({ state, dispatch, onStart }: SetupScreenProps) {
                   disabled={players.length <= MIN_PLAYERS}
                   onClick={() => dispatch({ type: 'removePlayer', id: p.id })}
                 >
-                  ✕
+                  {t.removeSymbol}
                 </button>
                 {colorPickerFor === p.id && (
                   <div className="swatches" role="radiogroup" aria-label={t.chooseColor(p.name)}>
@@ -109,7 +109,7 @@ export function SetupScreen({ state, dispatch, onStart }: SetupScreenProps) {
               className="button button--secondary"
               onClick={() => dispatch({ type: 'addPlayer' })}
             >
-              + {t.addPlayer}
+              {t.addPlayer}
             </button>
           )}
         </section>
@@ -126,7 +126,7 @@ export function SetupScreen({ state, dispatch, onStart }: SetupScreenProps) {
                 disabled={settings.targetScore <= MIN_TARGET_SCORE}
                 onClick={() => stepTarget(-1)}
               >
-                −
+                {t.decreaseSymbol}
               </button>
               <output aria-live="polite" data-testid="target-score">
                 {settings.targetScore}
@@ -138,7 +138,7 @@ export function SetupScreen({ state, dispatch, onStart }: SetupScreenProps) {
                 disabled={settings.targetScore >= MAX_TARGET_SCORE}
                 onClick={() => stepTarget(1)}
               >
-                +
+                {t.increaseSymbol}
               </button>
             </div>
           </div>

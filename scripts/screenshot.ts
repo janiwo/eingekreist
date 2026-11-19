@@ -36,7 +36,12 @@ try {
 
     await page.goto(url)
     await page
-      .waitForFunction(() => window.__eingekreist?.map.loaded(), null, { timeout: 30_000 })
+      // startGame is registered by the app right after the map has loaded.
+      .waitForFunction(
+        (game) => window.__eingekreist?.map.loaded() && (!game || window.__eingekreist.startGame),
+        game,
+        { timeout: 30_000 },
+      )
       .catch(() => logs.push('timeout: globe not loaded'))
     if (game) await page.evaluate(() => window.__eingekreist!.startGame!(1))
     // Components that settle asynchronously mark themselves data-ready="false" until done.

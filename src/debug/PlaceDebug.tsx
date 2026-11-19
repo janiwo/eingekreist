@@ -28,7 +28,7 @@ function placeFeatures(place: Place): ColoredFeatures {
  * of the dataset on the globe and fits the view to it.
  */
 export default function PlaceDebug({ map }: { map: MapLibreMap }) {
-  const places = usePlaces()
+  const { places } = usePlaces()
   const [query, setQuery] = useState(() => new URLSearchParams(location.search).get('place') ?? '')
   const [shownId, setShownId] = useState<string | null>(null)
   const layerRef = useRef<ReturnType<typeof addShapeLayer> | null>(null)

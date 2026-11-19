@@ -54,6 +54,11 @@ describe('setup', () => {
     ])
   })
 
+  it('never gives a new player a name that is taken', () => {
+    const s = asSetup(run(setup(), { type: 'renamePlayer', id: 'p2', name: 'spieler 3' }, add))
+    expect(s.players[2]).toMatchObject({ id: 'p4', name: 'Spieler 4' })
+  })
+
   it('renames a player', () => {
     const s = asSetup(run(setup(), { type: 'renamePlayer', id: 'p2', name: 'Anna' }))
     expect(s.players[1].name).toBe('Anna')
@@ -170,6 +175,15 @@ describe('persistence', () => {
       storage.setItem(STORAGE_KEY, raw)
       expect(loadGame(storage)).toBeNull()
     }
+  })
+
+  it('drops saved games with unknown categories', () => {
+    const storage = memory()
+    const playing = run(setup(), { type: 'start', pool, seed: 5 }) as PlayingState
+    saveGame({ ...playing, round: { ...playing.round, category: 'province' as never } }, storage)
+    expect(loadGame(storage)).toBeNull()
+    saveGame({ ...setup(), settings: { ...setup().settings, categories: [] } }, storage)
+    expect(loadGame(storage)).toBeNull()
   })
 
   it('swallows storage errors', () => {

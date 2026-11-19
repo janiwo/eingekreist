@@ -1,5 +1,4 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useState, type ReactNode } from 'react'
-import { loadPlaces } from './data/places'
 import { usePlaces } from './data/usePlaces'
 import { poolOf } from './game/draw'
 import { loadGame, saveGame } from './game/persistence'
@@ -24,15 +23,21 @@ export default function App() {
   const [state, dispatch] = useReducer(gameReducer, undefined, initialState)
   const [map, setMap] = useState<MapLibreMap | null>(null)
   // Loaded right away, so it is usually ready before the setup is done.
-  const places = usePlaces()
+  const { places, failed: placesFailed, load: loadPlaces } = usePlaces()
   const placesById = useMemo(() => new Map(places?.map((p) => [p.id, p])), [places])
+  const placeId = state.phase === 'playing' ? state.round.placeId : null
+
+  // A saved game whose place has left the dataset (e.g. after an update) can't go on.
+  useEffect(() => {
+    if (places && placeId && !placesById.has(placeId)) dispatch({ type: 'newGame' })
+  }, [places, placesById, placeId])
 
   useEffect(() => saveGame(state), [state])
 
   const startGame = useCallback(async (seed = randomSeed()) => {
     // Resolves immediately once loaded; rejects (shown by the setup screen) if loading fails.
     dispatch({ type: 'start', pool: poolOf(await loadPlaces()), seed })
-  }, [])
+  }, [loadPlaces])
 
   useEffect(() => {
     if (import.meta.env.DEV && map && window.__eingekreist) window.__eingekreist.startGame = startGame
@@ -54,6 +59,8 @@ export default function App() {
         key={state.round.number}
         state={state}
         place={placesById.get(state.round.placeId)}
+        placesFailed={placesFailed}
+        onRetry={() => loadPlaces().catch((e: unknown) => console.warn(e))}
         map={map}
         onNewGame={() => dispatch({ type: 'newGame' })}
       />
