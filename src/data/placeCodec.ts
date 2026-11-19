@@ -1,5 +1,7 @@
 import type { Position } from 'geojson'
-import type { Place } from '../game/types'
+// Explicit .ts extensions: the place build scripts run this module in plain Node.
+import type { Place } from '../game/types.ts'
+import { polygonsOf, toGeometry } from '../geo/polygons.ts'
 
 /**
  * Compact storage format of the place dataset (src/data/places.json).
@@ -59,10 +61,10 @@ export function encodePlaces(places: Place[], decimals: number): PlaceFile {
     format: 'eingekreist-places',
     version: 1,
     decimals,
-    places: places.map(({ geometry, ...rest }) => {
-      const polygons = geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.coordinates
-      return { ...rest, polygons: polygons.map((p) => p.map((r) => encodeRing(r, decimals))) }
-    }),
+    places: places.map(({ geometry, ...rest }) => ({
+      ...rest,
+      polygons: polygonsOf(geometry).map((p) => p.map((r) => encodeRing(r, decimals))),
+    })),
   }
 }
 
@@ -70,14 +72,8 @@ export function decodePlaces(file: PlaceFile): Place[] {
   if (file.format !== 'eingekreist-places' || file.version !== 1) {
     throw new Error(`Unknown place file format ${file.format} v${file.version}`)
   }
-  return file.places.map(({ polygons, ...rest }) => {
-    const coords = polygons.map((p) => p.map((r) => decodeRing(r, file.decimals)))
-    return {
-      ...rest,
-      geometry:
-        coords.length === 1
-          ? { type: 'Polygon', coordinates: coords[0] }
-          : { type: 'MultiPolygon', coordinates: coords },
-    }
-  })
+  return file.places.map(({ polygons, ...rest }) => ({
+    ...rest,
+    geometry: toGeometry(polygons.map((p) => p.map((r) => decodeRing(r, file.decimals)))),
+  }))
 }

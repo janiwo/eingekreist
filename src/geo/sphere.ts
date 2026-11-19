@@ -1,4 +1,5 @@
-import type { LngLat } from '../game/types'
+// Explicit .ts extensions: the place build scripts run this module in plain Node.
+import type { LngLat } from '../game/types.ts'
 
 /** Mean Earth radius (km), same value as Turf. */
 export const EARTH_RADIUS_KM = 6371.0088

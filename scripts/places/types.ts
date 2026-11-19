@@ -1,7 +1,6 @@
-import type { Category } from '../../src/game/types.ts'
+import type { Category, LngLat } from '../../src/game/types.ts'
 
-/** [lng, lat] in degrees. */
-export type LngLat = [number, number]
+export type { LngLat }
 
 /** [west, south, east, north] in degrees. */
 export type BBox = [number, number, number, number]
@@ -19,16 +18,16 @@ export type Source =
   | { kind: 'marine'; names: string[] }
   /** Lakes and reservoirs. */
   | { kind: 'lake'; names: string[] }
-  /** River centerlines. `bbox` drops same-named rivers elsewhere. Buffered. */
-  | { kind: 'river'; names: string[]; bbox?: BBox }
+  /** River centerlines, buffered by `bufferKm`. `bbox` drops same-named rivers elsewhere. */
+  | { kind: 'river'; names: string[]; bbox?: BBox; bufferKm: number }
   /** Land and minor-island polygons that contain one of the points. */
   | { kind: 'land'; at: LngLat[] }
   /** All land and minor-island polygons lying completely inside the box. */
   | { kind: 'landIn'; bbox: BBox }
   /** OpenStreetMap administrative boundaries, by relation ID. */
   | { kind: 'osm'; relations: number[] }
-  /** A single coordinate. Buffered. */
-  | { kind: 'point'; at: LngLat }
+  /** A single coordinate, buffered by `bufferKm`. */
+  | { kind: 'point'; at: LngLat; bufferKm: number }
 
 export interface PlaceSource {
   /** Stable, unique, kebab-case. */
@@ -39,8 +38,6 @@ export interface PlaceSource {
   qualifier?: string
   category: Category
   source: Source
-  /** Buffer around the geometry in km. Required for points and rivers. */
-  bufferKm?: number
   /** Polygon parts lying completely inside one of these boxes are dropped. */
   exclude?: BBox[]
 }

@@ -4,7 +4,8 @@ import { decodePlaces, type PlaceFile } from '../../src/data/placeCodec'
 import { loadPlaces } from '../../src/data/places'
 import type { Circle, LngLat, Place } from '../../src/game/types'
 import { circleHits } from '../../src/geo/hitTest'
-import { formatReport, PLACES_FILE, validatePlaces } from './validate'
+import { PLACES_FILE } from './output'
+import { formatReport, validatePlaces } from './validate'
 
 const json = readFileSync(PLACES_FILE, 'utf8')
 const places = decodePlaces(JSON.parse(json) as PlaceFile)
@@ -26,7 +27,8 @@ describe('place dataset', () => {
   })
 
   it('loads through loadPlaces', async () => {
-    expect(await loadPlaces()).toEqual(places)
+    // The codec round trip itself is covered in placeCodec.test.ts.
+    expect((await loadPlaces()).map((p) => p.id)).toEqual(places.map((p) => p.id))
   })
 })
 

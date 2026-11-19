@@ -1,6 +1,7 @@
 import { booleanPointInPolygon, lineString, point, pointToLineDistance } from '@turf/turf'
-import type { MultiPolygon, Polygon, Position } from 'geojson'
+import type { MultiPolygon, Polygon } from 'geojson'
 import type { Circle, LngLat } from '../game/types'
+import { polygonsOf } from './polygons'
 
 /**
  * Shortest geodesic distance (km) from the point to the area.
@@ -13,11 +14,8 @@ export function distanceToAreaKm(
   const pt = point(center)
   if (booleanPointInPolygon(pt, geometry)) return 0
 
-  const polygons: Position[][][] =
-    geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.coordinates
-
   let min = Infinity
-  for (const rings of polygons) {
+  for (const rings of polygonsOf(geometry)) {
     for (const ring of rings) {
       const d = pointToLineDistance(pt, lineString(ring), {
         units: 'kilometers',

@@ -5,8 +5,8 @@
  *   npm run build:places
  */
 import { writeFileSync } from 'node:fs'
-import type { Feature, Geometry, Position } from 'geojson'
-import { booleanPointInPolygon } from '@turf/turf'
+import type { Feature, Geometry, MultiPolygon, Polygon, Position } from 'geojson'
+import { bbox, booleanPointInPolygon } from '@turf/turf'
 import type { Place } from '../../src/game/types.ts'
 import {
   bufferLines,
@@ -22,11 +22,13 @@ import {
   type Polys,
 } from './geometry.ts'
 import { placeSources } from './list/index.ts'
+import { PLACES_FILE, serializePlaces } from './output.ts'
 import { naturalEarth, osmBoundaries, type NeLayer } from './sources.ts'
 import type { BBox, PlaceSource, Source } from './types.ts'
-import { formatReport, PLACES_FILE, serializePlaces, validatePlaces } from './validate.ts'
+import { formatReport, validatePlaces } from './validate.ts'
 
-type Raw = { polys: Polys } | { lines: Position[][] }
+type OsmAreas = Map<number, Polygon | MultiPolygon>
+type AreaSource = Exclude<Source, { kind: 'point' | 'river' }>
 
 const layers = new Map<NeLayer, Feature<Geometry>[]>()
 async function layer(name: NeLayer) {
@@ -40,9 +42,13 @@ function areaParts(features: Feature<Geometry>[]): Polys {
   )
 }
 
+const linesOf = (g: Geometry | null): Position[][] =>
+  g?.type === 'LineString' ? [g.coordinates] : g?.type === 'MultiLineString' ? g.coordinates : []
+
 /** Features of a layer whose name property matches; every name must match at least once. */
-async function byName(name: NeLayer, prop: string, names: string[], where = (_f: Feature) => true) {
-  const features = (await layer(name)).filter((f) => where(f))
+async function byName(name: NeLayer, prop: string, names: string[], where?: (f: Feature) => boolean) {
+  const all = await layer(name)
+  const features = where ? all.filter(where) : all
   return names.flatMap((n) => {
     const hits = features.filter((f) => f.properties?.[prop] === n)
     if (hits.length === 0) throw new Error(`ne_10m_${name}: no feature with ${prop} = "${n}"`)
@@ -52,47 +58,32 @@ async function byName(name: NeLayer, prop: string, names: string[], where = (_f:
 
 let landIndex: { poly: Position[][]; bbox: BBox }[] | undefined
 async function landPolygons() {
-  if (!landIndex) {
-    const polys = [...areaParts(await layer('land')), ...areaParts(await layer('minor_islands'))]
-    landIndex = polys.map((poly) => {
-      const lngs = poly[0].map((p) => p[0])
-      const lats = poly[0].map((p) => p[1])
-      const bbox: BBox = [Math.min(...lngs), Math.min(...lats), Math.max(...lngs), Math.max(...lats)]
-      return { poly, bbox }
-    })
-  }
+  landIndex ??= [...areaParts(await layer('land')), ...areaParts(await layer('minor_islands'))].map((poly) => ({
+    poly,
+    bbox: bbox({ type: 'Polygon', coordinates: poly }) as BBox,
+  }))
   return landIndex
 }
 
-const firstVertex = (g: Geometry): Position | undefined =>
-  g.type === 'LineString' ? g.coordinates[0] : g.type === 'MultiLineString' ? g.coordinates[0]?.[0] : undefined
+async function riverLines({ names, bbox }: Extract<Source, { kind: 'river' }>): Promise<Position[][]> {
+  const inBox = (f: Feature) => {
+    const v = linesOf(f.geometry)[0]?.[0]
+    return !!v && (!bbox || inBBox(v, bbox))
+  }
+  const features = await byName('rivers_lake_centerlines', 'name', names, inBox)
+  return features.flatMap((f) => linesOf(f.geometry)).filter((l) => l.length > 1)
+}
 
-async function resolve(source: Source, osm: Map<number, Geometry>): Promise<Raw> {
+async function areaPolys(source: AreaSource, osm: OsmAreas): Promise<Polys> {
   switch (source.kind) {
     case 'country':
-      return { polys: areaParts(await byName('admin_0_countries', 'ADM0_A3', source.codes)) }
+      return areaParts(await byName('admin_0_countries', 'ADM0_A3', source.codes))
     case 'region':
-      return { polys: areaParts(await byName('geography_regions_polys', 'NAME', source.names)) }
+      return areaParts(await byName('geography_regions_polys', 'NAME', source.names))
     case 'marine':
-      return { polys: areaParts(await byName('geography_marine_polys', 'name', source.names)) }
+      return areaParts(await byName('geography_marine_polys', 'name', source.names))
     case 'lake':
-      return { polys: areaParts(await byName('lakes', 'name', source.names)) }
-    case 'river': {
-      const { bbox } = source
-      const inBox = (f: Feature) => {
-        const v = f.geometry && firstVertex(f.geometry)
-        return !!v && (!bbox || inBBox(v, bbox))
-      }
-      const features = await byName('rivers_lake_centerlines', 'name', source.names, inBox)
-      const lines = features.flatMap((f) =>
-        f.geometry.type === 'LineString'
-          ? [f.geometry.coordinates]
-          : f.geometry.type === 'MultiLineString'
-            ? f.geometry.coordinates
-            : [],
-      )
-      return { lines: lines.filter((l) => l.length > 1) }
-    }
+      return areaParts(await byName('lakes', 'name', source.names))
     case 'land': {
       const land = await landPolygons()
       const found = new Set<Position[][]>()
@@ -103,52 +94,42 @@ async function resolve(source: Source, osm: Map<number, Geometry>): Promise<Raw>
         if (!hit) throw new Error(`no land polygon at ${pt.join(',')}`)
         found.add(hit.poly)
       }
-      return { polys: [...found] }
+      return [...found]
     }
     case 'landIn': {
       const [w, s, e, n] = source.bbox
-      const land = await landPolygons()
-      const polys = land
+      const polys = (await landPolygons())
         .filter(({ bbox: b }) => b[0] >= w && b[1] >= s && b[2] <= e && b[3] <= n)
         .map(({ poly }) => poly)
       if (polys.length === 0) throw new Error(`no land polygons inside ${source.bbox.join(',')}`)
-      return { polys }
+      return polys
     }
     case 'osm':
-      return {
-        polys: source.relations.flatMap((id) => {
-          const g = osm.get(id)
-          if (g?.type !== 'Polygon' && g?.type !== 'MultiPolygon') throw new Error(`OSM relation ${id} missing`)
-          return polygonsOf(g)
-        }),
-      }
-    case 'point':
-      return { polys: [] }
+      return source.relations.flatMap((id) => {
+        const g = osm.get(id)
+        if (!g) throw new Error(`OSM relation ${id} missing`)
+        return polygonsOf(g)
+      })
   }
 }
 
-async function buildPlace(src: PlaceSource, osm: Map<number, Geometry>): Promise<Place> {
-  const { source, bufferKm } = src
-  const needsBuffer = source.kind === 'point' || source.kind === 'river'
-  if (needsBuffer !== (bufferKm !== undefined)) {
-    throw new Error(`bufferKm is ${needsBuffer ? 'required' : 'only allowed'} for points and rivers`)
+async function placePolys(src: PlaceSource, osm: OsmAreas): Promise<Polys> {
+  const { source } = src
+  switch (source.kind) {
+    case 'point':
+      return bufferPoint(source.at, source.bufferKm)
+    case 'river':
+      return bufferLines(simplifyLines(await riverLines(source)), source.bufferKm)
+    default:
+      // Merge before simplifying, so edges shared by neighbouring source features
+      // (e.g. the seas that make up the Mediterranean) stay together.
+      return simplifyPolys(union(excludeParts(await areaPolys(source, osm), src.exclude)))
   }
+}
 
-  let polys: Polys
-  if (source.kind === 'point') {
-    polys = bufferPoint(source.at, bufferKm!)
-  } else {
-    const raw = await resolve(source, osm)
-    polys =
-      'lines' in raw
-        ? bufferLines(simplifyLines(raw.lines), bufferKm!)
-        : // Merge before simplifying, so edges shared by neighbouring source features
-          // (e.g. the seas that make up the Mediterranean) stay together.
-          simplifyPolys(union(excludeParts(raw.polys, src.exclude)))
-  }
-  polys = finalize(polys)
+async function buildPlace(src: PlaceSource, osm: OsmAreas): Promise<Place> {
+  const polys = finalize(await placePolys(src, osm))
   if (polys.length === 0) throw new Error('empty geometry')
-
   return {
     id: src.id,
     name: src.name,

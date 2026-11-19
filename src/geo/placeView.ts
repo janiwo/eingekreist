@@ -1,7 +1,5 @@
 import type { MultiLineString, MultiPolygon, Polygon, Position } from 'geojson'
-
-const polygonsOf = (g: Polygon | MultiPolygon): Position[][][] =>
-  g.type === 'Polygon' ? [g.coordinates] : g.coordinates
+import { polygonsOf } from './polygons'
 
 /** An edge running along ±180°: where Natural Earth cuts areas at the antimeridian. */
 const onSeam = (a: Position, b: Position) => Math.abs(a[0]) === 180 && a[0] === b[0]
@@ -34,12 +32,23 @@ export type Bounds = [number, number, number, number]
  * across it (east > 180) rather than around the whole globe, whichever is narrower.
  */
 export function placeBounds(geometry: Polygon | MultiPolygon): Bounds {
-  const points = polygonsOf(geometry).flat(2)
-  const lats = points.map((p) => p[1])
-  const [south, north] = [Math.min(...lats), Math.max(...lats)]
-  const box = (lngs: number[]): Bounds => [Math.min(...lngs), south, Math.max(...lngs), north]
-
-  const plain = box(points.map((p) => p[0]))
-  const shifted = box(points.map((p) => (p[0] < 0 ? p[0] + 360 : p[0])))
-  return shifted[2] - shifted[0] < plain[2] - plain[0] ? shifted : plain
+  let [west, south, east, north] = [Infinity, Infinity, -Infinity, -Infinity]
+  // The same box with western-hemisphere longitudes shifted by +360°
+  let [westShifted, eastShifted] = [Infinity, -Infinity]
+  for (const rings of polygonsOf(geometry)) {
+    for (const ring of rings) {
+      for (const [lng, lat] of ring) {
+        const shifted = lng < 0 ? lng + 360 : lng
+        west = Math.min(west, lng)
+        east = Math.max(east, lng)
+        westShifted = Math.min(westShifted, shifted)
+        eastShifted = Math.max(eastShifted, shifted)
+        south = Math.min(south, lat)
+        north = Math.max(north, lat)
+      }
+    }
+  }
+  return eastShifted - westShifted < east - west
+    ? [westShifted, south, eastShifted, north]
+    : [west, south, east, north]
 }

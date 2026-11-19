@@ -8,12 +8,11 @@ import { readFileSync } from 'node:fs'
 import { gzipSync } from 'node:zlib'
 import { area, bbox } from '@turf/turf'
 import type { Position } from 'geojson'
-import { decodePlaces, encodePlaces, type PlaceFile } from '../../src/data/placeCodec.ts'
+import { decodePlaces, type PlaceFile } from '../../src/data/placeCodec.ts'
 import { CATEGORIES, type Category, type Place } from '../../src/game/types.ts'
 import { distanceKm } from '../../src/geo/sphere.ts'
-import { COORD_DECIMALS, crossings, polygonsOf } from './geometry.ts'
-
-export const PLACES_FILE = 'src/data/places.json'
+import { crossings, polygonsOf } from './geometry.ts'
+import { PLACES_FILE } from './output.ts'
 
 /** Allowed number of places per category (spec §4.1, "approx."). */
 export const COUNT_RANGES: Record<Category, [number, number]> = {
@@ -39,13 +38,6 @@ export interface Report {
   gzipBytes: number
   vertices: number
   largest: { id: string; vertices: number }[]
-}
-
-/** Encoded, one place per line, so diffs of the generated file stay readable. */
-export function serializePlaces(places: Place[]): string {
-  const { places: encoded, ...header } = encodePlaces(places, COORD_DECIMALS)
-  const head = JSON.stringify(header).slice(0, -1)
-  return `${head},"places":[\n${encoded.map((p) => JSON.stringify(p)).join(',\n')}\n]}\n`
 }
 
 const ID_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
@@ -80,12 +72,6 @@ export function validatePlaces(places: Place[], json: string): Report {
     if (names.has(key)) err(`name "${p.name}" is ambiguous in its category; add a qualifier`)
     names.add(key)
 
-    // The data comes from a file, so don't trust the static type.
-    const type = (p.geometry as { type?: string } | undefined)?.type
-    if (type !== 'Polygon' && type !== 'MultiPolygon') {
-      err(`geometry type ${type}`)
-      continue
-    }
     const polys = polygonsOf(p.geometry)
     if (polys.length === 0) err('empty geometry')
     let vertices = 0

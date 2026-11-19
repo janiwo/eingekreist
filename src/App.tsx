@@ -25,7 +25,8 @@ export default function App() {
       <Globe showBorders={showBorders} onMapReady={setMap} />
       {map && <CircleEditor map={map} circle={circle} onChange={setCircle} />}
       {map && PlaceDebug && (
-        <Suspense>
+        // Not ready until loaded (the screenshot script waits for data-ready).
+        <Suspense fallback={<div data-ready="false" hidden />}>
           <PlaceDebug map={map} />
         </Suspense>
       )}

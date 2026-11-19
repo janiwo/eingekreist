@@ -32,12 +32,16 @@ async function download(url: string): Promise<string> {
 /** A Natural Earth 1:10m layer as GeoJSON, from the cache or downloaded once. */
 export async function naturalEarth(layer: NeLayer): Promise<FeatureCollection> {
   const file = `${CACHE_DIR}/ne_10m_${layer}.geojson`
-  if (!existsSync(file)) {
+  let text: string
+  if (existsSync(file)) {
+    text = readFileSync(file, 'utf8')
+  } else {
     mkdirSync(CACHE_DIR, { recursive: true })
     console.log(`↓ ${file}`)
-    writeFileSync(file, await download(`${NE_BASE}/ne_10m_${layer}.geojson`))
+    text = await download(`${NE_BASE}/ne_10m_${layer}.geojson`)
+    writeFileSync(file, text)
   }
-  return JSON.parse(readFileSync(file, 'utf8')) as FeatureCollection
+  return JSON.parse(text) as FeatureCollection
 }
 
 const osmFile = (id: number) => `${CACHE_DIR}/osm/R${id}.geojson`
@@ -47,6 +51,7 @@ export async function osmBoundaries(ids: number[]): Promise<Map<number, Polygon 
   mkdirSync(`${CACHE_DIR}/osm`, { recursive: true })
   const missing = ids.filter((id) => !existsSync(osmFile(id)))
   for (let i = 0; i < missing.length; i += NOMINATIM_BATCH) {
+    if (i > 0) await sleep(1100)
     const batch = missing.slice(i, i + NOMINATIM_BATCH)
     const params = new URLSearchParams({
       osm_ids: batch.map((id) => `R${id}`).join(','),
@@ -64,7 +69,6 @@ export async function osmBoundaries(ids: number[]): Promise<Map<number, Polygon 
     for (const id of batch) {
       if (!existsSync(osmFile(id))) throw new Error(`OSM relation ${id} not returned by Nominatim`)
     }
-    await sleep(1100)
   }
   const out = new Map<number, Polygon | MultiPolygon>()
   for (const id of ids) {

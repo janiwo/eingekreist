@@ -7,8 +7,7 @@ import type { Entry, LngLat } from '../types.ts'
 const at = (id: string, name: string, point: LngLat, bufferKm = 1): Entry => ({
   id,
   name,
-  source: { kind: 'point', at: point },
-  bufferKm,
+  source: { kind: 'point', at: point, bufferKm },
 })
 
 export const landmarks: Entry[] = [

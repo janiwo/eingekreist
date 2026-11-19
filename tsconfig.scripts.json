@@ -6,9 +6,9 @@
     "types": ["node"],
     "skipLibCheck": true,
 
-    /* Run directly by Node (type stripping); bundler resolution also accepts src/ imports. */
-    "module": "esnext",
-    "moduleResolution": "bundler",
+    /* Run directly by Node (type stripping): Node resolution, so imports need file extensions. */
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "verbatimModuleSyntax": true,
@@ -21,5 +21,6 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["scripts/places"]
+  "include": ["scripts/places"],
+  "exclude": ["scripts/**/*.test.ts"]
 }

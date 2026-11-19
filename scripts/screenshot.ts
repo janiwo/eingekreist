@@ -34,12 +34,11 @@ try {
     await page
       .waitForFunction(() => window.__eingekreist?.map.loaded(), null, { timeout: 30_000 })
       .catch(() => logs.push('timeout: globe not loaded'))
-    if (path.includes('debug=places')) {
-      await page
-        .locator('.debug-panel[data-ready="true"]')
-        .waitFor({ timeout: 30_000 })
-        .catch(() => logs.push('timeout: place not shown'))
-    }
+    // Components that settle asynchronously mark themselves data-ready="false" until done.
+    await page.evaluate(() => new Promise(requestAnimationFrame))
+    await page
+      .waitForFunction(() => !document.querySelector('[data-ready="false"]'), null, { timeout: 30_000 })
+      .catch(() => logs.push('timeout: [data-ready="false"] still present'))
     if (view) {
       const [lng, lat, zoom] = view.split(',').map(Number)
       await page.evaluate(

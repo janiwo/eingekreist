@@ -1,19 +1,17 @@
-import type { FeatureCollection, LineString, MultiLineString, MultiPolygon, Polygon } from 'geojson'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { loadPlaces } from '../data/places'
 import type { Place } from '../game/types'
 import { placeBounds, placeOutline } from '../geo/placeView'
+import { vertexCount } from '../geo/polygons'
 import { de } from '../i18n/de'
-import type { GeoJSONSource, Map as MapLibreMap } from '../map/maplibre'
+import type { Map as MapLibreMap } from '../map/maplibre'
+import { addShapeLayer, noFeatures, type ColoredFeatures } from '../map/shapeLayer'
 import { findPlace } from './findPlace'
 
-const SOURCE = 'debug-place'
+const LAYER_ID = 'debug-place'
 const strings = de.debugPlaces
 
-type Shape = Polygon | MultiPolygon | LineString | MultiLineString
-
-function placeFeatures(place: Place | undefined): FeatureCollection<Shape> {
-  if (!place) return { type: 'FeatureCollection', features: [] }
+function placeFeatures(place: Place): ColoredFeatures {
   const color = de.categories[place.category].color
   return {
     type: 'FeatureCollection',
@@ -25,9 +23,6 @@ function placeFeatures(place: Place | undefined): FeatureCollection<Shape> {
   }
 }
 
-const vertexCount = (p: Place) =>
-  (p.geometry.type === 'Polygon' ? [p.geometry.coordinates] : p.geometry.coordinates).flat(2).length
-
 /**
  * Dev-only inspector (`?debug=places`, optionally `&place=<id or name>`): shows one place
  * of the dataset on the globe and fits the view to it.
@@ -36,6 +31,7 @@ export default function PlaceDebug({ map }: { map: MapLibreMap }) {
   const [places, setPlaces] = useState<Place[] | null>(null)
   const [query, setQuery] = useState(() => new URLSearchParams(location.search).get('place') ?? '')
   const [shownId, setShownId] = useState<string | null>(null)
+  const layerRef = useRef<ReturnType<typeof addShapeLayer> | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -46,34 +42,28 @@ export default function PlaceDebug({ map }: { map: MapLibreMap }) {
   }, [])
 
   useEffect(() => {
-    map.addSource(SOURCE, { type: 'geojson', data: placeFeatures(undefined) })
-    map.addLayer({
-      id: `${SOURCE}-fill`,
-      type: 'fill',
-      source: SOURCE,
-      filter: ['==', ['geometry-type'], 'Polygon'],
-      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.35, 'fill-antialias': false },
-    })
-    map.addLayer({
-      id: `${SOURCE}-line`,
-      type: 'line',
-      source: SOURCE,
-      filter: ['==', ['geometry-type'], 'LineString'],
-      paint: { 'line-color': ['get', 'color'], 'line-width': 2 },
-    })
+    const layer = addShapeLayer(map, LAYER_ID, { fillOpacity: 0.35, lineWidth: 2 })
+    layerRef.current = layer
     return () => {
-      // The map may already be gone if the globe unmounted first.
-      if (!map.style) return
-      map.removeLayer(`${SOURCE}-line`)
-      map.removeLayer(`${SOURCE}-fill`)
-      map.removeSource(SOURCE)
+      layer.remove()
+      layerRef.current = null
     }
   }, [map])
 
-  const place = places ? findPlace(places, query) : undefined
+  const place = useMemo(() => (places ? findPlace(places, query) : undefined), [places, query])
+  const options = useMemo(
+    () =>
+      places?.map((p) => (
+        <option key={p.id} value={p.id}>
+          {p.name} ({de.categories[p.category].label})
+        </option>
+      )),
+    [places],
+  )
 
   useEffect(() => {
-    map.getSource<GeoJSONSource>(SOURCE)?.setData(placeFeatures(place))
+    // Runs after the layer effect above, which created the layer.
+    layerRef.current?.setFeatures(place ? placeFeatures(place) : noFeatures)
     if (!place) return
     map.fitBounds(placeBounds(place.geometry), { padding: 40, maxZoom: 12, animate: false })
     // Ready for screenshots once the new view has rendered.
@@ -89,18 +79,12 @@ export default function PlaceDebug({ map }: { map: MapLibreMap }) {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
-      <datalist id="debug-places">
-        {places?.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.name} ({de.categories[p.category].label})
-          </option>
-        ))}
-      </datalist>
+      <datalist id="debug-places">{options}</datalist>
       <div role="status" aria-live="polite" data-testid="debug-place-info">
         {!places
           ? strings.loading
           : place
-            ? `${de.categories[place.category].icon} ${place.name}${place.qualifier ? ` (${place.qualifier})` : ''} · ${place.id} · ${strings.vertices(vertexCount(place))}`
+            ? `${de.categories[place.category].icon} ${place.name}${place.qualifier ? ` (${place.qualifier})` : ''} · ${place.id} · ${strings.vertices(vertexCount(place.geometry))}`
             : query
               ? strings.notFound
               : strings.count(places.length)}

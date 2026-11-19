@@ -19,8 +19,7 @@ const RIVER_BUFFER_KM = 5
 const river = (id: string, name: string, names: string[], bbox?: BBox): Entry => ({
   id,
   name,
-  source: { kind: 'river', names, ...(bbox && { bbox }) },
-  bufferKm: RIVER_BUFFER_KM,
+  source: { kind: 'river', names, ...(bbox && { bbox }), bufferKm: RIVER_BUFFER_KM },
 })
 
 export const waters: Entry[] = [

@@ -3,14 +3,14 @@
  * and lines, simplify, round and repair. Everything works on plain coordinate arrays.
  */
 import { buffer, lineString, simplify } from '@turf/turf'
-import type { MultiPolygon, Polygon, Position } from 'geojson'
+import type { Position } from 'geojson'
 import * as polyclip from 'polyclip-ts'
-// Only modules without runtime imports from src/ work here: Node can't resolve extensionless paths.
+import type { LngLat } from '../../src/game/types.ts'
+import { polygonsOf, type Polys } from '../../src/geo/polygons.ts'
 import { destination, distanceKm } from '../../src/geo/sphere.ts'
-import type { BBox, LngLat } from './types.ts'
+import type { BBox } from './types.ts'
 
-/** A list of polygons, each a list of rings (outer ring first), as in a GeoJSON MultiPolygon. */
-export type Polys = Position[][][]
+export { polygonsOf, toGeometry, type Polys } from '../../src/geo/polygons.ts'
 
 /** ~500 m in degrees of latitude (spec §4.3). */
 export const SIMPLIFY_TOLERANCE_DEG = 0.0045
@@ -20,16 +20,6 @@ export const COORD_DECIMALS = 3
 
 /** Longest piece of a line that is buffered in one go; keeps turf's projection accurate. */
 const LINE_CHUNK_KM = 150
-
-export function polygonsOf(g: Polygon | MultiPolygon): Polys {
-  return g.type === 'Polygon' ? [g.coordinates] : g.coordinates
-}
-
-export function toGeometry(polys: Polys): Polygon | MultiPolygon {
-  return polys.length === 1
-    ? { type: 'Polygon', coordinates: polys[0] }
-    : { type: 'MultiPolygon', coordinates: polys }
-}
 
 export function inBBox([lng, lat]: Position, [w, s, e, n]: BBox): boolean {
   return lng >= w && lng <= e && lat >= s && lat <= n
@@ -90,14 +80,14 @@ function lngScale(points: Position[]): number {
   return Math.max(0.1, Math.cos((meanLat * Math.PI) / 180))
 }
 
-const scaleLng = (rings: Position[][], k: number) => rings.map((r) => r.map(([lng, lat]) => [lng * k, lat]))
+const scaleRing = (ring: Position[], k: number) => ring.map(([lng, lat]) => [lng * k, lat])
 
 export function simplifyLines(lines: Position[][]): Position[][] {
   return lines.map((l) => {
     if (l.length <= 2) return l
     const k = lngScale(l)
-    const simple = simplify(lineString(scaleLng([l], k)[0]), { tolerance: SIMPLIFY_TOLERANCE_DEG })
-    return scaleLng([simple.geometry.coordinates], 1 / k)[0]
+    const simple = simplify(lineString(scaleRing(l, k)), { tolerance: SIMPLIFY_TOLERANCE_DEG })
+    return scaleRing(simple.geometry.coordinates, 1 / k)
   })
 }
 
@@ -108,8 +98,9 @@ export function simplifyLines(lines: Position[][]): Position[][] {
 export function simplifyPolys(polys: Polys): Polys {
   return polys.map((p) => {
     const k = lngScale(p[0])
-    const simple = simplify({ type: 'Polygon', coordinates: scaleLng(p, k) }, { tolerance: SIMPLIFY_TOLERANCE_DEG })
-    return scaleLng(simple.coordinates, 1 / k)
+    const coordinates = p.map((r) => scaleRing(r, k))
+    const simple = simplify({ type: 'Polygon', coordinates }, { tolerance: SIMPLIFY_TOLERANCE_DEG })
+    return simple.coordinates.map((r) => scaleRing(r, 1 / k))
   })
 }
 
@@ -169,13 +160,18 @@ export function finalize(polys: Polys): Polys {
  * the orientation tests exact.
  */
 export function crossings(polys: Polys): number {
-  const segs: [number, number, number, number][] = []
+  type Seg = [number, number, number, number]
+  const segs: Seg[] = []
   for (const rings of polys) {
     for (const ring of rings) {
+      let ax = Math.round(ring[0][0] * factor)
+      let ay = Math.round(ring[0][1] * factor)
       for (let i = 1; i < ring.length; i++) {
-        const a = [Math.round(ring[i - 1][0] * factor), Math.round(ring[i - 1][1] * factor)]
-        const b = [Math.round(ring[i][0] * factor), Math.round(ring[i][1] * factor)]
-        segs.push(a[0] <= b[0] ? [a[0], a[1], b[0], b[1]] : [b[0], b[1], a[0], a[1]])
+        const bx = Math.round(ring[i][0] * factor)
+        const by = Math.round(ring[i][1] * factor)
+        segs.push(ax <= bx ? [ax, ay, bx, by] : [bx, by, ax, ay])
+        ax = bx
+        ay = by
       }
     }
   }
@@ -185,9 +181,12 @@ export function crossings(polys: Polys): number {
     Math.sign((bx - ax) * (cy - ay) - (by - ay) * (cx - ax))
 
   let count = 0
-  let active: [number, number, number, number][] = []
+  const active: Seg[] = []
   for (const s of segs) {
-    active = active.filter((t) => t[2] >= s[0])
+    // Drop segments that end west of this one, compacting in place.
+    let n = 0
+    for (const t of active) if (t[2] >= s[0]) active[n++] = t
+    active.length = n
     for (const t of active) {
       if (Math.max(s[1], s[3]) < Math.min(t[1], t[3]) || Math.max(t[1], t[3]) < Math.min(s[1], s[3])) continue
       const d1 = orient(s[0], s[1], s[2], s[3], t[0], t[1])
