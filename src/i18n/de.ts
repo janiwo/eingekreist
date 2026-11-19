@@ -1,8 +1,17 @@
 import type { Category } from '../game/types'
 
+const kmFormat = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 })
+
 export const de = {
   appName: 'Eingekreist',
   showBorders: 'Ländergrenzen anzeigen',
+  circle: {
+    placeHint: 'Tippe auf den Globus, um deinen Kreis zu setzen',
+    radius: 'Radius',
+    moveCenter: 'Mittelpunkt verschieben',
+    changeRadius: 'Radius ändern',
+  },
+  formatKm: (km: number) => `${kmFormat.format(km)} km`,
   categories: {
     country: { label: 'Land', icon: '🏳️', color: '#c0392b' },
     city: { label: 'Stadt', icon: '🏙️', color: '#7f8c8d' },

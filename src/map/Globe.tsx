@@ -2,6 +2,7 @@ import { Map as MapLibreMap, type StyleSpecification } from './maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useEffect, useRef } from 'react'
 import { bordersGeoJson, landGeoJson } from './baseData'
+import type { Circle } from '../game/types'
 import { START_VIEW } from './view'
 
 const COLORS = {
@@ -33,13 +34,15 @@ const style: StyleSpecification = {
 
 declare global {
   interface Window {
-    __eingekreist?: { map: MapLibreMap }
+    /** Dev-only hooks for tests and the screenshot script. */
+    __eingekreist?: { map: MapLibreMap; setCircle?: (circle: Circle | null) => void }
   }
 }
 
 interface GlobeProps {
   showBorders: boolean
-  onMapReady?: (map: MapLibreMap) => void
+  /** Called with the map once it has loaded, and with `null` when it is removed. */
+  onMapReady?: (map: MapLibreMap | null) => void
 }
 
 export function Globe({ showBorders, onMapReady }: GlobeProps) {
@@ -61,6 +64,8 @@ export function Globe({ showBorders, onMapReady }: GlobeProps) {
       attributionControl: false,
       renderWorldCopies: false,
       dragRotate: false,
+      // A tap places the circle, so a double tap must not also zoom.
+      doubleClickZoom: false,
       pitchWithRotate: false,
     })
     map.touchZoomRotate.disableRotation()
@@ -69,6 +74,7 @@ export function Globe({ showBorders, onMapReady }: GlobeProps) {
     // Access for browser tests (dev server only).
     if (import.meta.env.DEV) window.__eingekreist = { map }
     return () => {
+      onReadyRef.current?.(null)
       map.remove()
       mapRef.current = null
       if (import.meta.env.DEV) delete window.__eingekreist
