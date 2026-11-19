@@ -12,3 +12,9 @@ export async function openGlobe(page: Page, path = '/') {
     expectNoErrors: () => expect(errors, errors.join('\n')).toEqual([]),
   }
 }
+
+/** Starts a game from the setup screen with its current players and settings. */
+export async function startGame(page: Page) {
+  await page.getByRole('button', { name: 'Spiel starten' }).click()
+  await expect(page.locator('[data-testid="prompt"][data-ready="true"]')).toBeVisible()
+}

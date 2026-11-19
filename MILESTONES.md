@@ -66,7 +66,7 @@ A build script (`npm run build:places`) generates the curated place dataset from
 - Spot-check screenshots are clean: France with Réunion, Russia across the antimeridian, Sahara, a river, a landmark, a city.
 - A unit test checks the hit test against real places.
 
-## [ ] M3 – Game setup and game state
+## [x] M3 – Game setup and game state
 
 - Start screen:
   - add 2–8 players: name, automatically assigned and changeable color

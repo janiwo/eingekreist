@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { openGlobe } from './helpers'
+import { openGlobe, startGame } from './helpers'
 
 const readout = (page: Page) => page.getByRole('status')
 
@@ -54,6 +54,7 @@ async function dragRadiusOntoCenter(page: Page, drag: Drag, nudgeX = 0) {
 
 test('places a circle and changes its radius', async ({ page }, testInfo) => {
   const { expectNoErrors } = await openGlobe(page)
+  await startGame(page)
   const isMobile = testInfo.project.name === 'mobile'
   await expect(readout(page)).toContainText('Tippe auf den Globus')
 
@@ -93,6 +94,7 @@ test('places a circle and changes its radius', async ({ page }, testInfo) => {
 
 test('the radius never drops below 1 km', async ({ page }) => {
   const { expectNoErrors } = await openGlobe(page)
+  await startGame(page)
   // Zoom in far so the handle can be dragged right onto the center.
   await page.evaluate(() => window.__eingekreist!.map.jumpTo({ center: [10, 50], zoom: 14 }))
   const viewport = page.viewportSize()!
@@ -105,6 +107,7 @@ test('the radius never drops below 1 km', async ({ page }) => {
 
 test('taps in space next to the globe are ignored', async ({ page }) => {
   const { expectNoErrors } = await openGlobe(page)
+  await startGame(page)
   await page.mouse.click(5, page.viewportSize()!.height - 5)
   await expect(readout(page)).toContainText('Tippe auf den Globus')
   await expect(page.getByTestId('handle-center')).toHaveCount(0)

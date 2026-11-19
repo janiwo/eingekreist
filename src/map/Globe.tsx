@@ -36,7 +36,12 @@ const style: StyleSpecification = {
 declare global {
   interface Window {
     /** Dev-only hooks for tests and the screenshot script. */
-    __eingekreist?: { map: MapLibreMap; setCircle?: (circle: Circle | null) => void }
+    __eingekreist?: {
+      map: MapLibreMap
+      setCircle?: (circle: Circle | null) => void
+      /** Starts a game with the current setup (optionally with a fixed seed). */
+      startGame?: (seed?: number) => Promise<void>
+    }
   }
 }
 
@@ -94,8 +99,10 @@ export function Globe({ showBorders, onMapReady }: GlobeProps) {
     if (!map) return
     const apply = () =>
       map.setLayoutProperty('borders', 'visibility', showBorders ? 'visible' : 'none')
+    // `isStyleLoaded()` is also false while tiles load; `idle` comes after both the first
+    // load and any loading in progress (`load` would only fire once).
     if (map.isStyleLoaded()) apply()
-    else map.once('load', apply)
+    else map.once('idle', apply)
   }, [showBorders])
 
   return <div ref={containerRef} className="globe" style={{ background: COLORS.space }} />

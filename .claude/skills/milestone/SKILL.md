@@ -50,7 +50,7 @@ npm run build
 
 Then look at the result:
 - Run `npm run screenshot` and Read `screenshots/desktop.png` and `screenshots/mobile.png`.
-- Add camera views relevant to the milestone, e.g. `npm run screenshot -- / pole 0,85,3` or the antimeridian `180,0,3`. Check polar and antimeridian views whenever geometry changed.
+- Add camera views relevant to the milestone, e.g. `npm run screenshot -- --game / pole 0,85,3` or the antimeridian `180,0,3`. Check polar and antimeridian views whenever geometry changed.
 - Walk through the "Done when" list item by item and confirm each one with evidence: a test name, a screenshot, or a command output.
 
 ## 5. Self-review

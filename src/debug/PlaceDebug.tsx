@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { loadPlaces } from '../data/places'
+import { usePlaces } from '../data/usePlaces'
 import type { Place } from '../game/types'
 import { placeBounds, placeOutline } from '../geo/placeView'
 import { vertexCount } from '../geo/polygons'
@@ -28,20 +28,10 @@ function placeFeatures(place: Place): ColoredFeatures {
  * of the dataset on the globe and fits the view to it.
  */
 export default function PlaceDebug({ map }: { map: MapLibreMap }) {
-  const [places, setPlaces] = useState<Place[] | null>(null)
+  const { places } = usePlaces()
   const [query, setQuery] = useState(() => new URLSearchParams(location.search).get('place') ?? '')
   const [shownId, setShownId] = useState<string | null>(null)
   const layerRef = useRef<ReturnType<typeof addShapeLayer> | null>(null)
-
-  useEffect(() => {
-    let alive = true
-    loadPlaces()
-      .then((p) => alive && setPlaces(p))
-      .catch((e: unknown) => console.error(e))
-    return () => {
-      alive = false
-    }
-  }, [])
 
   useEffect(() => {
     const layer = addShapeLayer(map, LAYER_ID, { fillOpacity: 0.35, lineWidth: 2 })

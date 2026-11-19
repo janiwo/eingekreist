@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { openGlobe } from './helpers'
+import { openGlobe, startGame } from './helpers'
 
 test('globe renders without errors', async ({ page }) => {
   const { expectNoErrors } = await openGlobe(page)
@@ -16,7 +16,7 @@ test('globe renders without errors', async ({ page }) => {
   expectNoErrors()
 })
 
-test('country borders can be toggled', async ({ page }) => {
+test('the country borders setting toggles the border layer', async ({ page }) => {
   await openGlobe(page)
   const visibility = () =>
     page.evaluate(
@@ -26,6 +26,6 @@ test('country borders can be toggled', async ({ page }) => {
   expect(await visibility()).toBe('visible')
   await page.getByLabel('Ländergrenzen anzeigen').uncheck()
   expect(await visibility()).toBe('none')
-  await page.getByLabel('Ländergrenzen anzeigen').check()
-  expect(await visibility()).toBe('visible')
+  await startGame(page)
+  expect(await visibility()).toBe('none')
 })
