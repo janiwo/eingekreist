@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { openGlobe } from './helpers'
 
-test('Globus rendert ohne Fehler', async ({ page }) => {
+test('globe renders without errors', async ({ page }) => {
   const { expectNoErrors } = await openGlobe(page)
 
   const projection = await page.evaluate(() => window.__eingekreist!.map.getProjection()?.type)
@@ -16,7 +16,7 @@ test('Globus rendert ohne Fehler', async ({ page }) => {
   expectNoErrors()
 })
 
-test('Ländergrenzen lassen sich ausblenden', async ({ page }) => {
+test('country borders can be toggled', async ({ page }) => {
   await openGlobe(page)
   const visibility = () =>
     page.evaluate(

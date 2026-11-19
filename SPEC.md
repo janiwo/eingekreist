@@ -1,124 +1,124 @@
-# Eingekreist – Spezifikation (Version 1)
+# Eingekreist – Specification (version 1)
 
-Stand: 2026-11-19
+Last updated: 2026-11-19
 
-## 1. Spielprinzip
+## 1. Game concept
 
-- 2–8 Spieler spielen reihum auf **einem Gerät** (Hotseat).
-- Jeder Spieler gibt beim Start einen Namen ein und bekommt automatisch eine Farbe zugewiesen (änderbar).
-- In jeder Runde wird ein Ort genannt. Jeder Spieler setzt **verdeckt** einen Kreis beliebiger Größe auf einen 3D-Globus.
-- Den Punkt bekommt, wer mit dem **kleinsten Kreis** den Umriss des Ortes überlappt.
-  - **Jede Überlappung zählt**, auch eine minimale Berührung des Randes.
-  - Bei mehrteiligen Orten zählt die Überlappung mit **irgendeinem Teil** (z. B. Frankreich über Réunion). Welche Teile zu einem Ort gehören, legt der Datensatz pro Ort fest.
-  - Mindestradius: **1 km**.
-  - Gleichstand: Alle Gleichstehenden bekommen einen Punkt.
-  - Überlappt kein Kreis den Ort, bekommt niemand einen Punkt.
-- Das Spiel geht bis zu einer einstellbaren Zielpunktzahl (Standard: **10**).
-  - Erreichen mehrere Spieler die Zielpunktzahl in derselben Runde, wird im **Sudden Death** weitergespielt, bis ein Spieler allein führt.
+- 2–8 players take turns on **one device** (hotseat).
+- Each player enters a name at the start and is automatically assigned a color (changeable).
+- Each round names a place. Every player **secretly** places a circle of any size on a 3D globe.
+- The point goes to whoever overlaps the place's outline with the **smallest circle**.
+  - **Any overlap counts**, even a minimal touch of the edge.
+  - For places made of several parts, overlapping **any part** counts (e.g. France via Réunion). The dataset defines per place which parts belong to it.
+  - Minimum radius: **1 km**.
+  - Tie: all tied players get a point.
+  - If no circle overlaps the place, nobody gets a point.
+- The game runs to a configurable target score (default: **10**).
+  - If several players reach the target score in the same round, play continues in **sudden death** until one player leads alone.
 
-## 2. Rundenablauf
+## 2. Round flow
 
-1. **Aufgabe**: Ort mit Kategorie anzeigen (z. B. „🏙️ Stadt: Luxemburg“).
-2. **Züge**: Die Spieler sind nacheinander dran. Der Startspieler ist in jeder Runde **derselbe**.
-   - Vor jedem Zug erscheint ein **Übergabebildschirm** („Gib das Gerät an Anna – Tippen zum Starten“).
-   - Der Globus wird für jeden Spieler auf die **Startansicht** zurückgesetzt: ganzer Globus, zentriert auf 20° N / 10° O.
-   - Der Timer startet mit dem Tippen auf „Start“.
-3. **Kreis setzen**:
-   - Tippen bzw. Klicken setzt den Mittelpunkt.
-   - Mittelpunkt und Radius lassen sich über Griffe anpassen.
-   - Der aktuelle Radius wird live in km angezeigt.
-   - „Abgeben“ bestätigt den Kreis, „Passen“ gibt ohne Kreis ab.
-4. **Timer**: Standard 60 Sekunden pro Spieler und Zug, einstellbar und deaktivierbar.
-   - Läuft die Zeit ab und ein Kreis ist gesetzt, wird er automatisch abgegeben.
-   - Ohne Kreis gilt der Zug als „nicht abgegeben“.
-5. **Auflösung**, nachdem alle Spieler dran waren:
-   - Alle Kreise erscheinen gleichzeitig in Spielerfarben.
-   - Der Umriss des Ortes wird angezeigt, und der Globus fliegt zum Ort.
-   - Pro Spieler wird der Radius in km angezeigt, außerdem der Rundensieger.
-   - Danach folgen Zwischenstand und „Nächste Runde“.
+1. **Prompt**: show the place with its category (e.g. „🏙️ Stadt: Luxemburg“).
+2. **Turns**: players go one after another. The starting player is **the same** every round.
+   - Before each turn a **handover screen** appears („Gib das Gerät an Anna – Tippen zum Starten“).
+   - The globe is reset to the **start view** for every player: whole globe, centered on 20° N / 10° E.
+   - The timer starts when the player taps "Start".
+3. **Placing the circle**:
+   - Tapping or clicking sets the center.
+   - Center and radius can be adjusted via handles.
+   - The current radius is shown live in km.
+   - "Submit" confirms the circle, "Pass" ends the turn without a circle.
+4. **Timer**: default 60 seconds per player and turn, configurable and can be disabled.
+   - If time runs out and a circle is placed, it is submitted automatically.
+   - Without a circle, the turn counts as "not submitted".
+5. **Reveal**, after all players have had their turn:
+   - All circles appear at once in player colors.
+   - The place's outline is shown, and the globe flies to the place.
+   - Each player's radius in km is shown, plus the round winner.
+   - Then the standings and "Next round".
 
-## 3. Einstellungen
+## 3. Settings
 
-| Einstellung | Standard |
+| Setting | Default |
 |---|---|
-| Spieler (Name, Farbe) | 2–8 Spieler |
-| Zielpunktzahl | 10 |
-| Timer pro Zug | 60 s, deaktivierbar |
-| Ländergrenzen anzeigen | an |
-| Aktive Kategorien | alle |
+| Players (name, color) | 2–8 players |
+| Target score | 10 |
+| Timer per turn | 60 s, can be disabled |
+| Show country borders | on |
+| Active categories | all |
 
-## 4. Inhalte
+## 4. Content
 
-### 4.1 Kategorien
+### 4.1 Categories
 
-| Kategorie | Umfang (ca.) | Geometriequelle |
+| Category | Approx. count | Geometry source |
 |---|---|---|
-| Länder | alle ~195 | Natural Earth |
-| Städte | ~150 (Hauptstädte und Großstädte) | OSM-Verwaltungsgrenzen |
-| Inseln | ~50 | Natural Earth |
-| Landschaften (Wüsten, Gebirge, Ebenen …) | ~50 | Natural Earth (geography regions) |
-| Gewässer (Meere, Seen, Flüsse) | ~60 | Natural Earth |
-| Sehenswürdigkeiten | ~80 | Punkt + Puffer |
+| Countries | all ~195 | Natural Earth |
+| Cities | ~150 (capitals and major cities) | OSM administrative boundaries |
+| Islands | ~50 | Natural Earth |
+| Landscapes (deserts, mountain ranges, plains …) | ~50 | Natural Earth (geography regions) |
+| Waters (seas, lakes, rivers) | ~60 | Natural Earth |
+| Landmarks | ~80 | point + buffer |
 
-- Provinzen bzw. Bundesländer sind in Version 1 **nicht** enthalten.
-- Auswahlgrundsatz: Ein allgemein gebildeter Mensch sollte von jedem Ort schon gehört haben.
-- Es gibt **keine Schwierigkeitsstufen**.
+- Provinces and states are **not** part of version 1.
+- Selection principle: a generally educated person should have heard of every place.
+- There are **no difficulty levels**.
 
-### 4.2 Ziehung
+### 4.2 Drawing places
 
-- Zweistufig: Zuerst wird eine der aktiven Kategorien gleichverteilt gezogen, dann ein Ort aus dieser Kategorie.
-- Jeder Ort kommt pro Spiel höchstens einmal vor.
+- Two-stage: first one of the active categories is drawn uniformly, then a place from that category.
+- Each place appears at most once per game.
 
-### 4.3 Geometrie-Regeln
+### 4.3 Geometry rules
 
-- **Städte**: OSM-Verwaltungsgrenze. Ausreißer mit absurder Ausdehnung (z. B. Chongqing) werden nicht aufgenommen.
-- **Punkte und Linien** (Sehenswürdigkeiten, Flüsse): Sie bekommen eine **Pufferzone**, deren Größe pro Ort im Datensatz steht.
-- **Unscharfe Orte** (Sahara, Alpen, Mittelmeer …): Der Natural-Earth-Umriss gilt als Wahrheit. Bei der Auflösung wird er angezeigt.
-- **Umstrittene Gebiete**: De-facto-Sicht von Natural Earth.
-- **Überseegebiete** mit eigenem Status (z. B. Grönland bei Dänemark) zählen nicht zum Mutterland.
-- **Vereinfachung**: Toleranz ~500 m.
+- **Cities**: OSM administrative boundary. Outliers with absurd extent (e.g. Chongqing) are excluded.
+- **Points and lines** (landmarks, rivers): get a **buffer zone** whose size is set per place in the dataset.
+- **Fuzzy places** (Sahara, Alps, Mediterranean …): the Natural Earth outline counts as the truth. It is shown during the reveal.
+- **Disputed territories**: Natural Earth's de facto view.
+- **Overseas territories** with their own status (e.g. Greenland for Denmark) don't count toward the mother country.
+- **Simplification**: tolerance ~500 m.
 
-### 4.4 Benennung
+### 4.4 Naming
 
-- Sprache: nur Deutsch (z. B. „Elfenbeinküste“, „Mailand“). Die Texte liegen so, dass später weitere Sprachen ergänzt werden können.
-- Die Aufgabe zeigt immer die Kategorie an. Bei Mehrdeutigkeit innerhalb einer Kategorie kommt ein Zusatz dazu.
+- Language: the UI and place names are German only (e.g. „Elfenbeinküste“, „Mailand“). Texts are kept so that more languages can be added later.
+- The prompt always shows the category. If a name is ambiguous within a category, a suffix is added.
 
-### 4.5 Datensatz
+### 4.5 Dataset
 
-- Kuratierter, **statischer** Datensatz, der mit der App ausgeliefert wird. Zur Laufzeit gibt es keine Abfragen externer Dienste.
-- Pro Ort werden gespeichert:
+- Curated, **static** dataset shipped with the app. No external services are queried at runtime.
+- Stored per place:
   - ID
-  - deutscher Name
-  - optionaler Namenszusatz
-  - Kategorie
-  - Geometrie (vereinfachtes GeoJSON)
-  - optional die Puffergröße
-- Ein **Build-Skript** holt die Geometrien aus Natural Earth und OSM und erzeugt den Datensatz.
-- Die Startliste wird vorgeschlagen und danach manuell gepflegt.
+  - German name
+  - optional name suffix
+  - category
+  - geometry (simplified GeoJSON)
+  - optional buffer size
+- A **build script** fetches the geometries from Natural Earth and OSM and generates the dataset.
+- The initial list is proposed by Claude and maintained manually afterwards.
 
-## 5. Darstellung
+## 5. Presentation
 
-- **3D-Globus** mit schlichtem, selbst gerendertem Stil aus Natural-Earth-Daten: Land, Meer, optional Ländergrenzen. **Keine Beschriftungen.**
-- Der Globus-Stil ist für alle Kategorien gleich, damit er keine Hinweise gibt.
-- **Kategorie-Theme**: Nur die Aufgabenkarte bekommt Icon und Akzentfarbe der Kategorie (z. B. 🌊 Gewässer in Blau, 🏜️ Landschaft in Sandfarbe).
-- Responsive für Desktop, Tablet und Smartphone, mit voller Touch-Bedienung.
+- **3D globe** with a plain, self-rendered style from Natural Earth data: land, sea, optional country borders. **No labels.**
+- The globe style is the same for all categories, so it gives no hints.
+- **Category theme**: only the prompt card gets the category's icon and accent color (e.g. 🌊 waters in blue, 🏜️ landscapes in sand).
+- Responsive for desktop, tablet and smartphone, with full touch support.
 
-## 6. Technik
+## 6. Technology
 
-- Statische Web-App **ohne Backend**: TypeScript, React (Vite), MapLibre GL JS im Globus-Modus, Turf.js.
-- Hosting als statische Seite (GitHub Pages oder Netlify).
-- **Kreisgröße**: echter Radius auf der Erdkugel in km. Der Kreis wird als geodätischer Kreis dargestellt.
-- **Trefferprüfung**: Ein Kreis trifft genau dann, wenn
-  - der Mittelpunkt im Ort liegt **oder**
-  - der geodätische Abstand vom Mittelpunkt zum nächsten Punkt des Umrisses ≤ Radius ist.
-- **Persistenz**: Der Spielstand liegt im `localStorage`. Nach einem Reload wird das laufende Spiel fortgesetzt.
+- Static web app **without a backend**: TypeScript, React (Vite), MapLibre GL JS in globe mode, Turf.js.
+- Hosting as a static site (to be decided once the local version is approved).
+- **Circle size**: true radius on the Earth's surface in km. The circle is rendered as a geodesic circle.
+- **Hit test**: a circle hits if and only if
+  - the center lies inside the place **or**
+  - the geodesic distance from the center to the nearest point of the outline is ≤ the radius.
+- **Persistence**: the game state is stored in `localStorage`. After a reload, the running game continues.
 
-## 7. Nicht in Version 1
+## 7. Not in version 1
 
-- Online-Multiplayer (eigene Geräte, Raum-Code)
-- Provinzen und Bundesländer
-- Satellitenkarte
-- Schwierigkeitsstufen
-- Anzeige des „nötigen“ Radius bei der Auflösung
-- Accounts und Monetarisierung
-- Weitere Sprachen
+- Online multiplayer (own devices, room code)
+- Provinces and states
+- Satellite map
+- Difficulty levels
+- Showing the "required" radius during the reveal
+- Accounts and monetization
+- Other languages

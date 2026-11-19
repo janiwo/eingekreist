@@ -3,8 +3,8 @@ import type { MultiPolygon, Polygon, Position } from 'geojson'
 import type { Circle, LngLat } from '../game/types'
 
 /**
- * Kürzester geodätischer Abstand (km) vom Punkt zur Fläche.
- * 0, wenn der Punkt innerhalb liegt.
+ * Shortest geodesic distance (km) from the point to the area.
+ * 0 if the point lies inside.
  */
 export function distanceToAreaKm(
   center: LngLat,
@@ -29,7 +29,7 @@ export function distanceToAreaKm(
   return min
 }
 
-/** Ein Kreis trifft, sobald er die Fläche irgendwo berührt. */
+/** A circle hits as soon as it touches the area anywhere. */
 export function circleHits(
   circle: Circle,
   geometry: Polygon | MultiPolygon,

@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 const PORT = 5199
 
-/** Chromium-Flags, damit WebGL (MapLibre) auch headless per Software-Rendering läuft. */
+/** Chromium flags so WebGL (MapLibre) works headless via software rendering. */
 export const webglArgs = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']
 
 export default defineConfig({

@@ -66,7 +66,7 @@ export function Globe({ showBorders, onMapReady }: GlobeProps) {
     map.touchZoomRotate.disableRotation()
     mapRef.current = map
     map.once('load', () => onReadyRef.current?.(map))
-    // Zugriff für Browser-Tests (nur im Dev-Server).
+    // Access for browser tests (dev server only).
     if (import.meta.env.DEV) window.__eingekreist = { map }
     return () => {
       map.remove()

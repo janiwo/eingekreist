@@ -28,7 +28,7 @@ body,
   inset: 0;
 }
 
-/* Größe explizit setzen: maplibre-gl.css überschreibt `position` am Container. */
+/* Size explicitly: maplibre-gl.css overrides `position` on the container. */
 .globe {
   width: 100%;
   height: 100%;

@@ -1,6 +1,6 @@
 /**
- * Lädt die Basiskarte (Natural Earth 1:50m, gemeinfrei) und schreibt kompakte GeoJSON-Dateien
- * nach src/data/basemap/. Nur nötig, wenn sich die Basiskarte ändern soll.
+ * Downloads the base map (Natural Earth 1:50m, public domain) and writes compact GeoJSON files
+ * to src/data/basemap/. Only needed when the base map should change.
  *
  *   npm run fetch:basemap
  */
@@ -15,7 +15,7 @@ const FILES = {
   borders: 'ne_50m_admin_0_boundary_lines_land.geojson',
 }
 
-/** 4 Nachkommastellen ≈ 11 m, mehr als genug für die Basiskarte. */
+/** 4 decimal places ≈ 11 m, more than enough for the base map. */
 const round = (p: Position): Position => p.map((n) => Math.round(n * 1e4) / 1e4)
 
 function roundGeometry(g: Geometry): Geometry {
@@ -29,7 +29,7 @@ function roundGeometry(g: Geometry): Geometry {
     case 'MultiLineString':
       return { type: g.type, coordinates: g.coordinates.map((l) => l.map(round)) }
     default:
-      throw new Error(`Unerwarteter Geometrietyp: ${g.type}`)
+      throw new Error(`Unexpected geometry type: ${g.type}`)
   }
 }
 

@@ -1,6 +1,6 @@
 import { expect, type Page } from '@playwright/test'
 
-/** Lädt die App und wartet, bis der Globus fertig gerendert ist. */
+/** Loads the app and waits until the globe has finished rendering. */
 export async function openGlobe(page: Page) {
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))

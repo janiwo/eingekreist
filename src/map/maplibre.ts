@@ -1,5 +1,5 @@
-// MapLibre sucht seinen Worker relativ zu import.meta.url. Das klappt nicht, wenn Vite das
-// Paket vorbündelt (Dev) oder umbenennt (Build). Daher den Worker explizit als Asset einbinden.
+// MapLibre resolves its worker relative to import.meta.url, which breaks when Vite pre-bundles
+// (dev) or renames (build) the package. So include the worker explicitly as an asset.
 import { setWorkerUrl } from 'maplibre-gl'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 

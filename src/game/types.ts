@@ -1,6 +1,6 @@
 import type { MultiPolygon, Polygon } from 'geojson'
 
-/** [Längengrad, Breitengrad] in Grad, wie in GeoJSON. */
+/** [longitude, latitude] in degrees, as in GeoJSON. */
 export type LngLat = [number, number]
 
 export type Category =
@@ -22,12 +22,12 @@ export const CATEGORIES: readonly Category[] = [
 
 export interface Place {
   id: string
-  /** Deutscher Anzeigename. */
+  /** Display name (German). */
   name: string
-  /** Optionaler Zusatz zur Unterscheidung, z. B. „Stadt in Kanada“. */
+  /** Optional disambiguation suffix, e.g. „Stadt in Kanada“. */
   qualifier?: string
   category: Category
-  /** Bereits gepufferte, vereinfachte Fläche des Ortes. */
+  /** Already buffered, simplified area of the place. */
   geometry: Polygon | MultiPolygon
 }
 
@@ -45,7 +45,7 @@ export interface Circle {
 
 export interface Settings {
   targetScore: number
-  /** Sekunden pro Zug; `null` = kein Zeitlimit. */
+  /** Seconds per turn; `null` = no time limit. */
   turnSeconds: number | null
   showBorders: boolean
   categories: Category[]

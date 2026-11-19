@@ -1,9 +1,9 @@
 /**
- * Startet einen Vite-Dev-Server, öffnet die App in headless Chromium und speichert Screenshots.
+ * Starts a Vite dev server, opens the app in headless Chromium and saves screenshots.
  *
  *   npm run screenshot                      → screenshots/desktop.png + screenshots/mobile.png
- *   npm run screenshot -- /pfad?x=1 name    → eigener Pfad / Dateiname-Präfix
- *   npm run screenshot -- / arktis 0,80,2   → Kamera auf Länge,Breite,Zoom setzen
+ *   npm run screenshot -- /pfad?x=1 name    → custom path / file name prefix
+ *   npm run screenshot -- / arctic 0,80,2   → set camera to lng,lat,zoom
  */
 import { chromium, devices } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
@@ -31,7 +31,7 @@ try {
     await page.goto(url)
     await page
       .waitForFunction(() => window.__eingekreist?.map.loaded(), null, { timeout: 30_000 })
-      .catch(() => logs.push('timeout: Globus nicht geladen'))
+      .catch(() => logs.push('timeout: globe not loaded'))
     if (view) {
       const [lng, lat, zoom] = view.split(',').map(Number)
       await page.evaluate(
@@ -47,7 +47,7 @@ try {
     await page.waitForTimeout(500)
     const canvas = await page.evaluate(() => {
       const c = document.querySelector('canvas.maplibregl-canvas')
-      return c ? `${c.clientWidth}×${c.clientHeight}` : 'fehlt'
+      return c ? `${c.clientWidth}×${c.clientHeight}` : 'missing'
     })
     logs.push(`canvas: ${canvas}`)
 
