@@ -78,6 +78,10 @@ body,
   touch-action: none;
 }
 
+.maplibregl-marker-covered.handle {
+  pointer-events: none;
+}
+
 .handle:active {
   cursor: grabbing;
 }

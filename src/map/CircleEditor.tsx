@@ -27,6 +27,11 @@ function handleElement(kind: 'center' | 'radius', label: string): HTMLElement {
   return el
 }
 
+/** Whether the tapped pixel lies on the globe rather than in the space around it. */
+function hitsGlobe(map: MapLibreMap, e: MapMouseEvent): boolean {
+  return map.project(e.lngLat).dist(e.point) < 2
+}
+
 /** Starting radius for a new circle, based on the map scale at the screen center. */
 function initialRadiusFor(map: MapLibreMap): number {
   const { clientWidth: w, clientHeight: h } = map.getContainer()
@@ -61,11 +66,13 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
 
     const center = new Marker({
       element: handleElement('center', de.circle.moveCenter),
-      draggable: true,
+      draggable: true,      // Hide handles on the far side of the globe (CSS also makes them unclickable).
+      opacityWhenCovered: '0',
     })
     const radius = new Marker({
       element: handleElement('radius', de.circle.changeRadius),
-      draggable: true,
+      draggable: true,      // Hide handles on the far side of the globe (CSS also makes them unclickable).
+      opacityWhenCovered: '0',
     })
     editorRef.current = { layer, center, radius }
 
@@ -94,6 +101,8 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
     const onClick = (e: MapMouseEvent) => {
       // Taps on a handle bubble up to the map; they must not move the circle.
       if ((e.originalEvent.target as Element).closest('.maplibregl-marker')) return
+      // Taps in space next to the globe unproject to the nearest point on its edge.
+      if (!hitsGlobe(map, e)) return
       const tapped = e.lngLat.toArray() as LngLat
       const current = circleRef.current
       if (current) {
@@ -109,6 +118,7 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
       map.off('click', onClick)
       center.remove()
       radius.remove()
+      draggingRadius.current = false
       editorRef.current = null
       layer.remove()
     }
@@ -121,7 +131,9 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
     if (!circle) {
       editor.layer.setCircles([])
       editor.center.remove()
+      // Removing a marker mid-drag fires no dragend.
       editor.radius.remove()
+      draggingRadius.current = false
       return
     }
     editor.layer.setCircles([{ circle, color }])

@@ -6,7 +6,7 @@ Each milestone is its own PR (see [AGENTS.md](AGENTS.md)). Completed milestones 
 
 Vite, React and TypeScript; MapLibre globe with Natural Earth base map; geodesic hit test; Vitest; Playwright; screenshot script; Git and GitHub.
 
-## [ ] M1 – Drawing the circle
+## [x] M1 – Drawing the circle
 
 A single player can place and adjust a circle on the globe.
 

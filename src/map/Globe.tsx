@@ -64,6 +64,8 @@ export function Globe({ showBorders, onMapReady }: GlobeProps) {
       attributionControl: false,
       renderWorldCopies: false,
       dragRotate: false,
+      // A tap places the circle, so a double tap must not also zoom.
+      doubleClickZoom: false,
       pitchWithRotate: false,
     })
     map.touchZoomRotate.disableRotation()

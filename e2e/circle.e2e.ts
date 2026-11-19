@@ -72,32 +72,41 @@ test('places a circle and changes its radius', async ({ page }, testInfo) => {
   const centerBefore = await mapCenter(page)
   const drag = isMobile ? touchDrag : mouseDrag
   await drag(page, await handleCenter(page, 'radius'), 60, 0)
+  await expect.poll(() => radiusKm(page)).toBeGreaterThan(initial * 1.3)
   const grown = await radiusKm(page)
-  expect(grown).toBeGreaterThan(initial * 1.3)
   expect(await mapCenter(page)).toEqual(centerBefore)
 
   // Moving the center keeps the radius.
   const before = await handleCenter(page, 'center')
   await drag(page, before, 0, -40)
-  expect(await radiusKm(page)).toBe(grown)
+  await expect.poll(() => radiusKm(page)).toBe(grown)
   const after = await handleCenter(page, 'center')
   expect(after.y).toBeLessThan(before.y - 30)
   expect(await mapCenter(page)).toEqual(centerBefore)
 
   // Dragging it onto the center shrinks the circle.
   await dragRadiusOntoCenter(page, drag)
-  expect(await radiusKm(page)).toBeLessThan(initial)
+  await expect.poll(() => radiusKm(page)).toBeLessThan(initial)
 
   expectNoErrors()
 })
 
 test('the radius never drops below 1 km', async ({ page }) => {
-  await openGlobe(page)
+  const { expectNoErrors } = await openGlobe(page)
   // Zoom in far so the handle can be dragged right onto the center.
   await page.evaluate(() => window.__eingekreist!.map.jumpTo({ center: [10, 50], zoom: 14 }))
   const viewport = page.viewportSize()!
   await page.mouse.click(viewport.width / 2, viewport.height / 2)
   await expect(readout(page)).toContainText('Radius:')
   await dragRadiusOntoCenter(page, mouseDrag, 1)
-  expect(await radiusKm(page)).toBe(1)
+  await expect.poll(() => radiusKm(page)).toBe(1)
+  expectNoErrors()
+})
+
+test('taps in space next to the globe are ignored', async ({ page }) => {
+  const { expectNoErrors } = await openGlobe(page)
+  await page.mouse.click(5, page.viewportSize()!.height - 5)
+  await expect(readout(page)).toContainText('Tippe auf den Globus')
+  await expect(page.getByTestId('handle-center')).toHaveCount(0)
+  expectNoErrors()
 })
