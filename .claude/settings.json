@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npm test)",
+      "Bash(npm test *)",
+      "Bash(npm install *)",
+      "Bash(npm uninstall *)",
+      "Bash(npm ci)",
+      "Bash(npm pkg *)",
+      "Bash(npm view *)",
+      "Bash(npx playwright *)",
+      "Bash(npx tsc *)",
+      "Bash(npx oxlint *)",
+      "Bash(npx vite *)",
+      "Bash(npx vitest *)",
+      "Bash(node scripts/*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git branch*)",
+      "Bash(git checkout*)",
+      "Bash(git switch*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(git pull*)",
+      "Bash(git fetch*)",
+      "Bash(git stash*)",
+      "Bash(gh pr create*)",
+      "Bash(gh pr view*)",
+      "Bash(gh pr list*)",
+      "Bash(gh pr diff*)",
+      "Bash(gh pr checks*)",
+      "Bash(gh pr edit*)",
+      "Bash(gh repo view*)",
+      "Bash(gh auth status)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:www.naturalearthdata.com)",
+      "WebFetch(domain:overpass-api.de)",
+      "WebFetch(domain:nominatim.openstreetmap.org)",
+      "WebFetch(domain:wiki.openstreetmap.org)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push origin --force*)",
+      "Bash(git push origin -f*)",
+      "Bash(git push origin main --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(gh pr merge*)",
+      "Bash(gh repo delete*)",
+      "Bash(gh repo edit --visibility*)",
+      "Bash(npm publish*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-ts.sh",
+            "timeout": 60,
+            "statusMessage": "Typecheck + lint"
+          }
+        ]
+      }
+    ]
+  }
+}

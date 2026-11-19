@@ -15,6 +15,7 @@ Hotseat geography game: players draw circles on a 3D globe, the smallest circle 
 - **No hosting or deployment** until the user explicitly approves it.
 - **Place list**: build and maintain it yourself. No review by the user is needed.
 - If the spec changes during a milestone, update SPEC.md in the same PR.
+- **Claude Code**: run milestones through the `/milestone` skill (`.claude/skills/milestone/`). A PostToolUse hook (`.claude/hooks/check-ts.sh`) typechecks and lints after every TS edit. Project permissions live in `.claude/settings.json`, which forbids `gh pr merge` and force-pushes.
 
 ## Git
 
