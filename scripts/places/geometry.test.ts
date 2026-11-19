@@ -8,6 +8,7 @@ import {
   crossings,
   excludeParts,
   finalize,
+  intersect,
   roundPolys,
   simplifyPolys,
   type Polys,
@@ -112,6 +113,18 @@ describe('crossings', () => {
 
   it('finds parts sharing an edge', () => {
     expect(crossings([[square(0, 0)], [square(1, 0)]])).toBe(1)
+  })
+})
+
+describe('intersect', () => {
+  it('keeps only the parts inside the mask', () => {
+    const [[ring]] = intersect([[square(0, 0, 2)]], [[square(1, 1, 2)]])
+    expect(ring).toHaveLength(5)
+    expect(new Set(ring.map((p) => p.join(',')))).toEqual(new Set(['1,1', '2,1', '2,2', '1,2']))
+  })
+
+  it('is empty without overlap', () => {
+    expect(intersect([[square(0, 0)]], [[square(5, 5)]])).toEqual([])
   })
 })
 

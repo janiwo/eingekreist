@@ -35,7 +35,9 @@ export default function PlaceDebug({ map }: { map: MapLibreMap }) {
 
   useEffect(() => {
     let alive = true
-    void loadPlaces().then((p) => alive && setPlaces(p))
+    loadPlaces()
+      .then((p) => alive && setPlaces(p))
+      .catch((e: unknown) => console.error(e))
     return () => {
       alive = false
     }
@@ -71,7 +73,7 @@ export default function PlaceDebug({ map }: { map: MapLibreMap }) {
   }, [map, place])
 
   return (
-    <div className="debug-panel" data-ready={place !== undefined && shownId === place.id}>
+    <div className="debug-panel" data-ready={places !== null && (!place || shownId === place.id)}>
       <input
         aria-label={strings.search}
         placeholder={strings.search}

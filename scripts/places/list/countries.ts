@@ -4,7 +4,8 @@ import type { BBox, Entry } from '../types.ts'
  * Countries: Natural Earth admin-0 features (de facto borders), by ADM0_A3 code.
  * Dependencies with their own status (Greenland, Faroe, Hong Kong, Puerto Rico …) are separate
  * NE features and are not included. Overseas departments (e.g. Réunion for France) are part of
- * their country's feature and count.
+ * their country's feature and count. Leased areas follow the de facto view too: Guantánamo Bay
+ * and Baikonur are separate NE features and count for neither Cuba nor Kazakhstan.
  */
 const c = (id: string, name: string, codes: string[], exclude?: BBox[]): Entry => ({
   id,
@@ -90,7 +91,7 @@ export const countries: Entry[] = [
   c('cameroon', 'Kamerun', ['CMR']),
   c('canada', 'Kanada', ['CAN']),
   c('cape-verde', 'Kap Verde', ['CPV']),
-  c('kazakhstan', 'Kasachstan', ['KAZ', 'KAB']),
+  c('kazakhstan', 'Kasachstan', ['KAZ']),
   c('qatar', 'Katar', ['QAT']),
   c('kenya', 'Kenia', ['KEN']),
   c('kyrgyzstan', 'Kirgisistan', ['KGZ']),

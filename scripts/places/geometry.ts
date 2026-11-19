@@ -2,7 +2,9 @@
  * Geometry steps of the place build: collect polygon parts, drop excluded parts, buffer points
  * and lines, simplify, round and repair. Everything works on plain coordinate arrays.
  */
-import { buffer, lineString, simplify } from '@turf/turf'
+import { buffer } from '@turf/buffer'
+import { lineString } from '@turf/helpers'
+import { simplify } from '@turf/simplify'
 import type { Position } from 'geojson'
 import * as polyclip from 'polyclip-ts'
 import type { LngLat } from '../../src/game/types.ts'
@@ -32,7 +34,7 @@ export function excludeParts(polys: Polys, boxes: BBox[] = []): Polys {
 
 /**
  * Geodesic circle around a point, counter-clockwise. Not split at the antimeridian; no landmark
- * is close enough to it for that to matter, and validation would catch the broken ring.
+ * is close enough to it for that to matter, and validation rejects edges that wrap around.
  */
 export function bufferPoint(at: LngLat, km: number, steps = 48): Polys {
   const ring: Position[] = []
@@ -136,6 +138,12 @@ export function union(polys: Polys): Polys {
 
 const isRounded = (polys: Polys) =>
   polys.every((p) => p.every((r) => r.every(([lng, lat]) => lng === roundNum(lng) && lat === roundNum(lat))))
+
+/** The parts of `polys` that also lie in `mask`. */
+export function intersect(polys: Polys, mask: Polys): Polys {
+  if (polys.length === 0 || mask.length === 0) return []
+  return polyclip.intersection(polys as polyclip.Geom, mask as polyclip.Geom) as Polys
+}
 
 /**
  * Final pass for every place: round, then repair. The repair adds intersection vertices,

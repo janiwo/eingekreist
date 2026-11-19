@@ -6,7 +6,9 @@
  */
 import { writeFileSync } from 'node:fs'
 import type { Feature, Geometry, MultiPolygon, Polygon, Position } from 'geojson'
-import { bbox, booleanPointInPolygon } from '@turf/turf'
+import { bbox } from '@turf/bbox'
+import { bboxClip } from '@turf/bbox-clip'
+import { booleanPointInPolygon } from '@turf/boolean-point-in-polygon'
 import type { Place } from '../../src/game/types.ts'
 import {
   bufferLines,
@@ -14,6 +16,7 @@ import {
   excludeParts,
   finalize,
   inBBox,
+  intersect,
   polygonsOf,
   simplifyLines,
   simplifyPolys,
@@ -23,7 +26,7 @@ import {
 } from './geometry.ts'
 import { placeSources } from './list/index.ts'
 import { PLACES_FILE, serializePlaces } from './output.ts'
-import { naturalEarth, osmBoundaries, type NeLayer } from './sources.ts'
+import { CACHE_DIR, naturalEarth, osmBoundaries, type NeLayer } from './sources.ts'
 import type { BBox, PlaceSource, Source } from './types.ts'
 import { formatReport, validatePlaces } from './validate.ts'
 
@@ -65,6 +68,19 @@ async function landPolygons() {
   return landIndex
 }
 
+/** Natural Earth land, cut to the box (cheap), for clipping areas to land. */
+async function landWithin(box: BBox): Promise<Polys> {
+  const [w, s, e, n] = box
+  return (await landPolygons())
+    .filter(({ bbox: b }) => b[0] <= e && b[2] >= w && b[1] <= n && b[3] >= s)
+    .flatMap(({ poly, bbox: b }) =>
+      b[0] >= w && b[2] <= e && b[1] >= s && b[3] <= n
+        ? [poly]
+        : polygonsOf(bboxClip({ type: 'Polygon', coordinates: poly }, box).geometry as Polygon | MultiPolygon),
+    )
+    .filter((p) => p[0]?.length >= 4)
+}
+
 async function riverLines({ names, bbox }: Extract<Source, { kind: 'river' }>): Promise<Position[][]> {
   const inBox = (f: Feature) => {
     const v = linesOf(f.geometry)[0]?.[0]
@@ -104,12 +120,16 @@ async function areaPolys(source: AreaSource, osm: OsmAreas): Promise<Polys> {
       if (polys.length === 0) throw new Error(`no land polygons inside ${source.bbox.join(',')}`)
       return polys
     }
-    case 'osm':
-      return source.relations.flatMap((id) => {
+    case 'osm': {
+      const polys = source.relations.flatMap((id) => {
         const g = osm.get(id)
         if (!g) throw new Error(`OSM relation ${id} missing`)
         return polygonsOf(g)
       })
+      // Administrative boundaries often reach far into the sea (Jakarta, Auckland, Hong Kong);
+      // only the land counts.
+      return intersect(union(polys), await landWithin(bbox(toGeometry(polys)) as BBox))
+    }
   }
 }
 
@@ -157,9 +177,10 @@ if (failures.length > 0) {
 }
 
 const json = serializePlaces(places)
-writeFileSync(PLACES_FILE, json)
-console.log(`✓ ${PLACES_FILE}`)
-
 const report = validatePlaces(places, json)
 console.log(formatReport(report))
+// An invalid dataset goes to the cache for inspection, never into the source tree.
+const out = report.errors.length === 0 ? PLACES_FILE : `${CACHE_DIR}/places.invalid.json`
+writeFileSync(out, json)
+console.log(`${report.errors.length === 0 ? '✓' : '✗'} ${out}`)
 if (report.errors.length > 0) process.exit(1)

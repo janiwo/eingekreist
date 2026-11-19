@@ -8,6 +8,11 @@ let cache: Promise<Place[]> | undefined
  * own chunk, so it doesn't weigh down the initial bundle.
  */
 export function loadPlaces(): Promise<Place[]> {
-  cache ??= import('./places.json').then((m) => decodePlaces(m.default as PlaceFile))
+  cache ??= import('./places.json')
+    .then((m) => decodePlaces(m.default as PlaceFile))
+    .catch((e: unknown) => {
+      cache = undefined // let the next call retry
+      throw e
+    })
   return cache
 }

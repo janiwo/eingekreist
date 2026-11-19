@@ -6,7 +6,8 @@
  */
 import { readFileSync } from 'node:fs'
 import { gzipSync } from 'node:zlib'
-import { area, bbox } from '@turf/turf'
+import { area } from '@turf/area'
+import { bbox } from '@turf/bbox'
 import type { Position } from 'geojson'
 import { decodePlaces, type PlaceFile } from '../../src/data/placeCodec.ts'
 import { CATEGORIES, type Category, type Place } from '../../src/game/types.ts'
@@ -46,10 +47,12 @@ function ringErrors(ring: Position[]): string | undefined {
   if (ring.length < 4) return `ring with ${ring.length} points`
   const [a, b] = [ring[0], ring[ring.length - 1]]
   if (a[0] !== b[0] || a[1] !== b[1]) return 'ring not closed'
-  for (const [lng, lat] of ring) {
+  for (const [i, [lng, lat]] of ring.entries()) {
     if (!Number.isFinite(lng) || !Number.isFinite(lat) || Math.abs(lng) > 180 || Math.abs(lat) > 90) {
       return `coordinate out of range: ${lng},${lat}`
     }
+    // An edge this long wraps around the antimeridian instead of being cut there.
+    if (i > 0 && Math.abs(lng - ring[i - 1][0]) > 180) return `edge across the antimeridian at ${lng},${lat}`
   }
 }
 

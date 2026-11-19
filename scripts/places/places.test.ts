@@ -26,6 +26,16 @@ describe('place dataset', () => {
     expect(report.errors, formatReport(report)).toEqual([])
   })
 
+  it('rejects a ring that wraps around the antimeridian instead of being cut', () => {
+    const wrapped: Place = {
+      id: 'wrapped',
+      name: 'Kaputt',
+      category: 'landmark',
+      geometry: { type: 'Polygon', coordinates: [[[179.9, 0], [-179.9, 0], [-179.9, 1], [179.9, 0]]] },
+    }
+    expect(validatePlaces([wrapped], '').errors).toContain('wrapped: edge across the antimeridian at -179.9,0')
+  })
+
   it('loads through loadPlaces', async () => {
     // The codec round trip itself is covered in placeCodec.test.ts.
     expect((await loadPlaces()).map((p) => p.id)).toEqual(places.map((p) => p.id))
@@ -69,6 +79,9 @@ describe('hit test on real places', () => {
     expect(hits('berlin', [11.576, 48.137], 100)).toBe(false) // Munich
     // Tokyo without its Pacific islands: Hachijō-jima is far from the city
     expect(hits('tokyo', [139.78, 33.11], 50)).toBe(false)
+    // Clipped to land: the Java Sea off Jakarta and the Hauraki Gulf don't count
+    expect(hits('jakarta', [106.6, -5.5], 1)).toBe(false)
+    expect(hits('auckland', [175.0, -36.5], 1)).toBe(false)
   })
 
   it('buffers rivers', () => {
@@ -92,5 +105,7 @@ describe('hit test on real places', () => {
   it('uses Natural Earth outlines for fuzzy places', () => {
     expect(hits('sahara', [10, 25], 1)).toBe(true)
     expect(hits('sahara', [10, 50], 500)).toBe(false)
+    // Island groups include their outliers (Darwin Island, Galápagos)
+    expect(hits('galapagos', [-92.0, 1.67], 2)).toBe(true)
   })
 })

@@ -73,7 +73,7 @@ export const islands: Entry[] = [
   island('puerto-rico', 'Puerto Rico', [-66.5, 18.25]),
   island('trinidad', 'Trinidad', [-61.3, 10.45]),
   island('tierra-del-fuego', 'Feuerland', [-68.5, -54]),
-  group('galapagos', 'Galápagos-Inseln', [-92.2, -1.6, -89, 0.8]),
+  group('galapagos', 'Galápagos-Inseln', [-92.2, -1.6, -89, 1.8]),
   island('easter-island', 'Osterinsel', [-109.35, -27.12]),
   // Oceania
   island('new-guinea', 'Neuguinea', [140, -5]),
