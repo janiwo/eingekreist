@@ -1,14 +1,19 @@
 import { useState } from 'react'
-import { DEFAULT_SETTINGS } from './game/types'
+import { DEFAULT_SETTINGS, type Circle } from './game/types'
 import { de } from './i18n/de'
+import { CircleEditor } from './map/CircleEditor'
 import { Globe } from './map/Globe'
+import type { Map as MapLibreMap } from './map/maplibre'
 
 export default function App() {
   const [showBorders, setShowBorders] = useState(DEFAULT_SETTINGS.showBorders)
+  const [map, setMap] = useState<MapLibreMap | null>(null)
+  const [circle, setCircle] = useState<Circle | null>(null)
 
   return (
     <div className="app">
-      <Globe showBorders={showBorders} />
+      <Globe showBorders={showBorders} onMapReady={setMap} />
+      {map && <CircleEditor map={map} circle={circle} onChange={setCircle} />}
       <div className="dev-panel">
         <strong>{de.appName}</strong>
         <label>
@@ -19,6 +24,15 @@ export default function App() {
           />
           {de.showBorders}
         </label>
+      </div>
+      <div className="radius-readout" role="status" aria-live="polite">
+        {circle ? (
+          <>
+            {de.circle.radius}: <strong>{de.formatKm(circle.radiusKm)}</strong>
+          </>
+        ) : (
+          de.circle.placeHint
+        )}
       </div>
     </div>
   )

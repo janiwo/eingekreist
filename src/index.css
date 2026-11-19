@@ -52,3 +52,51 @@ body,
   gap: 6px;
   cursor: pointer;
 }
+
+.radius-readout {
+  position: absolute;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--panel);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+/* Circle handles: a small visible dot inside a 44px touch target. */
+.handle {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  cursor: grab;
+  touch-action: none;
+}
+
+.handle:active {
+  cursor: grabbing;
+}
+
+.handle::after {
+  content: '';
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.handle--center::after {
+  width: 18px;
+  height: 18px;
+  background: var(--handle-color);
+  border: 3px solid #fff;
+}
+
+.handle--radius::after {
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border: 3px solid var(--handle-color);
+}
