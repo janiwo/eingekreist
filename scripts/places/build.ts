@@ -18,6 +18,7 @@ import {
   simplifyLines,
   simplifyPolys,
   toGeometry,
+  union,
   type Polys,
 } from './geometry.ts'
 import { placeSources } from './list/index.ts'
@@ -141,7 +142,9 @@ async function buildPlace(src: PlaceSource, osm: Map<number, Geometry>): Promise
     polys =
       'lines' in raw
         ? bufferLines(simplifyLines(raw.lines), bufferKm!)
-        : simplifyPolys(excludeParts(raw.polys, src.exclude))
+        : // Merge before simplifying, so edges shared by neighbouring source features
+          // (e.g. the seas that make up the Mediterranean) stay together.
+          simplifyPolys(union(excludeParts(raw.polys, src.exclude)))
   }
   polys = finalize(polys)
   if (polys.length === 0) throw new Error('empty geometry')

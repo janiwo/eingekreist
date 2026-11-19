@@ -95,7 +95,7 @@ export const waters: Entry[] = [
   lake('lake-ontario', 'Ontariosee', 'Lake Ontario'),
   lake('great-salt-lake', 'Großer Salzsee', 'Great Salt Lake'),
   // Rivers
-  river('rhine', 'Rhein', ['Rhine', 'Rhein'], [3, 46, 12, 53]),
+  river('rhine', 'Rhein', ['Rhine', 'Rhein', 'Rhin'], [3, 46, 12, 53]),
   river('danube', 'Donau', ['Danube', 'Donau'], [8, 42, 30, 50]),
   river('elbe', 'Elbe', ['Elbe'], [8, 49, 16, 54.5]),
   river('thames', 'Themse', ['Thames'], [-3, 51, 1.5, 52]),
