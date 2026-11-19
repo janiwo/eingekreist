@@ -6,6 +6,10 @@
  *   npm run screenshot -- / arctic 0,80,2   → set camera to lng,lat,zoom
  *   npm run screenshot -- / pole 0,80,2 0,85,1500 → also draw a circle at lng,lat with radius km
  *   npm run screenshot -- "/?debug=places&place=france" france → show a place (view fits to it)
+ *   npm run screenshot -- "/?game" game                       → start a game (seed 1) first
+ *
+ * With a camera view or a circle (and outside the debug view), a game is started first, since
+ * the globe is only interactive in a running game.
  */
 import { chromium, devices } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
@@ -39,6 +43,15 @@ try {
     await page
       .waitForFunction(() => !document.querySelector('[data-ready="false"]'), null, { timeout: 30_000 })
       .catch(() => logs.push('timeout: [data-ready="false"] still present'))
+    const debug = new URL(url).searchParams.has('debug')
+    if (!debug && (view || circle || new URL(url).searchParams.has('game'))) {
+      await page.evaluate(() => window.__eingekreist!.startGame!(1))
+      await page
+        .waitForFunction(() => document.querySelector('[data-testid="prompt"][data-ready="true"]'), null, {
+          timeout: 30_000,
+        })
+        .catch(() => logs.push('timeout: game not started'))
+    }
     if (view) {
       const [lng, lat, zoom] = view.split(',').map(Number)
       await page.evaluate(

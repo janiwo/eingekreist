@@ -36,7 +36,12 @@ const style: StyleSpecification = {
 declare global {
   interface Window {
     /** Dev-only hooks for tests and the screenshot script. */
-    __eingekreist?: { map: MapLibreMap; setCircle?: (circle: Circle | null) => void }
+    __eingekreist?: {
+      map: MapLibreMap
+      setCircle?: (circle: Circle | null) => void
+      /** Starts a game with the current setup (optionally with a fixed seed). */
+      startGame?: (seed?: number) => Promise<void>
+    }
   }
 }
 
