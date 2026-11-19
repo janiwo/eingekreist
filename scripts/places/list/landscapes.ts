@@ -1,0 +1,88 @@
+import type { Entry } from '../types.ts'
+
+/**
+ * Landscapes: Natural Earth geography region polygons, by their NE `NAME`. These outlines
+ * are generalized by nature (where exactly do the Alps end?); the NE outline counts.
+ */
+const region = (id: string, name: string, ...names: string[]): Entry => ({
+  id,
+  name,
+  source: { kind: 'region', names },
+})
+
+export const landscapes: Entry[] = [
+  // Deserts
+  region('sahara', 'Sahara', 'SAHARA'),
+  region('gobi', 'Gobi', 'GOBI DESERT'),
+  region('kalahari', 'Kalahari', 'KALAHARI DESERT'),
+  region('namib', 'Namib', 'NAMIB DESERT'),
+  region('atacama', 'Atacama', 'DESIERTO DE ATACAMA'),
+  region('rub-al-khali', 'Rub al-Chali', 'RUB’ AL KHALI'),
+  region('taklamakan', 'Taklamakan', 'TAKLIMAKAN DESERT'),
+  region('great-victoria-desert', 'Große Victoria-Wüste', 'GREAT VICTORIA DESERT'),
+  region('sonoran-desert', 'Sonora-Wüste', 'SONORAN DESERT'),
+  region('thar', 'Thar', 'THAR DESERT'),
+  region('karakum', 'Karakum', 'GARAGUM DESERT'),
+  // Mountain ranges
+  region('alps', 'Alpen', 'ALPS'),
+  region('pyrenees', 'Pyrenäen', 'PYRENEES'),
+  region('carpathians', 'Karpaten', 'CARPATHIAN MOUNTAINS'),
+  region('apennines', 'Apennin', 'APPENNINI'),
+  region('caucasus', 'Kaukasus', 'CAUCASUS MTS.'),
+  region('ural', 'Ural', 'URAL MOUNTAINS'),
+  region('scandinavian-mountains', 'Skandinavisches Gebirge', 'KJØLEN MOUNTAINS'),
+  region('harz', 'Harz', 'Harz'),
+  region('ore-mountains', 'Erzgebirge', 'Erzgebirge'),
+  region('jura', 'Jura', 'Jura'),
+  region('vosges', 'Vogesen', 'Vosges'),
+  region('ardennes', 'Ardennen', 'Ardennes'),
+  region('tatra', 'Tatra', 'Tatra Mts.'),
+  region('himalayas', 'Himalaya', 'HIMALAYAS'),
+  region('hindu-kush', 'Hindukusch', 'HINDU KUSH'),
+  region('karakoram', 'Karakorum', 'KARAKORAM RA.'),
+  region('pamir', 'Pamir', 'PAMIRS'),
+  region('tian-shan', 'Tian Shan', 'TIAN SHAN'),
+  region('altai', 'Altai', 'ALTAY MOUNTAINS'),
+  region('andes', 'Anden', 'ANDES'),
+  region('rocky-mountains', 'Rocky Mountains', 'ROCKY MOUNTAINS'),
+  region('appalachians', 'Appalachen', 'APPALACHIAN MTS.'),
+  region('sierra-nevada-us', 'Sierra Nevada', 'SIERRA NEVADA'),
+  region('atlas', 'Atlas', 'ATLAS MOUNTAINS'),
+  region('drakensberg', 'Drakensberge', 'DRAKENSBERG'),
+  region('great-dividing-range', 'Great Dividing Range', 'GREAT DIVIDING RANGE'),
+  region('southern-alps', 'Neuseeländische Alpen', 'SOUTHERN ALPS'),
+  // Plains, plateaus, basins, wetlands
+  region('tibetan-plateau', 'Hochland von Tibet', 'PLATEAU OF TIBET'),
+  region('deccan', 'Dekkan', 'DECCAN PLATEAU'),
+  region('amazon-basin', 'Amazonasbecken', 'AMAZON BASIN'),
+  region('congo-basin', 'Kongobecken', 'CONGO BASIN'),
+  region('great-plains', 'Great Plains', 'GREAT PLAINS'),
+  region('pampas', 'Pampa', 'PAMPAS'),
+  region('gran-chaco', 'Gran Chaco', 'GRAN CHACO'),
+  region('pantanal', 'Pantanal', 'PANTANAL'),
+  region('sahel', 'Sahel', 'SAHEL'),
+  region('serengeti', 'Serengeti', 'Serengeti Plains'),
+  region('great-rift-valley', 'Großer Afrikanischer Grabenbruch', 'GREAT RIFT VALLEY'),
+  region('grand-canyon', 'Grand Canyon', 'Grand Canyon'),
+  // Regions and peninsulas
+  region('siberia', 'Sibirien', 'SIBERIA'),
+  region('patagonia', 'Patagonien', 'PATAGONIA'),
+  region('lapland', 'Lappland', 'LAPLAND'),
+  region('anatolia', 'Anatolien', 'ANATOLIA'),
+  region('mesopotamia', 'Mesopotamien', 'Mesopotamia'),
+  region('scandinavia', 'Skandinavien', 'SCANDINAVIA'),
+  region('iberian-peninsula', 'Iberische Halbinsel', 'PENÍNSULA IBÉRICA'),
+  region('balkan-peninsula', 'Balkanhalbinsel', 'BALKAN PEN.'),
+  region('arabian-peninsula', 'Arabische Halbinsel', 'ARABIAN PENINSULA'),
+  region('jutland', 'Jütland', 'JUTLAND'),
+  region('crimea', 'Krim', 'CRIMEA'),
+  region('kamchatka', 'Kamtschatka', 'KAMCHATKA PENINSULA'),
+  region('yucatan', 'Yucatán', 'PEN. DE YUCATÁN'),
+  region('baja-california', 'Niederkalifornien', 'BAJA CALIFORNIA'),
+  region('brittany', 'Bretagne', 'Bretagne'),
+  region('massif-central', 'Zentralmassiv', 'Massif Central'),
+  // Deltas
+  region('nile-delta', 'Nildelta', 'Nile Delta'),
+  region('danube-delta', 'Donaudelta', 'Danube Delta'),
+  region('mekong-delta', 'Mekongdelta', 'Mekong Delta'),
+]

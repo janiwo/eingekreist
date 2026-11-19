@@ -11,7 +11,9 @@
     "test": "vitest run",
     "e2e": "playwright test",
     "screenshot": "node scripts/screenshot.ts",
-    "fetch:basemap": "node scripts/fetch-basemap.ts"
+    "fetch:basemap": "node scripts/fetch-basemap.ts",
+    "build:places": "node scripts/places/build.ts",
+    "validate:places": "node scripts/places/validate.ts"
   },
   "dependencies": {
     "@turf/turf": "^7.4.0",
@@ -27,6 +29,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "oxlint": "^1.90.0",
+    "polyclip-ts": "^0.16.8",
     "typescript": "~7.0.2",
     "vite": "^8.3.6",
     "vitest": "^5.1.1"
