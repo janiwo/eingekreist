@@ -372,6 +372,7 @@ button:not(:disabled) {
 
 /* The round's place. Only this card carries the category's icon and color (spec §5). */
 .prompt {
+  flex: 0 1 auto;
   --category-ink: color-mix(in srgb, var(--category-color) 55%, #fff);
   display: flex;
   align-items: center;
@@ -434,7 +435,25 @@ button:not(:disabled) {
   color: var(--muted);
 }
 
+.new-game-button__symbol {
+  display: none;
+}
+
 @media (max-width: 420px) {
+  .new-game-button {
+    width: 44px;
+    padding: 0;
+    font-size: 20px;
+  }
+
+  .new-game-button__label {
+    display: none;
+  }
+
+  .new-game-button__symbol {
+    display: inline;
+  }
+
   .prompt {
     gap: 10px;
     padding: 8px 12px 8px 8px;
@@ -675,6 +694,10 @@ button:not(:disabled) {
   font-size: 15px;
 }
 
+.results td {
+  white-space: nowrap;
+}
+
 .results th,
 .results td {
   padding: 6px 4px;
@@ -744,6 +767,21 @@ button:not(:disabled) {
   .results th,
   .results td {
     padding: 4px;
+  }
+}
+
+@media (max-width: 420px) {
+  .results {
+    font-size: 14px;
+  }
+}
+
+/* Short portrait screens: more room for the card, the place keeps a minimum view. */
+@media (orientation: portrait) and (max-height: 700px) {
+  .reveal {
+    max-height: 60vh;
+    padding: 12px 14px;
+    gap: 8px;
   }
 }
 

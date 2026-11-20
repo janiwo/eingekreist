@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import { isSuddenDeath, leaders } from '../game/scoring'
 import type { PlayingState, RoundResult, Turn } from '../game/state'
 import type { Place } from '../game/types'
@@ -32,6 +32,7 @@ function circleText(turn: Turn | undefined): string {
 export function Reveal({ state, result, place, map, headerRef, onNext }: RevealProps) {
   const { players, round, settings } = state
   const cardRef = useRef<HTMLElement>(null)
+  const nextRef = useRef<HTMLButtonElement>(null)
   const [arrived, setArrived] = useState(false)
   const onArrived = useCallback(() => setArrived(true), [])
 
@@ -59,6 +60,9 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
     if (height - top - bottom < MIN_VIEW) bottom = Math.max(GAP, height - top - MIN_VIEW)
     return { top, bottom, left: GAP * 2, right: GAP * 2 }
   }, [headerRef])
+
+  // For keyboard players; not `autoFocus`, which would scroll the card past its title.
+  useEffect(() => nextRef.current?.focus({ preventScroll: true }), [])
 
   const winners = players.filter((p) => result.winnerIds.includes(p.id))
   const suddenDeath = !result.gameOver && isSuddenDeath(players, settings.targetScore)
@@ -127,7 +131,7 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
               {t.suddenDeath(top.map((p) => p.name), top[0].score)}
             </p>
           )}
-          <button type="button" className="button button--primary reveal__next" autoFocus onClick={onNext}>
+          <button ref={nextRef} type="button" className="button button--primary reveal__next" onClick={onNext}>
             {result.gameOver ? t.toResults : t.nextRound}
           </button>
         </section>

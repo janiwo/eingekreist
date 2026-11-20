@@ -49,6 +49,8 @@ export const de = {
     round: (n: number) => `Runde ${n}`,
     targetScore: (n: number) => `Ziel: ${points(n)}`,
     newGame: 'Neues Spiel',
+    /** In place of the label on narrow screens. */
+    newGameSymbol: '↺',
     confirmNewGame: 'Das laufende Spiel wird beendet.',
     confirm: 'Neues Spiel starten',
     cancel: 'Weiterspielen',

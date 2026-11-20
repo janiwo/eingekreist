@@ -248,10 +248,15 @@ function NewGameButton({ onConfirm }: { onConfirm: () => void }) {
     <>
       <button
         type="button"
-        className="button button--secondary button--panel button--small"
+        className="button button--secondary button--panel button--small new-game-button"
+        // The label shrinks to a symbol on narrow screens; the name stays.
+        aria-label={t.newGame}
         onClick={() => dialogRef.current?.showModal()}
       >
-        {t.newGame}
+        <span className="new-game-button__label">{t.newGame}</span>
+        <span className="new-game-button__symbol" aria-hidden="true">
+          {t.newGameSymbol}
+        </span>
       </button>
       {/* Native modal: focus trap, Escape and backdrop come for free. */}
       <dialog ref={dialogRef} className="card dialog" aria-labelledby="confirm-new-game">
