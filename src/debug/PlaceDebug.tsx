@@ -5,6 +5,7 @@ import { vertexCount } from '../geo/polygons'
 import { de } from '../i18n/de'
 import type { Map as MapLibreMap } from '../map/maplibre'
 import { addShapeLayer, noFeatures, placeFeatures } from '../map/shapeLayer'
+import './debug.css'
 import { findPlace } from './findPlace'
 
 const LAYER_ID = 'debug-place'

@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import { bordersGeoJson, landGeoJson } from './baseData'
 import type { Circle, Settings } from '../game/types'
 import { de } from '../i18n/de'
+import { attributionHtml } from './dataSources'
 import { START_VIEW } from './view'
 
 const COLORS = {
@@ -69,7 +70,8 @@ export function Globe({ showBorders, onMapReady }: GlobeProps) {
       center: START_VIEW.center,
       zoom: START_VIEW.zoom,
       // Compact (behind an ⓘ button) on narrow maps only; MapLibre decides by width.
-      attributionControl: { customAttribution: de.attribution },
+      attributionControl: { customAttribution: attributionHtml },
+      locale: de.mapLocale,
       renderWorldCopies: false,
       dragRotate: false,
       // A tap places the circle, so a double tap must not also zoom.
@@ -77,6 +79,8 @@ export function Globe({ showBorders, onMapReady }: GlobeProps) {
       pitchWithRotate: false,
     })
     map.touchZoomRotate.disableRotation()
+    // Shift + arrow keys would rotate and tilt the globe; keyboard players only pan and zoom.
+    map.keyboard.disableRotation()
     mapRef.current = map
     map.once('load', () => {
       // A compact attribution starts expanded and would cover the UI on phones; collapse it.

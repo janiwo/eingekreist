@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type Dispatch } from 'react'
+import { Fragment, useState, type CSSProperties, type Dispatch } from 'react'
 import {
   MAX_TARGET_SCORE,
   MIN_TARGET_SCORE,
@@ -9,6 +9,7 @@ import {
 } from '../game/state'
 import { CATEGORIES, MAX_PLAYERS, MIN_PLAYERS } from '../game/types'
 import { de } from '../i18n/de'
+import { DATA_SOURCES } from '../map/dataSources'
 import { HowToPlay } from './HowToPlay'
 
 const t = de.setup
@@ -215,6 +216,18 @@ export function SetupScreen({ state, dispatch, onStart }: SetupScreenProps) {
             {starting ? t.loading : t.start}
           </button>
         </div>
+
+        <p className="credits">
+          {de.credits.label}{' '}
+          {DATA_SOURCES.map((c, i) => (
+            <Fragment key={c.href}>
+              {i > 0 && ' · '}
+              <a href={c.href} target="_blank" rel="noopener">
+                {c.name}
+              </a>
+            </Fragment>
+          ))}
+        </p>
       </form>
     </main>
   )

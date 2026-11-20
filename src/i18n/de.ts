@@ -44,6 +44,8 @@ export const de = {
     round: (n: number) => `Runde ${n}`,
     targetScore: (n: number) => `Ziel: ${points(n)}`,
     newGame: 'Neues Spiel',
+    /** In place of the label on narrow screens. */
+    newGameSymbol: '↺',
     confirmNewGame: 'Das laufende Spiel wird beendet.',
     confirm: 'Neues Spiel starten',
     cancel: 'Weiterspielen',
@@ -101,6 +103,12 @@ export const de = {
     radius: 'Radius',
     moveCenter: 'Mittelpunkt verschieben',
     changeRadius: 'Radius ändern',
+    /** Accessible descriptions of the handles' keys. */
+    moveCenterKeys: 'Pfeiltasten verschieben den Kreis, mit Umschalt in großen Schritten.',
+    changeRadiusKeys: 'Pfeil hoch oder rechts vergrößert, runter oder links verkleinert, mit Umschalt in großen Schritten.',
+    /** The globe's accessible name during a turn. */
+    globeLabel:
+      'Globus. Pfeiltasten drehen ihn, Plus und Minus zoomen, die Eingabetaste setzt den Kreis in die Mitte.',
   },
   howToPlay: {
     title: 'So wird gespielt',
@@ -156,11 +164,19 @@ export const de = {
     },
   },
   formatKm,
-  /** Map data credits (shown in the map's attribution control; HTML). */
-  attribution: [
-    '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap-Mitwirkende</a>',
-    '<a href="https://www.naturalearthdata.com" target="_blank" rel="noopener">Natural Earth</a>',
-  ],
+  /** Map data credits (src/map/dataSources.ts): on the map and, as the map's collapses on phones, the start screen. */
+  credits: {
+    label: 'Kartendaten:',
+    naturalEarth: 'Natural Earth',
+    osm: '© OpenStreetMap-Mitwirkende',
+  },
+  /** MapLibre's own UI strings (only those of the controls and handlers in use). */
+  mapLocale: {
+    'Map.Title': 'Globus. Pfeiltasten drehen ihn, Plus und Minus zoomen.',
+    'Marker.Title': 'Markierung',
+    'AttributionControl.ToggleAttribution': 'Quellenangaben ein- oder ausblenden',
+    'AttributionControl.MapFeedback': 'Feedback zur Karte',
+  },
   /** Dev-only place inspector (`?debug=places`). */
   debugPlaces: {
     search: 'Ort (Name oder ID)',

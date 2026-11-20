@@ -31,6 +31,8 @@ test('shows the map data attribution', async ({ page }) => {
   await openGlobe(page)
   await expect(page.locator('.maplibregl-ctrl-attrib')).toContainText('© OpenStreetMap-Mitwirkende')
   await expect(page.locator('.maplibregl-ctrl-attrib')).toContainText('Natural Earth')
+  // Also visible on the start screen: on phones the map's attribution is collapsed.
+  await expect(page.getByRole('link', { name: '© OpenStreetMap-Mitwirkende' }).first()).toBeVisible()
 })
 
 test('the debug view is off without the URL flag', async ({ page }) => {

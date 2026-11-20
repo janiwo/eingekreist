@@ -1,52 +1,51 @@
 /**
- * Downloads the base map (Natural Earth 1:50m, public domain) and writes compact GeoJSON files
- * to src/data/basemap/. Only needed when the base map should change.
+ * Downloads the base map (Natural Earth 1:50m, public domain) and writes it in the compact
+ * delta-encoded format (src/data/basemapCodec.ts) to src/data/basemap/. Only needed when the
+ * base map should change.
  *
  *   npm run fetch:basemap
  */
 import { mkdirSync, writeFileSync } from 'node:fs'
 import type { FeatureCollection, Geometry, Position } from 'geojson'
+import { encodeLines, encodePolygons } from '../src/data/basemapCodec.ts'
+import { polygonsOf } from '../src/geo/polygons.ts'
+// Same rounding as the place data: 3 decimals ≈ 110 m, finer than the 1:50m source itself.
+import { COORD_DECIMALS, roundLine, roundPolys } from './places/geometry.ts'
 
 const BASE = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson'
 const OUT = 'src/data/basemap'
 
-const FILES = {
-  land: 'ne_50m_land.geojson',
-  borders: 'ne_50m_admin_0_boundary_lines_land.geojson',
+async function fetchGeometries(file: string): Promise<Geometry[]> {
+  const res = await fetch(`${BASE}/${file}`)
+  if (!res.ok) throw new Error(`${file}: HTTP ${res.status}`)
+  return ((await res.json()) as FeatureCollection).features.map((f) => f.geometry)
 }
 
-/** 4 decimal places ≈ 11 m, more than enough for the base map. */
-const round = (p: Position): Position => p.map((n) => Math.round(n * 1e4) / 1e4)
+function areaOf(g: Geometry) {
+  if (g.type !== 'Polygon' && g.type !== 'MultiPolygon') throw new Error(`Unexpected geometry type: ${g.type}`)
+  return polygonsOf(g)
+}
 
-function roundGeometry(g: Geometry): Geometry {
-  switch (g.type) {
-    case 'Polygon':
-      return { type: g.type, coordinates: g.coordinates.map((r) => r.map(round)) }
-    case 'MultiPolygon':
-      return { type: g.type, coordinates: g.coordinates.map((p) => p.map((r) => r.map(round))) }
-    case 'LineString':
-      return { type: g.type, coordinates: g.coordinates.map(round) }
-    case 'MultiLineString':
-      return { type: g.type, coordinates: g.coordinates.map((l) => l.map(round)) }
-    default:
-      throw new Error(`Unexpected geometry type: ${g.type}`)
-  }
+function linesOf(g: Geometry): Position[][] {
+  if (g.type === 'LineString') return [g.coordinates]
+  if (g.type === 'MultiLineString') return g.coordinates
+  throw new Error(`Unexpected geometry type: ${g.type}`)
+}
+
+function write(name: string, data: unknown, count: number) {
+  const out = `${OUT}/${name}.json`
+  writeFileSync(out, JSON.stringify(data))
+  console.log(`✓ ${out} (${count})`)
 }
 
 mkdirSync(OUT, { recursive: true })
-for (const [name, file] of Object.entries(FILES)) {
-  const res = await fetch(`${BASE}/${file}`)
-  if (!res.ok) throw new Error(`${file}: HTTP ${res.status}`)
-  const fc = (await res.json()) as FeatureCollection
-  const slim: FeatureCollection = {
-    type: 'FeatureCollection',
-    features: fc.features.map((f) => ({
-      type: 'Feature',
-      properties: {},
-      geometry: roundGeometry(f.geometry),
-    })),
-  }
-  const out = `${OUT}/${name}.json`
-  writeFileSync(out, JSON.stringify(slim))
-  console.log(`✓ ${out} (${slim.features.length} Features)`)
-}
+
+// Polygons that rounding shrank below a triangle (tiny islets) are dropped.
+const land = roundPolys((await fetchGeometries('ne_50m_land.geojson')).flatMap(areaOf))
+write('land', encodePolygons(land, COORD_DECIMALS), land.length)
+
+const borders = (await fetchGeometries('ne_50m_admin_0_boundary_lines_land.geojson'))
+  .flatMap(linesOf)
+  .map(roundLine)
+  .filter((l) => l.length >= 2)
+write('borders', encodeLines(borders, COORD_DECIMALS), borders.length)

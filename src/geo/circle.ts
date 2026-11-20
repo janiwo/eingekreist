@@ -17,6 +17,17 @@ export function roundRadiusKm(km: number): number {
 }
 
 /**
+ * The radius one keyboard step up (`direction` 1) or down (-1). Multiplicative, so a step is
+ * about as noticeable at any size; 5 % is always more than the rounding step, so the
+ * radius changes unless it is clamped.
+ */
+export function stepRadiusKm(km: number, direction: 1 | -1, large = false): number {
+  // Arrow key: 5 %, with Shift: 25 %.
+  const factor = large ? 1.25 : 1.05
+  return roundRadiusKm(km * factor ** direction)
+}
+
+/**
  * Starting radius for a new circle: a tenth of the shorter viewport side,
  * given the current map scale in km per pixel.
  */

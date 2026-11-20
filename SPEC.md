@@ -111,6 +111,8 @@ Last updated: 2026-11-20
 - The globe style is the same for all categories, so it gives no hints.
 - **Category theme**: only the prompt card gets the category's icon and accent color (e.g. 🌊 waters in blue, 🏜️ landscapes in sand).
 - Responsive for desktop, tablet and smartphone, with full touch support.
+- Playable with the keyboard: Enter on the focused globe places the circle at the center of the view, the arrow keys move the center handle or change the radius on the radius handle.
+- The map data credits (Natural Earth, „© OpenStreetMap-Mitwirkende“) are shown on the map and on the start screen.
 
 ## 6. Technology
 

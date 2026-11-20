@@ -109,23 +109,25 @@ export function simplifyPolys(polys: Polys): Polys {
 const factor = 10 ** COORD_DECIMALS
 const roundNum = (n: number) => Math.round(n * factor) / factor
 
+/** Rounds coordinates to COORD_DECIMALS and removes points that rounding made repeat. */
+export function roundLine(line: Position[]): Position[] {
+  const r: Position[] = []
+  for (const [lng, lat] of line) {
+    const q = [roundNum(lng), roundNum(lat)]
+    const prev = r[r.length - 1]
+    if (!prev || prev[0] !== q[0] || prev[1] !== q[1]) r.push(q)
+  }
+  return r
+}
+
 /** Rounds coordinates, removes repeated points and drops rings that collapsed. */
 export function roundPolys(polys: Polys): Polys {
-  const roundRing = (ring: Position[]) => {
-    const r: Position[] = []
-    for (const [lng, lat] of ring) {
-      const q = [roundNum(lng), roundNum(lat)]
-      const prev = r[r.length - 1]
-      if (!prev || prev[0] !== q[0] || prev[1] !== q[1]) r.push(q)
-    }
-    return r
-  }
   // A valid ring has at least three distinct points plus the closing one.
   const valid = (r: Position[]) => r.length >= 4
   return polys.flatMap(([outer, ...holes]) => {
-    const o = roundRing(outer)
+    const o = roundLine(outer)
     // Outer ring collapsed: drop the whole polygon, holes included.
-    return valid(o) ? [[o, ...holes.map(roundRing).filter(valid)]] : []
+    return valid(o) ? [[o, ...holes.map(roundLine).filter(valid)]] : []
   })
 }
 

@@ -6,6 +6,7 @@ import { CircleEditor } from '../map/CircleEditor'
 import type { Map as MapLibreMap } from '../map/maplibre'
 import { START_VIEW } from '../map/view'
 import { HowToPlay } from './HowToPlay'
+import { ignoreKeyRepeat } from './keys'
 import { Reveal } from './Reveal'
 import { TurnTimer } from './TurnTimer'
 
@@ -88,6 +89,13 @@ interface HandoverProps {
 
 /** Covers the globe until the next player takes the device. */
 function Handover({ round, player, ready, loadError, onStart }: HandoverProps) {
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  // The previous turn's controls are gone; give keyboard players a place to start. Only once
+  // the button is enabled (a disabled button can't take the focus).
+  useEffect(() => {
+    if (ready) buttonRef.current?.focus({ preventScroll: true })
+  }, [ready])
+
   return (
     <div className="screen screen--opaque">
       <div className="handover-wrap">
@@ -96,7 +104,9 @@ function Handover({ round, player, ready, loadError, onStart }: HandoverProps) {
           className="card handover"
           data-testid="handover"
           style={{ '--player-color': player.color } as CSSProperties}
+          ref={buttonRef}
           disabled={!ready}
+          onKeyDown={ignoreKeyRepeat}
           onClick={onStart}
         >
           <span className="handover__meta">{t.round(round)}</span>
@@ -127,25 +137,36 @@ function Prompt({ state, player, place, loadError }: PromptProps) {
       className="prompt"
       data-testid="prompt"
       data-ready={place !== undefined}
-      style={{ '--accent': category.color } as CSSProperties}
+      style={{ '--category-color': category.color } as CSSProperties}
     >
-      <span className="prompt__meta">
-        {player && (
-          <>
-            <span className="player-tag" style={{ '--player-color': player.color } as CSSProperties}>
-              {t.onTurn(player.name)}
-            </span>{' '}
-            ·{' '}
-          </>
-        )}
-        {t.round(round.number)} · {t.targetScore(settings.targetScore)}
+      <span className="prompt__icon" aria-hidden="true">
+        {category.icon}
       </span>
-      <span className="prompt__text">
-        <span aria-hidden="true">{category.icon}</span> {category.label}:{' '}
-        <strong>{place ? place.name : t.placeLoading}</strong>
-        {place?.qualifier && <span className="prompt__qualifier"> ({place.qualifier})</span>}
-      </span>
-      {loadError}
+      <div className="prompt__body">
+        <span className="prompt__text">
+          <span className="prompt__category">
+            {category.label}
+            <span className="sr-only">: </span>
+          </span>
+          <span className="prompt__place">
+            <strong>{place ? place.name : t.placeLoading}</strong>
+            {place?.qualifier && <span className="prompt__qualifier"> ({place.qualifier})</span>}
+          </span>
+        </span>
+        <span className="prompt__meta">
+          {player && (
+            <>
+              <span className="player-tag nowrap" style={{ '--player-color': player.color } as CSSProperties}>
+                {t.onTurn(player.name)}
+              </span>{' '}
+              ·{' '}
+            </>
+          )}
+          <span className="nowrap">{t.round(round.number)}</span> ·{' '}
+          <span className="nowrap">{t.targetScore(settings.targetScore)}</span>
+        </span>
+        {loadError}
+      </div>
     </div>
   )
 }
@@ -167,6 +188,8 @@ function Turn({ state, player, map, dispatch }: TurnProps) {
     if (!map) return
     map.stop()
     map.jumpTo(START_VIEW)
+    // Keyboard players continue right on the globe (the handover button they used is gone).
+    map.getCanvas().focus({ preventScroll: true })
   }, [map])
 
   useEffect(() => {
@@ -233,10 +256,15 @@ function NewGameButton({ onConfirm }: { onConfirm: () => void }) {
     <>
       <button
         type="button"
-        className="button button--secondary button--panel button--small"
+        className="button button--secondary button--panel button--small new-game-button"
+        // The label shrinks to a symbol on narrow screens; the name stays.
+        aria-label={t.newGame}
         onClick={() => dialogRef.current?.showModal()}
       >
-        {t.newGame}
+        <span className="new-game-button__label">{t.newGame}</span>
+        <span className="new-game-button__symbol" aria-hidden="true">
+          {t.newGameSymbol}
+        </span>
       </button>
       {/* Native modal: focus trap, Escape and backdrop come for free. */}
       <dialog ref={dialogRef} className="card dialog" aria-labelledby="confirm-new-game">

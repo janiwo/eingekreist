@@ -7,6 +7,14 @@ export const nameInput = (page: Page, n: number) => page.getByLabel(`Name von Sp
 /** The radius readout. */
 export const readout = (page: Page) => page.getByRole('status')
 
+/** Parses the readout („Radius: 1.230 km“) into km (1230). */
+export async function radiusKm(page: Page): Promise<number> {
+  const text = (await readout(page).textContent()) ?? ''
+  const match = text.match(/([\d.,]+)\s*km/)
+  if (!match) throw new Error(`no radius in "${text}"`)
+  return Number(match[1].replace(/\./g, '').replace(',', '.'))
+}
+
 /** The persisted game state, as the app stored it. */
 export const stored = (page: Page) =>
   page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? 'null')?.state, STORAGE_KEY)
