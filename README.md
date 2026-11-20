@@ -13,6 +13,8 @@ npm run build    # typecheck + production build to dist/
 npm run e2e      # browser tests (Playwright, desktop + mobile)
 npm run screenshot                      # → screenshots/desktop.png, mobile.png
 npm run screenshot -- / arctic 0,80,2   # camera at lng,lat,zoom
+npm run screenshot -- --game / game     # game screen (seed 1), first turn started
+npm run screenshot -- --handover / ho   # game screen, handover before the first turn
 npm run fetch:basemap                   # re-download the base map from Natural Earth
 ```
 

@@ -6,13 +6,14 @@ import {
   createSetup,
   MAX_TARGET_SCORE,
   PLAYER_COLORS,
+  playerOnTurn,
   setupProblems,
   type GameAction,
   type GameState,
   type PlayingState,
   type SetupState,
 } from './state'
-import { CATEGORIES, MAX_PLAYERS, MIN_PLAYERS } from './types'
+import { CATEGORIES, MAX_PLAYERS, MIN_PLAYERS, type Circle } from './types'
 
 const defaultName = (n: number) => `Spieler ${n}`
 const gameReducer = createGameReducer(defaultName)
@@ -25,6 +26,14 @@ const asSetup = (s: GameState) => {
   return s as SetupState
 }
 const add: GameAction = { type: 'addPlayer' }
+/** In-memory stand-in for localStorage. */
+const memory = () => {
+  const data = new Map<string, string>()
+  return {
+    getItem: (k: string) => data.get(k) ?? null,
+    setItem: (k: string, v: string) => void data.set(k, v),
+  }
+}
 
 describe('setup', () => {
   it('starts with two players, distinct colors and the default settings', () => {
@@ -151,15 +160,111 @@ describe('start', () => {
   })
 })
 
-describe('persistence', () => {
-  const memory = () => {
-    const data = new Map<string, string>()
-    return {
-      getItem: (k: string) => data.get(k) ?? null,
-      setItem: (k: string, v: string) => void data.set(k, v),
-    }
+describe('turns', () => {
+  const T0 = 1_000_000
+  const circle: Circle = { center: [2.35, 48.86], radiusKm: 120 }
+  /** A started three-player game (60 s timer unless given). */
+  const game = (turnSeconds: number | null = 60) =>
+    run(
+      setup(),
+      add,
+      { type: 'updateSettings', settings: { turnSeconds } },
+      { type: 'start', pool, seed: 7 },
+    ) as PlayingState
+  const playing = (s: GameState) => {
+    expect(s.phase).toBe('playing')
+    return s as PlayingState
   }
+  const startTurn = (now = T0): GameAction => ({ type: 'startTurn', now })
+  const place = (c: Circle = circle): GameAction => ({ type: 'setDraft', circle: c })
+  const submit: GameAction = { type: 'submitTurn' }
+  const timeUp = (now: number): GameAction => ({ type: 'timeUp', now })
 
+  it('starts each round on the handover screen of the first player', () => {
+    const s = game()
+    expect(s.round.turns).toEqual([])
+    expect(s.round.turnStartedAt).toBeNull()
+    expect(playerOnTurn(s)?.id).toBe('p1')
+  })
+
+  it('plays a round: submit, pass, timeout', () => {
+    const s = playing(
+      run(
+        game(),
+        startTurn(),
+        place(),
+        submit,
+        startTurn(T0 + 5000),
+        { type: 'passTurn' },
+        startTurn(T0 + 9000),
+        timeUp(T0 + 69_000),
+      ),
+    )
+    expect(s.round.turns).toEqual([
+      { playerId: 'p1', outcome: 'submitted', circle },
+      { playerId: 'p2', outcome: 'passed', circle: null },
+      { playerId: 'p3', outcome: 'timedOut', circle: null },
+    ])
+    expect(s.round.turnStartedAt).toBeNull()
+    expect(s.round.draft).toBeNull()
+    expect(playerOnTurn(s)).toBeNull()
+  })
+
+  it('records the start time and returns to the handover after a turn', () => {
+    const s = playing(run(game(), startTurn()))
+    expect(s.round.turnStartedAt).toBe(T0)
+    expect(run(s, startTurn(T0 + 1))).toBe(s) // already started
+    const next = playing(run(s, { type: 'passTurn' }))
+    expect(next.round.turnStartedAt).toBeNull()
+    expect(playerOnTurn(next)?.id).toBe('p2')
+  })
+
+  it('submits a placed circle automatically when time runs out', () => {
+    const s = playing(run(game(30), startTurn(), place(), timeUp(T0 + 30_000)))
+    expect(s.round.turns).toEqual([{ playerId: 'p1', outcome: 'submitted', circle }])
+    expect(s.round.draft).toBeNull() // no trace for the next player
+  })
+
+  it('ignores a time-up before the time is up or without a timer', () => {
+    const early = playing(run(game(30), startTurn()))
+    expect(run(early, timeUp(T0 + 29_999))).toBe(early)
+    const untimed = playing(run(game(null), startTurn()))
+    expect(run(untimed, timeUp(T0 + 1e9))).toBe(untimed)
+  })
+
+  it('ignores turn actions on the handover screen', () => {
+    const s = game()
+    expect(run(s, place(), submit, { type: 'passTurn' }, timeUp(T0 + 1e9))).toBe(s)
+  })
+
+  it('cannot submit without a circle', () => {
+    const s = playing(run(game(), startTurn()))
+    expect(run(s, submit)).toBe(s)
+  })
+
+  it('rejects invalid circles and enforces the minimum radius', () => {
+    const s = playing(run(game(), startTurn()))
+    expect(run(s, place({ center: [0, 95], radiusKm: 10 }))).toBe(s)
+    expect(run(s, place({ center: [Number.NaN, 0], radiusKm: 10 }))).toBe(s)
+    expect(playing(run(s, place({ center: [0, 0], radiusKm: 0.2 }))).round.draft?.radiusKm).toBe(1)
+    expect(playing(run(s, place({ center: [0, 0], radiusKm: 1e6 }))).round.draft?.radiusKm).toBe(20_000)
+  })
+
+  it('ignores turn actions once every player has had a turn', () => {
+    let s: GameState = game()
+    for (let i = 0; i < 3; i++) s = run(s, startTurn(), { type: 'passTurn' })
+    expect(run(s, startTurn(), { type: 'passTurn' })).toBe(s)
+  })
+
+  it('round-trips a game mid-turn through persistence', () => {
+    const storage = memory()
+    const s = run(game(), startTurn(), place(), submit, startTurn(T0 + 1), place({ center: [0, 0], radiusKm: 5 }))
+    saveGame(s, storage)
+    expect(loadGame(storage)).toEqual(s)
+  })
+})
+
+describe('persistence', () => {
   it('round-trips setup and playing states', () => {
     const storage = memory()
     for (const state of [setup(), run(setup(), { type: 'start', pool, seed: 5 })]) {
@@ -171,7 +276,7 @@ describe('persistence', () => {
   it('returns null for missing, corrupt or outdated entries', () => {
     const storage = memory()
     expect(loadGame(storage)).toBeNull()
-    for (const raw of ['{', '"x"', '{"version":0,"state":{}}', '{"version":1,"state":{"phase":"bogus"}}', '{"version":1}']) {
+    for (const raw of ['{', '"x"', '{"version":0,"state":{}}', '{"version":2,"state":{"phase":"setup"}}', '{"version":3,"state":{"phase":"bogus"}}', '{"version":3}']) {
       storage.setItem(STORAGE_KEY, raw)
       expect(loadGame(storage)).toBeNull()
     }

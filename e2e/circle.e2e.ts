@@ -1,7 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { openGlobe, startGame } from './helpers'
-
-const readout = (page: Page) => page.getByRole('status')
+import { openGlobe, readout, startGame, tapGlobeCenter } from './helpers'
 
 /** Parses „Radius: 1.230 km“ into 1230. */
 async function radiusKm(page: Page): Promise<number> {
@@ -58,12 +56,7 @@ test('places a circle and changes its radius', async ({ page }, testInfo) => {
   const isMobile = testInfo.project.name === 'mobile'
   await expect(readout(page)).toContainText('Tippe auf den Globus')
 
-  const viewport = page.viewportSize()!
-  const tap = { x: viewport.width / 2, y: viewport.height / 2 }
-  if (isMobile) await page.touchscreen.tap(tap.x, tap.y)
-  else await page.mouse.click(tap.x, tap.y)
-
-  await expect(readout(page)).toContainText('Radius:')
+  await tapGlobeCenter(page, isMobile)
   await expect(page.getByTestId('handle-center')).toBeVisible()
   await expect(page.getByTestId('handle-radius')).toBeVisible()
   const initial = await radiusKm(page)
@@ -97,9 +90,7 @@ test('the radius never drops below 1 km', async ({ page }) => {
   await startGame(page)
   // Zoom in far so the handle can be dragged right onto the center.
   await page.evaluate(() => window.__eingekreist!.map.jumpTo({ center: [10, 50], zoom: 14 }))
-  const viewport = page.viewportSize()!
-  await page.mouse.click(viewport.width / 2, viewport.height / 2)
-  await expect(readout(page)).toContainText('Radius:')
+  await tapGlobeCenter(page, false)
   await dragRadiusOntoCenter(page, mouseDrag, 1)
   await expect.poll(() => radiusKm(page)).toBe(1)
   expectNoErrors()

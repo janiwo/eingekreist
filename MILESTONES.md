@@ -82,7 +82,7 @@ A build script (`npm run build:places`) generates the curated place dataset from
 - Unit tests for the reducer and the drawing pass.
 - An e2e test creates a game, reloads the page and the state is still there.
 
-## [ ] M4 – Turn flow
+## [x] M4 – Turn flow
 
 - The prompt (category and name) is visible during the turn.
 - Handover screen („Gib das Gerät an …“). Globe and timer only appear after tapping.
