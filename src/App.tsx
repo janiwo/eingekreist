@@ -56,7 +56,12 @@ export default function App() {
 
   // After a reveal the places are loaded: it needed them.
   const nextRound = () => pool && dispatch({ type: 'nextRound', pool })
-  const playAgain = () => pool && dispatch({ type: 'playAgain', pool, seed: randomSeed() })
+  // The end screen may come from a reload, before the places are there.
+  const playAgain = () =>
+    loadPlaces().then(
+      (loaded) => dispatch({ type: 'playAgain', pool: poolOf(loaded), seed: randomSeed() }),
+      (e: unknown) => console.warn(e), // shown by the end screen (`placesFailed`)
+    )
 
   useEffect(() => {
     if (import.meta.env.DEV && map && window.__eingekreist) window.__eingekreist.startGame = startGame
@@ -73,7 +78,14 @@ export default function App() {
   } else if (state.phase === 'setup') {
     screen = <SetupScreen state={state} dispatch={dispatch} onStart={() => startGame()} />
   } else if (state.phase === 'finished') {
-    screen = <EndScreen state={state} onPlayAgain={playAgain} onNewGame={() => dispatch({ type: 'newGame' })} />
+    screen = (
+      <EndScreen
+        state={state}
+        loadFailed={placesFailed}
+        onPlayAgain={playAgain}
+        onNewGame={() => dispatch({ type: 'newGame' })}
+      />
+    )
   } else {
     screen = (
       <GameScreen

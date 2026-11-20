@@ -35,6 +35,8 @@ mkdirSync(outDir, { recursive: true })
 
 const server = await createServer({ server: { port: 0 }, logLevel: 'error' })
 await server.listen()
+// Through Vite: the app's modules use extensionless imports, which Node can't resolve.
+const { MAX_RADIUS_KM } = (await server.ssrLoadModule('/src/geo/circle.ts')) as typeof import('../src/geo/circle.ts')
 const url = new URL(path, server.resolvedUrls!.local[0]).toString()
 
 const browser = await chromium.launch({ args: webglArgs })
@@ -67,7 +69,7 @@ try {
       for (let i = 0; await page.getByTestId('handover').isVisible(); i++) {
         await page.getByTestId('handover').click()
         await page.locator('[data-testid="prompt"][data-ready="true"]').waitFor()
-        const r = end && i === 0 ? 20_000 /* MAX_RADIUS_KM */ : radiusKm * (1 + i / 2)
+        const r = end && i === 0 ? MAX_RADIUS_KM : radiusKm * (1 + i / 2)
         await page.evaluate((c) => window.__eingekreist!.setCircle!(c), { center: [lng, lat], radiusKm: r })
         await page.getByRole('button', { name: 'Abgeben' }).click()
         await page.getByTestId('handover').or(page.getByTestId('reveal')).waitFor()

@@ -24,7 +24,7 @@ interface RevealProps {
 
 /** Turn result in words: the radius, or why there is no circle. */
 function circleText(turn: Turn | undefined): string {
-  if (!turn) return '–'
+  if (!turn) return t.noTurn
   return turn.circle ? de.formatKm(turn.circle.radiusKm) : de.game.outcomes[turn.outcome]
 }
 
@@ -76,7 +76,7 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
             {t.title(round.number)}
           </h2>
           <p className="reveal__winner" role="status">
-            {winners.length > 0 ? `🏆 ${t.winners(winners.map((p) => p.name))}` : t.noWinner}
+            {winners.length > 0 ? t.winners(winners.map((p) => p.name)) : t.noWinner}
           </p>
           <table className="results">
             <thead>
@@ -106,7 +106,7 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
                     </th>
                     <td>{circleText(turn)}</td>
                     <td className={hit ? 'results__hit' : 'results__miss'}>
-                      {turn?.circle ? (hit ? `✓ ${t.hit}` : `✗ ${t.miss}`) : ''}
+                      {turn?.circle ? (hit ? t.hit : t.miss) : ''}
                     </td>
                     <td className="results__score">
                       {won && <span className="results__gain">{t.pointGained}</span>} <strong>{player.score}</strong>

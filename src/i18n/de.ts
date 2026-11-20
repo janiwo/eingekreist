@@ -63,14 +63,16 @@ export const de = {
     title: (n: number) => `Auflösung Runde ${n}`,
     evaluating: 'Auswertung …',
     winners: (names: string[]) =>
-      names.length === 1 ? `${names[0]} holt den Punkt` : `${listFormat.format(names)} holen je einen Punkt`,
+      `🏆 ${names.length === 1 ? `${names[0]} holt den Punkt` : `${listFormat.format(names)} holen je einen Punkt`}`,
     noWinner: 'Niemand hat getroffen – kein Punkt in dieser Runde',
     player: 'Spieler',
     circle: 'Kreis',
     result: 'Ergebnis',
     score: 'Punkte',
-    hit: 'Treffer',
-    miss: 'Daneben',
+    hit: '✓ Treffer',
+    miss: '✗ Daneben',
+    /** In place of the radius when a player has no turn this round. */
+    noTurn: '–',
     /** Badge next to the score of a round winner. */
     pointGained: '+1',
     suddenDeath: (n: number) => `Gleichstand bei ${points(n)}: Stechen! Es geht weiter, bis einer allein vorne liegt.`,
@@ -79,7 +81,7 @@ export const de = {
   },
   end: {
     title: 'Spielende',
-    winner: (name: string) => `${name} gewinnt!`,
+    winner: (name: string) => `🏆 ${name} gewinnt!`,
     /** Only when the places ran out with several players on top. */
     draw: (names: string[]) => `Unentschieden: ${listFormat.format(names)}`,
     rounds: (n: number) => `nach ${n} ${n === 1 ? 'Runde' : 'Runden'}`,

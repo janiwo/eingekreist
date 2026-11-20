@@ -7,11 +7,13 @@ const t = de.end
 
 interface EndScreenProps {
   state: FinishedState
+  /** Loading the places failed; „Play again“ tries again. */
+  loadFailed: boolean
   onPlayAgain: () => void
   onNewGame: () => void
 }
 
-export function EndScreen({ state, onPlayAgain, onNewGame }: EndScreenProps) {
+export function EndScreen({ state, loadFailed, onPlayAgain, onNewGame }: EndScreenProps) {
   const top = leaders(state.players)
   return (
     <div className="screen">
@@ -20,7 +22,7 @@ export function EndScreen({ state, onPlayAgain, onNewGame }: EndScreenProps) {
           {t.title} · {t.rounds(state.rounds)}
         </p>
         <h2 id="end-title" className="end__title">
-          🏆 {top.length === 1 ? t.winner(top[0].name) : t.draw(top.map((p) => p.name))}
+          {top.length === 1 ? t.winner(top[0].name) : t.draw(top.map((p) => p.name))}
         </h2>
         <ol className="ranking">
           {ranking(state.players).map(({ player, rank }) => (
@@ -43,6 +45,11 @@ export function EndScreen({ state, onPlayAgain, onNewGame }: EndScreenProps) {
             {t.newGame}
           </button>
         </div>
+        {loadFailed && (
+          <p className="hint hint--error" role="alert">
+            {de.setup.loadError}
+          </p>
+        )}
       </section>
     </div>
   )
