@@ -9,6 +9,7 @@ import {
 } from '../game/state'
 import { CATEGORIES, MAX_PLAYERS, MIN_PLAYERS } from '../game/types'
 import { de } from '../i18n/de'
+import { DATA_SOURCES } from '../map/dataSources'
 import { HowToPlay } from './HowToPlay'
 
 const t = de.setup
@@ -218,7 +219,7 @@ export function SetupScreen({ state, dispatch, onStart }: SetupScreenProps) {
 
         <p className="credits">
           {de.credits.label}{' '}
-          {de.credits.sources.map((c, i) => (
+          {DATA_SOURCES.map((c, i) => (
             <Fragment key={c.href}>
               {i > 0 && ' · '}
               <a href={c.href} target="_blank" rel="noopener">

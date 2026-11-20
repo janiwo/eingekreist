@@ -148,7 +148,7 @@ function Prompt({ state, player, place, loadError }: PromptProps) {
         <span className="prompt__meta">
           {player && (
             <>
-              <span className="player-tag" style={{ '--player-color': player.color } as CSSProperties}>
+              <span className="player-tag nowrap" style={{ '--player-color': player.color } as CSSProperties}>
                 {t.onTurn(player.name)}
               </span>{' '}
               ·{' '}

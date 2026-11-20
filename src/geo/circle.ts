@@ -16,16 +16,14 @@ export function roundRadiusKm(km: number): number {
   return Math.min(MAX_RADIUS_KM, Math.max(MIN_RADIUS_KM, rounded))
 }
 
-/** Factors per keyboard step on the radius handle: arrow key, and arrow key with Shift. */
-export const RADIUS_KEY_FACTOR = { small: 1.05, large: 1.25 }
-
 /**
  * The radius one keyboard step up (`direction` 1) or down (-1). Multiplicative, so a step is
  * about as noticeable at any size; 5 % is always more than the rounding step, so the
  * radius changes unless it is clamped.
  */
 export function stepRadiusKm(km: number, direction: 1 | -1, large = false): number {
-  const factor = large ? RADIUS_KEY_FACTOR.large : RADIUS_KEY_FACTOR.small
+  // Arrow key: 5 %, with Shift: 25 %.
+  const factor = large ? 1.25 : 1.05
   return roundRadiusKm(km * factor ** direction)
 }
 

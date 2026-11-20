@@ -1,13 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { openGlobe, readout, startGame, tapGlobeCenter } from './helpers'
-
-/** Parses „Radius: 1.230 km“ into 1230. */
-async function radiusKm(page: Page): Promise<number> {
-  const text = (await readout(page).textContent()) ?? ''
-  const match = text.match(/([\d.,]+)\s*km/)
-  if (!match) throw new Error(`no radius in "${text}"`)
-  return Number(match[1].replace(/\./g, '').replace(',', '.'))
-}
+import { openGlobe, radiusKm, readout, startGame, tapGlobeCenter } from './helpers'
 
 const mapCenter = (page: Page) =>
   page.evaluate(() => window.__eingekreist!.map.getCenter().toArray())

@@ -7,6 +7,8 @@
   --muted: #a8b0c4;
   --accent: #f2b544;
   --danger: #ff8a80;
+  /* Bottom offset of overlays: clear of the map's attribution in the bottom corner. */
+  --bottom-clear: calc(max(12px, env(safe-area-inset-bottom)) + 28px);
   font: 16px/1.4 system-ui, 'Segoe UI', Roboto, sans-serif;
   color: var(--text);
   background: var(--bg);
@@ -406,9 +408,9 @@ button:not(:disabled) {
   min-width: 0;
 }
 
-.prompt__text {
-  display: flex;
-  flex-direction: column;
+.prompt__category,
+.prompt__place {
+  display: block;
 }
 
 .prompt__category {
@@ -584,8 +586,7 @@ button:not(:disabled) {
 }
 
 /* Keeps „… ist dran“ etc. together; the line wraps between them. */
-.nowrap,
-.prompt .player-tag {
+.nowrap {
   white-space: nowrap;
 }
 
@@ -595,7 +596,6 @@ button:not(:disabled) {
   margin-right: 6px;
   width: 10px;
   height: 10px;
-  flex: none;
   border-radius: 50%;
   background: var(--player-color);
   box-shadow: 0 0 0 1.5px #fff;
@@ -603,8 +603,7 @@ button:not(:disabled) {
 
 .turn-bar {
   position: absolute;
-  /* Clear of the map's attribution in the bottom corner. */
-  bottom: calc(max(12px, env(safe-area-inset-bottom)) + 28px);
+  bottom: var(--bottom-clear);
   left: 12px;
   right: 12px;
   display: flex;
@@ -644,8 +643,7 @@ button:not(:disabled) {
 
 .reveal-wrap {
   position: absolute;
-  /* Clear of the map's attribution in the bottom corner. */
-  bottom: calc(max(12px, env(safe-area-inset-bottom)) + 28px);
+  bottom: var(--bottom-clear);
   left: 12px;
   right: 12px;
   display: flex;
@@ -694,16 +692,16 @@ button:not(:disabled) {
   font-size: 15px;
 }
 
-.results td {
-  white-space: nowrap;
-}
-
 .results th,
 .results td {
   padding: 6px 4px;
   text-align: left;
   font-weight: normal;
   font-variant-numeric: tabular-nums;
+}
+
+.results td {
+  white-space: nowrap;
 }
 
 .results thead th {

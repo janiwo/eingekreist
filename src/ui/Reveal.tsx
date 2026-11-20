@@ -45,19 +45,20 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
     [round.turns, players],
   )
 
-  // Keeps the place clear of the header (top) and this card: below the place, or beside it on
-  // short landscape screens.
+  // Keeps the place clear of the header (top) and of this card: in the larger free area,
+  // above the card or beside it (left), whichever layout the CSS chose.
   const padding = useCallback((): PaddingOptions => {
     const { innerWidth: width, innerHeight: height } = window
     const top = (headerRef.current?.getBoundingClientRect().bottom ?? 0) + GAP
     const card = cardRef.current?.getBoundingClientRect()
-    if (card && card.left > width / 2) {
-      // On a narrow screen the card may cover most of it; then let it overlap the place a little.
-      const right = Math.min(width - card.left + GAP, Math.max(GAP, width - GAP - MIN_VIEW))
+    const above = card ? card.top - top : height - top
+    const beside = card ? card.left : 0
+    if (beside * (height - top) > above * width) {
+      // Never squeeze the place below MIN_VIEW; then let the card overlap it a little.
+      const right = Math.max(GAP, Math.min(width - card!.left + GAP, width - GAP - MIN_VIEW))
       return { top, bottom: GAP, left: GAP, right }
     }
-    let bottom = height - (card?.top ?? height) + GAP
-    if (height - top - bottom < MIN_VIEW) bottom = Math.max(GAP, height - top - MIN_VIEW)
+    const bottom = Math.max(GAP, Math.min(height - (card?.top ?? height) + GAP, height - top - MIN_VIEW))
     return { top, bottom, left: GAP * 2, right: GAP * 2 }
   }, [headerRef])
 

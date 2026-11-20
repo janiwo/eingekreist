@@ -1,12 +1,9 @@
 import { expect, test } from '@playwright/test'
-import { openGlobe, readout } from './helpers'
-
-const radiusKm = async (text: string | null) => Number(/Radius: ([\d.]+)/.exec(text ?? '')![1].replace('.', ''))
+import { openGlobe, radiusKm, readout, setUpGame } from './helpers'
 
 test('plays a turn with the keyboard only', async ({ page }) => {
   const { expectNoErrors } = await openGlobe(page)
-  await page.getByLabel('Zeit pro Zug').selectOption({ label: 'Ohne Zeitlimit' })
-  await page.getByRole('button', { name: 'Spiel starten' }).click()
+  await setUpGame(page, [], { noTimer: true })
 
   // The handover takes the focus: Enter starts the turn, which focuses the globe.
   const handover = page.getByTestId('handover')
@@ -33,12 +30,12 @@ test('plays a turn with the keyboard only', async ({ page }) => {
   // The radius handle steps the radius: Shift+ArrowUp +25 %, ArrowDown −5 %.
   await page.keyboard.press('Tab')
   await expect(page.getByRole('button', { name: 'Radius ändern' })).toBeFocused()
-  const r0 = await radiusKm(await readout(page).textContent())
+  const r0 = await radiusKm(page)
   await page.keyboard.press('Shift+ArrowUp')
-  await expect.poll(async () => radiusKm(await readout(page).textContent())).toBeGreaterThan(r0 * 1.2)
-  const r1 = await radiusKm(await readout(page).textContent())
+  await expect.poll(() => radiusKm(page)).toBeGreaterThan(r0 * 1.2)
+  const r1 = await radiusKm(page)
   await page.keyboard.press('ArrowDown')
-  await expect.poll(async () => radiusKm(await readout(page).textContent())).toBeLessThan(r1)
+  await expect.poll(() => radiusKm(page)).toBeLessThan(r1)
 
   // Submitting by keyboard leads to the next handover, which has the focus again.
   await page.getByRole('button', { name: 'Abgeben' }).focus()

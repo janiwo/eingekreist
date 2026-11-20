@@ -133,10 +133,11 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
       const to = map.unproject(new Point(at.x + arrow[0] * step, at.y + arrow[1] * step))
       onChangeRef.current({ ...current, center: to.toArray() as LngLat })
     }
-    const onCenterKey = onKey('center')
-    const onRadiusKey = onKey('radius')
-    center.getElement().addEventListener('keydown', onCenterKey)
-    radius.getElement().addEventListener('keydown', onRadiusKey)
+    // Removes all DOM listeners of the editor at once.
+    const listeners = new AbortController()
+    const { signal } = listeners
+    center.getElement().addEventListener('keydown', onKey('center'), { signal })
+    radius.getElement().addEventListener('keydown', onKey('radius'), { signal })
 
     const place = (at: LngLat) => {
       const current = circleRef.current
@@ -151,12 +152,15 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
     // Enter or Space on the focused globe places the circle at the center of the view
     // (the arrow keys turn the globe there, + and - zoom).
     const canvas = map.getCanvas()
-    const onCanvasKey = (e: KeyboardEvent) => {
-      if ((e.key !== 'Enter' && e.key !== ' ') || e.target !== canvas) return
-      e.preventDefault()
-      place(map.getCenter().toArray() as LngLat)
-    }
-    canvas.addEventListener('keydown', onCanvasKey)
+    canvas.addEventListener(
+      'keydown',
+      (e) => {
+        if ((e.key !== 'Enter' && e.key !== ' ') || e.target !== canvas) return
+        e.preventDefault()
+        place(map.getCenter().toArray() as LngLat)
+      },
+      { signal },
+    )
 
     const onClick = (e: MapMouseEvent) => {
       // Taps on a handle bubble up to the map; they must not move the circle.
@@ -169,9 +173,7 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
 
     return () => {
       map.off('click', onClick)
-      canvas.removeEventListener('keydown', onCanvasKey)
-      center.getElement().removeEventListener('keydown', onCenterKey)
-      radius.getElement().removeEventListener('keydown', onRadiusKey)
+      listeners.abort()
       center.remove()
       radius.remove()
       draggingRadius.current = false
