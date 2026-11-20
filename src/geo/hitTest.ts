@@ -1,4 +1,6 @@
-import { booleanPointInPolygon, lineString, point, pointToLineDistance } from '@turf/turf'
+import { booleanPointInPolygon } from '@turf/boolean-point-in-polygon'
+import { lineString, point } from '@turf/helpers'
+import { pointToLineDistance } from '@turf/point-to-line-distance'
 import type { MultiPolygon, Polygon } from 'geojson'
 import type { Circle, LngLat } from '../game/types'
 import { polygonsOf } from './polygons'

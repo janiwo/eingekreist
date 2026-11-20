@@ -1,4 +1,6 @@
-import { booleanClockwise, booleanPointInPolygon, point } from '@turf/turf'
+import { booleanClockwise } from '@turf/boolean-clockwise'
+import { booleanPointInPolygon } from '@turf/boolean-point-in-polygon'
+import { point } from '@turf/helpers'
 import type { Position } from 'geojson'
 import { describe, expect, it } from 'vitest'
 import { MIN_RADIUS_KM, type Circle, type LngLat } from '../game/types'
