@@ -9,6 +9,7 @@
  *   npm run screenshot -- --game / pole 0,80,2 0,85,1500 → also draw a circle at lng,lat with radius km
  *   npm run screenshot -- --reveal / reveal 2,47,300 → play a round (each player draws a circle at lng,lat,
  *                                                     the radius growing per player) and show the reveal
+ *   npm run screenshot -- --reveal --seed=135 / russia 170,65,500 → another seed: another first place
  *   npm run screenshot -- --end / end         → play a game to target score 1 and show the end screen
  *   npm run screenshot -- "/?debug=places&place=france" france → show a place (view fits to it)
  */
@@ -22,6 +23,7 @@ const handover = args.includes('--handover')
 const end = args.includes('--end')
 const reveal = end || args.includes('--reveal')
 const game = handover || reveal || args.includes('--game')
+const seed = Number(args.find((a) => a.startsWith('--seed='))?.slice('--seed='.length) ?? 1)
 const positional = args.filter((a) => !a.startsWith('--'))
 const [path = '/', prefix = ''] = positional
 // --reveal takes the circle right after the prefix; it has no camera view (the reveal sets it).
@@ -60,7 +62,7 @@ try {
         await page.getByRole('button', { name: 'Weniger' }).click()
       }
     }
-    if (game) await page.evaluate(() => window.__eingekreist!.startGame!(1))
+    if (game) await page.evaluate((seed) => window.__eingekreist!.startGame!(seed), seed)
     if (reveal) {
       const [lng, lat, radiusKm] = circle!.split(',').map(Number)
       // Every player has a turn; the radius grows by half per player. At --end the first circle
