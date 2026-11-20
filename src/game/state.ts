@@ -5,7 +5,9 @@ import {
   DEFAULT_SETTINGS,
   MAX_PLAYERS,
   MIN_PLAYERS,
+  MIN_RADIUS_KM,
   type Category,
+  type Circle,
   type Player,
   type Settings,
 } from './types'
@@ -36,11 +38,34 @@ export interface SetupState {
   settings: Settings
 }
 
+/**
+ * How a turn ended. A circle placed when time runs out is submitted automatically and counts
+ * as `submitted`; `timedOut` means time ran out without a circle.
+ */
+export type TurnOutcome = 'submitted' | 'passed' | 'timedOut'
+
+export interface Turn {
+  playerId: string
+  outcome: TurnOutcome
+  /** Set exactly when the outcome is `submitted`. */
+  circle: Circle | null
+}
+
 export interface Round {
   /** 1-based. */
   number: number
   placeId: string
   category: Category
+  /**
+   * Finished turns, in player order; the starting player is the same every round. The player
+   * on turn is `players[turns.length]`; once every player has had a turn, the round is over.
+   */
+  turns: Turn[]
+  /**
+   * When the player on turn tapped „Start“ (ms since the epoch), so a reload keeps the timer
+   * running; `null` while the handover screen is shown.
+   */
+  turnStartedAt: number | null
 }
 
 export interface PlayingState {
@@ -64,6 +89,12 @@ export type GameAction =
   | { type: 'updateSettings'; settings: Partial<Omit<Settings, 'categories'>> }
   | { type: 'toggleCategory'; category: Category }
   | { type: 'start'; pool: PlacePool; seed: RngState }
+  /** The player on turn tapped the handover screen; `now` in ms since the epoch. */
+  | { type: 'startTurn'; now: number }
+  | { type: 'submitTurn'; circle: Circle }
+  | { type: 'passTurn' }
+  /** The timer ran out; `circle` is whatever was placed, and gets submitted. */
+  | { type: 'timeUp'; circle: Circle | null; now: number }
   /** Abandons whatever is going on and returns to a fresh setup. */
   | { type: 'newGame' }
 
@@ -156,8 +187,57 @@ function reduceSetup(state: SetupState, action: GameAction, defaultName: Default
         settings: state.settings,
         rng: draw.rng,
         usedPlaceIds: [draw.placeId],
-        round: { number: 1, placeId: draw.placeId, category: draw.category },
+        round: { number: 1, placeId: draw.placeId, category: draw.category, turns: [], turnStartedAt: null },
       }
+    }
+
+    default:
+      return state
+  }
+}
+
+/** The player whose turn it is, or `null` once every player has had a turn this round. */
+export function playerOnTurn(state: PlayingState): Player | null {
+  return state.players[state.round.turns.length] ?? null
+}
+
+/** A circle that can be stored: finite coordinates on the globe, radius of at least 1 km. */
+function validCircle({ center: [lng, lat], radiusKm }: Circle): Circle | null {
+  if (![lng, lat, radiusKm].every(Number.isFinite) || Math.abs(lat) > 90) return null
+  return { center: [lng, lat], radiusKm: Math.max(MIN_RADIUS_KM, radiusKm) }
+}
+
+function endTurn(state: PlayingState, player: Player, outcome: TurnOutcome, circle: Circle | null): PlayingState {
+  const turn: Turn = { playerId: player.id, outcome, circle }
+  return { ...state, round: { ...state.round, turns: [...state.round.turns, turn], turnStartedAt: null } }
+}
+
+function reducePlaying(state: PlayingState, action: GameAction): GameState {
+  const player = playerOnTurn(state)
+  if (!player) return state
+  const { turnStartedAt } = state.round
+  const { turnSeconds } = state.settings
+
+  switch (action.type) {
+    case 'startTurn':
+      if (turnStartedAt !== null) return state
+      return { ...state, round: { ...state.round, turnStartedAt: action.now } }
+
+    case 'submitTurn': {
+      const circle = validCircle(action.circle)
+      if (turnStartedAt === null || !circle) return state
+      return endTurn(state, player, 'submitted', circle)
+    }
+
+    case 'passTurn':
+      if (turnStartedAt === null) return state
+      return endTurn(state, player, 'passed', null)
+
+    case 'timeUp': {
+      // Only counts once the time is really up (and there is a timer at all).
+      if (turnStartedAt === null || turnSeconds === null || action.now < turnStartedAt + turnSeconds * 1000) return state
+      const circle = action.circle && validCircle(action.circle)
+      return circle ? endTurn(state, player, 'submitted', circle) : endTurn(state, player, 'timedOut', null)
     }
 
     default:
@@ -172,6 +252,6 @@ function reduceSetup(state: SetupState, action: GameAction, defaultName: Default
 export function createGameReducer(defaultName: DefaultName) {
   return function gameReducer(state: GameState, action: GameAction): GameState {
     if (action.type === 'newGame') return createSetup(defaultName)
-    return state.phase === 'setup' ? reduceSetup(state, action, defaultName) : state
+    return state.phase === 'setup' ? reduceSetup(state, action, defaultName) : reducePlaying(state, action)
   }
 }

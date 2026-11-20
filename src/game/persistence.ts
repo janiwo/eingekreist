@@ -6,7 +6,7 @@ export const STORAGE_KEY = 'eingekreist.game'
  * Bump whenever the shape of `GameState` changes: saved games of another version are dropped
  * rather than checked field by field.
  */
-const VERSION = 1
+const VERSION = 2
 
 interface Stored {
   version: typeof VERSION
