@@ -116,7 +116,31 @@ A build script (`npm run build:places`) generates the curated place dataset from
 - Unit tests for scoring, ties, no hits and sudden death pass.
 - An e2e test plays a short game (target score 2) to the end.
 
-## [ ] M6 – Polish
+## [ ] M6 – How to play
+
+An instructions dialog explains the game, so new players understand it without a walkthrough.
+
+- Format: one native modal `<dialog>` (like the "new game" confirmation), scrollable, short headed sections, closes with ✕ or Esc.
+- Entry points:
+  - start screen: text link „So wird gespielt" below the title
+  - game bar: round "?" button next to „Neues Spiel" (aria-label/title „So wird gespielt") on the handover and reveal screens
+  - not during a turn (the timer is running), not on the end screen
+- No auto-open on first visit.
+- Content (German, in `de.ts`, informal „du", ~150–250 words):
+  1. Goal: the smallest circle that still touches the place wins the point.
+  2. A round: the place is named → pass the device → tap to set the center, drag the handles → „Abgeben" or „Passen" → timer. Secrecy line: „Alle zeichnen geheim. Die Kreise der anderen siehst du erst bei der Auflösung."
+  3. Scoring: any touch counts, even the edge; for places with several parts, any part counts; the outline shown at the reveal is the truth; a tie gives everyone a point; no hit, no point. Tip: circles shrink down to 1 km, so go tiny if you're sure.
+  4. End: first to the target score wins; players tied on top play sudden death.
+- Settings-aware text: the current target score and timer (seconds, or no time limit). No list of categories.
+- One inline SVG illustration of the scoring rule: a place outline, a large circle and a small circle touching the edge, the small one marked as the winner. Labels in `de.ts`, colors from CSS tokens.
+- SPEC.md gets a short "Instructions" section.
+
+**Done when:**
+- A unit test covers the settings-aware text (timer on/off, target score).
+- An e2e test opens the dialog from the start screen and closes it with Esc, opens it from the handover, and checks that the button is missing during a turn.
+- Screenshots of the open dialog on desktop and mobile have been checked (the screenshot script gets a `--help` option).
+
+## [ ] M7 – Polish
 
 - Prompt card with the category's icon and accent color.
 - Responsive for smartphone (portrait and landscape), tablet and desktop.
