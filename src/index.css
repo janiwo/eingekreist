@@ -633,6 +633,10 @@ button:not(:disabled) {
   background: rgba(242, 181, 68, 0.12);
 }
 
+.results__out {
+  opacity: 0.55;
+}
+
 .results__score {
   text-align: right !important;
   white-space: nowrap;

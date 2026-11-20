@@ -71,11 +71,12 @@ export const de = {
     score: 'Punkte',
     hit: '✓ Treffer',
     miss: '✗ Daneben',
-    /** In place of the radius when a player has no turn this round. */
-    noTurn: '–',
+    /** In place of the radius for a player knocked out in sudden death. */
+    out: 'Ausgeschieden',
     /** Badge next to the score of a round winner. */
     pointGained: '+1',
-    suddenDeath: (n: number) => `Gleichstand bei ${points(n)}: Stechen! Es geht weiter, bis einer allein vorne liegt.`,
+    suddenDeath: (names: string[], n: number) =>
+      `Gleichstand bei ${points(n)}: Stechen! Nur ${listFormat.format(names)} spielen weiter, bis einer allein vorne liegt.`,
     nextRound: 'Nächste Runde',
     toResults: 'Zum Ergebnis',
   },

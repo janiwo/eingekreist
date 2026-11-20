@@ -3,7 +3,7 @@ import { roundRadiusKm } from '../geo/circle'
 import { circleHits } from '../geo/hitTest'
 import { drawPlace, type PlacePool } from './draw'
 import type { RngState } from './rng'
-import { gameWinner, roundWinners } from './scoring'
+import { gameWinner, isSuddenDeath, leaders, roundWinners } from './scoring'
 import {
   CATEGORIES,
   DEFAULT_SETTINGS,
@@ -60,8 +60,13 @@ export interface Round {
   placeId: string
   category: Category
   /**
-   * Finished turns, in player order; the starting player is the same every round. The player
-   * on turn is `players[turns.length]`; once every player has had a turn, the round is over.
+   * Who plays this round, in player order: everyone, or in sudden death only the players tied
+   * on top. The starting player is the same every round (unless they are out).
+   */
+  playerIds: string[]
+  /**
+   * Finished turns, in `playerIds` order. The player on turn is `playerIds[turns.length]`;
+   * once every player of the round has had a turn, the round is over.
    */
   turns: Turn[]
   /**
@@ -224,7 +229,7 @@ function reduceSetup(state: SetupState, action: GameAction, defaultName: Default
         settings: state.settings,
         rng: draw.rng,
         usedPlaceIds: [draw.placeId],
-        round: newRound(1, draw.placeId, draw.category),
+        round: newRound(1, draw.placeId, draw.category, state.players.map((p) => p.id)),
       }
     }
 
@@ -233,13 +238,23 @@ function reduceSetup(state: SetupState, action: GameAction, defaultName: Default
   }
 }
 
-function newRound(number: number, placeId: string, category: Category): Round {
-  return { number, placeId, category, turns: [], turnStartedAt: null, draft: null, result: null }
+function newRound(number: number, placeId: string, category: Category, playerIds: string[]): Round {
+  return { number, placeId, category, playerIds, turns: [], turnStartedAt: null, draft: null, result: null }
 }
 
-/** The player whose turn it is, or `null` once every player has had a turn this round. */
+/** The player whose turn it is, or `null` once every player of the round has had a turn. */
 export function playerOnTurn(state: PlayingState): Player | null {
-  return state.players[state.round.turns.length] ?? null
+  const id = state.round.playerIds[state.round.turns.length]
+  return state.players.find((p) => p.id === id) ?? null
+}
+
+/**
+ * Who plays the next round. In sudden death only the players tied on top go on; everyone
+ * behind them is out for good, since they don't play and so can't catch up.
+ */
+function nextPlayerIds({ players, settings }: PlayingState): string[] {
+  const contenders = isSuddenDeath(players, settings.targetScore) ? leaders(players) : players
+  return contenders.map((p) => p.id)
 }
 
 /** When the current turn's time runs out (ms since the epoch); `null` without a timer or before the turn started. */
@@ -296,7 +311,7 @@ function reduceRoundOver(state: PlayingState, action: GameAction): GameState {
         ...state,
         rng: draw.rng,
         usedPlaceIds: [...state.usedPlaceIds, draw.placeId],
-        round: newRound(round.number + 1, draw.placeId, draw.category),
+        round: newRound(round.number + 1, draw.placeId, draw.category, nextPlayerIds(state)),
       }
     }
 

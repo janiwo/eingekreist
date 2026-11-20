@@ -1,6 +1,6 @@
 # Eingekreist – Specification (version 1)
 
-Last updated: 2026-11-19
+Last updated: 2026-11-20
 
 ## 1. Game concept
 
@@ -15,6 +15,8 @@ Last updated: 2026-11-19
   - If no circle overlaps the place, nobody gets a point.
 - The game runs to a configurable target score (default: **10**).
   - If several players reach the target score in the same round, play continues in **sudden death** until one player leads alone.
+    - Only the players tied on top play in sudden death; everyone else is out.
+    - After each sudden-death round, whoever is no longer tied on top is out as well (e.g. three tied, two hit with the same radius, one misses → only those two play on).
 
 ## 2. Round flow
 

@@ -24,7 +24,7 @@ export function leaders<P extends Pick<Player, 'score'>>(players: readonly P[]):
 
 /**
  * The game's winner: the single leader once the target score is reached. Several players
- * on top at or above the target means sudden death: play goes on until one leads alone.
+ * on top at or above the target means sudden death: only they play on, until one leads alone.
  */
 export function gameWinner<P extends Pick<Player, 'score'>>(players: readonly P[], targetScore: number): P | null {
   const top = leaders(players)

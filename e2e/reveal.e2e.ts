@@ -66,22 +66,25 @@ test('plays a game to target score 2, through a tie and sudden death', async ({ 
   expectNoErrors()
 })
 
-test('sudden death: a tie at the target score plays on until one leads alone', async ({ page }) => {
+test('sudden death: only the tied leaders play on until one leads alone', async ({ page }) => {
   test.setTimeout(90_000)
   const { expectNoErrors } = await openGlobe(page)
-  await setUpGame(page, ['Anna', 'Ben'], { targetScore: 1, noTimer: true })
+  await setUpGame(page, ['Anna', 'Ben', 'Cem'], { targetScore: 1, noTimer: true })
 
-  // Both hit with the same radius at target score 1.
+  // Anna and Ben hit with the same radius at target score 1, Cem passes: Cem is out.
   await playTurn(page, 'Anna', HIT)
   await playTurn(page, 'Ben', HIT)
-  await expect(page.getByTestId('sudden-death')).toContainText('Stechen')
+  await playTurn(page, 'Cem', null)
+  await expect(page.getByTestId('sudden-death')).toContainText('Stechen! Nur Anna und Ben spielen weiter')
   await page.getByRole('button', { name: 'Nächste Runde' }).click()
 
   // Nobody hits: still tied (a 1 km circle in the far South Pacific misses every place).
+  // After Anna and Ben the round is over: Cem gets no turn.
   await playTurn(page, 'Anna', { center: [-150, -60], radiusKm: 1 })
   await playTurn(page, 'Ben', null)
   await expect(reveal(page)).toContainText('Niemand hat getroffen')
-  await expect(rows(page).nth(0)).toContainText('✗ Daneben')
+  await expect(reveal(page).getByRole('row', { name: /^Anna / })).toContainText('✗ Daneben')
+  await expect(reveal(page).getByRole('row', { name: /^Cem / })).toContainText('Ausgeschieden')
   await page.getByRole('button', { name: 'Nächste Runde' }).click()
 
   await playTurn(page, 'Anna', null)

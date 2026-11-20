@@ -24,7 +24,7 @@ interface RevealProps {
 
 /** Turn result in words: the radius, or why there is no circle. */
 function circleText(turn: Turn | undefined): string {
-  if (!turn) return t.noTurn
+  if (!turn) return t.out
   return turn.circle ? de.formatKm(turn.circle.radiusKm) : de.game.outcomes[turn.outcome]
 }
 
@@ -57,6 +57,7 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
 
   const winners = players.filter((p) => result.winnerIds.includes(p.id))
   const suddenDeath = !result.gameOver && isSuddenDeath(players, settings.targetScore)
+  const top = leaders(players)
 
   return (
     <>
@@ -98,7 +99,7 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
                 return (
                   <tr
                     key={player.id}
-                    className={won ? 'results__winner' : undefined}
+                    className={won ? 'results__winner' : turn ? undefined : 'results__out'}
                     style={{ '--player-color': player.color } as CSSProperties}
                   >
                     <th scope="row">
@@ -118,7 +119,7 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
           </table>
           {suddenDeath && (
             <p className="hint reveal__note" data-testid="sudden-death">
-              {t.suddenDeath(leaders(players)[0].score)}
+              {t.suddenDeath(top.map((p) => p.name), top[0].score)}
             </p>
           )}
           <button type="button" className="button button--primary reveal__next" onClick={onNext}>

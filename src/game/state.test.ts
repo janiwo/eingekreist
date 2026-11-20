@@ -344,18 +344,49 @@ describe('reveal and end of game', () => {
     expect(scoresOf(done)).toEqual([2, 0])
   })
 
-  it('plays sudden death while several players share the lead at the target', () => {
-    // Both reach 1 point in round 1 (tie) with target 1.
-    let s = run(game(1, true), ...round(hit(5), hit(5), null), reveal, next)
-    expect(s.phase).toBe('playing')
+  /** IDs of the players who play the round, and who is on turn. */
+  const roundPlayers = (s: GameState) => (s as PlayingState).round.playerIds
+  const onTurn = (s: GameState) => playerOnTurn(s as PlayingState)?.id
+
+  it('sudden death: only the players tied on top play on', () => {
+    // Target 1: p1 and p2 hit with the same radius, p3 passes → 1 : 1 : 0.
+    let s = run(game(1, true), ...round(hit(5), hit(5), null), reveal)
+    expect((s as PlayingState).round.result?.gameOver).toBe(false)
+    s = run(s, next)
+    expect(roundPlayers(s)).toEqual(['p1', 'p2'])
+    expect(onTurn(s)).toBe('p1')
+    // Two turns end the round: p3 is out and never on turn.
+    s = run(s, ...round(miss(5), null))
+    expect(onTurn(s)).toBeUndefined()
+    s = run(s, reveal) as PlayingState
     expect(scoresOf(s)).toEqual([1, 1, 0])
-    // Round 2: the trailing player scores; still tied on top.
-    s = run(s, ...round(miss(5), miss(5), hit(5)), reveal, next)
-    expect(s.phase).toBe('playing')
-    // Round 3: p2 alone takes the lead and wins.
-    s = run(s, ...round(hit(20), hit(10), null), reveal, next)
+    // Nobody hit: still tied, the same two play on.
+    s = run(s, next, ...round(hit(20), hit(10)), reveal)
+    expect(scoresOf(s)).toEqual([1, 2, 0])
+    expect(run(s, next).phase).toBe('finished')
+  })
+
+  it('sudden death: a player who falls behind is out, the rest play on', () => {
+    // Four players, target 1: all four tie in round 1.
+    let s = run(setup(), add, add, { type: 'updateSettings', settings: { targetScore: 1 } }, { type: 'start', pool: places, seed: 3 })
+    s = run(s, ...round(hit(5), hit(5), hit(5), hit(5)), reveal, next)
+    expect(roundPlayers(s)).toEqual(['p1', 'p2', 'p3', 'p4'])
+    // Three tie again, p2 misses: p2 is out.
+    s = run(s, ...round(hit(5), miss(5), hit(5), hit(5)), reveal, next)
+    expect(scoresOf(s)).toEqual([2, 1, 2, 2])
+    expect(roundPlayers(s)).toEqual(['p1', 'p3', 'p4'])
+    // Two tie, p4 passes: p4 is out too.
+    s = run(s, ...round(hit(5), hit(5), null), reveal, next)
+    expect(roundPlayers(s)).toEqual(['p1', 'p3'])
+    // p3 wins alone.
+    s = run(s, ...round(hit(9), hit(8)), reveal, next)
     expect(s.phase).toBe('finished')
-    expect(scoresOf(s)).toEqual([1, 2, 1])
+    expect(scoresOf(s)).toEqual([3, 1, 4, 2])
+  })
+
+  it('everyone plays while nobody has reached the target', () => {
+    const s = run(game(3, true), ...round(hit(5), hit(5), null), reveal, next)
+    expect(roundPlayers(s)).toEqual(['p1', 'p2', 'p3'])
   })
 
   it('ends the game when the places run out', () => {
