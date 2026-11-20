@@ -3,7 +3,8 @@ import { usePlaces } from './data/usePlaces'
 import { poolOf } from './game/draw'
 import { loadGame, saveGame } from './game/persistence'
 import { randomSeed } from './game/rng'
-import { createGameReducer, createSetup, type GameState } from './game/state'
+import { createGameReducer, createSetup, playerOnTurn, type GameState } from './game/state'
+import type { Settings } from './game/types'
 import { de } from './i18n/de'
 import { Globe } from './map/Globe'
 import type { Map as MapLibreMap } from './map/maplibre'
@@ -26,7 +27,10 @@ export default function App() {
   // Loaded right away, so it is usually ready before the setup is done.
   const { places, failed: placesFailed, load: loadPlaces } = usePlaces()
   const placesById = useMemo(() => new Map(places?.map((p) => [p.id, p])), [places])
+  const pool = useMemo(() => places && poolOf(places), [places])
   const placeId = state.phase === 'playing' ? state.round.placeId : null
+  // Every player has had a turn, the round isn't scored yet.
+  const toReveal = state.phase === 'playing' && !playerOnTurn(state) && !state.round.result
 
   // A saved game whose place has left the dataset (e.g. after an update) can't go on.
   useEffect(() => {
@@ -35,25 +39,24 @@ export default function App() {
 
   useEffect(() => saveGame(state), [state])
 
-  const startGame = useCallback(async (seed = randomSeed()) => {
-    // Resolves immediately once loaded; rejects (shown by the setup screen) if loading fails.
-    dispatch({ type: 'start', pool: poolOf(await loadPlaces()), seed })
-  }, [loadPlaces])
+  // Scores the round as soon as the place is there.
+  const revealPlace = toReveal && placeId ? placesById.get(placeId) : undefined
+  useEffect(() => {
+    if (revealPlace && pool) dispatch({ type: 'reveal', geometry: revealPlace.geometry, pool })
+  }, [revealPlace, pool])
 
-  // The places are loaded by now: the reveal needed them.
-  const nextRound = useCallback(() => {
-    loadPlaces().then(
-      (loaded) => dispatch({ type: 'nextRound', pool: poolOf(loaded) }),
-      (e: unknown) => console.warn(e),
-    )
-  }, [loadPlaces])
+  const startGame = useCallback(
+    async (seed = randomSeed(), settings?: Partial<Omit<Settings, 'categories'>>) => {
+      if (settings) dispatch({ type: 'updateSettings', settings })
+      // Resolves immediately once loaded; rejects (shown by the setup screen) if loading fails.
+      dispatch({ type: 'start', pool: poolOf(await loadPlaces()), seed })
+    },
+    [loadPlaces],
+  )
 
-  const playAgain = useCallback(() => {
-    loadPlaces().then(
-      (loaded) => dispatch({ type: 'playAgain', pool: poolOf(loaded), seed: randomSeed() }),
-      (e: unknown) => console.warn(e),
-    )
-  }, [loadPlaces])
+  // After a reveal the places are loaded: it needed them.
+  const nextRound = () => pool && dispatch({ type: 'nextRound', pool })
+  const playAgain = () => pool && dispatch({ type: 'playAgain', pool, seed: randomSeed() })
 
   useEffect(() => {
     if (import.meta.env.DEV && map && window.__eingekreist) window.__eingekreist.startGame = startGame

@@ -1,9 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import type { Place } from '../game/types'
-import { placeBounds, placeOutline } from '../geo/placeView'
-import { circleFeatures, type ColoredCircle } from './circleLayer'
+import { placeBounds } from '../geo/placeView'
+import { addCircleLayer, type ColoredCircle } from './circleLayer'
 import type { Map as MapLibreMap, PaddingOptions } from './maplibre'
-import { addShapeLayer } from './shapeLayer'
+import { addShapeLayer, placeFeatures } from './shapeLayer'
 
 export const PLACE_LAYER_ID = 'reveal-place'
 export const CIRCLES_LAYER_ID = 'reveal-circles'
@@ -20,43 +20,31 @@ interface RevealLayersProps {
   /** Screen space the camera should keep free (header, result card); read when the flight starts. */
   padding: () => PaddingOptions
   /** Called once the camera has arrived and the map has rendered. */
-  onArrived?: () => void
+  onArrived: () => void
 }
 
-/** Shows the place's outline and every player's circle, and flies the globe to the place. */
+/**
+ * Shows the place's outline and every player's circle, and flies the globe to the place.
+ * All props must stay stable while the round is revealed; a change starts the flight anew.
+ */
 export function RevealLayers({ map, place, circles, padding, onArrived }: RevealLayersProps) {
-  const paddingRef = useRef(padding)
-  const onArrivedRef = useRef(onArrived)
-  useEffect(() => {
-    paddingRef.current = padding
-    onArrivedRef.current = onArrived
-  })
-
   useEffect(() => {
     const placeLayer = addShapeLayer(map, PLACE_LAYER_ID, { fillOpacity: 0.3, lineWidth: 2 })
-    const circleLayer = addShapeLayer(map, CIRCLES_LAYER_ID)
-    placeLayer.setFeatures({
-      type: 'FeatureCollection',
-      features: [place.geometry, placeOutline(place.geometry)].map((geometry) => ({
-        type: 'Feature',
-        properties: { color: PLACE_COLOR },
-        geometry,
-      })),
-    })
-    circleLayer.setFeatures(circleFeatures(circles))
+    const circleLayer = addCircleLayer(map, CIRCLES_LAYER_ID)
+    placeLayer.setFeatures(placeFeatures(place.geometry, PLACE_COLOR))
+    circleLayer.setCircles(circles)
 
     map.stop()
-    map.fitBounds(placeBounds(place.geometry), { padding: paddingRef.current(), maxZoom: MAX_ZOOM, duration: FLIGHT_MS })
+    map.fitBounds(placeBounds(place.geometry), { padding: padding(), maxZoom: MAX_ZOOM, duration: FLIGHT_MS })
     // `idle` waits for the end of the flight.
-    const arrived = () => onArrivedRef.current?.()
-    map.once('idle', arrived)
+    map.once('idle', onArrived)
     return () => {
-      map.off('idle', arrived)
+      map.off('idle', onArrived)
       map.stop()
       circleLayer.remove()
       placeLayer.remove()
     }
-  }, [map, place, circles])
+  }, [map, place, circles, padding, onArrived])
 
   return null
 }

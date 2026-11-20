@@ -1,27 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePlaces } from '../data/usePlaces'
-import type { Place } from '../game/types'
-import { placeBounds, placeOutline } from '../geo/placeView'
+import { placeBounds } from '../geo/placeView'
 import { vertexCount } from '../geo/polygons'
 import { de } from '../i18n/de'
 import type { Map as MapLibreMap } from '../map/maplibre'
-import { addShapeLayer, noFeatures, type ColoredFeatures } from '../map/shapeLayer'
+import { addShapeLayer, noFeatures, placeFeatures } from '../map/shapeLayer'
 import { findPlace } from './findPlace'
 
 const LAYER_ID = 'debug-place'
 const strings = de.debugPlaces
-
-function placeFeatures(place: Place): ColoredFeatures {
-  const color = de.categories[place.category].color
-  return {
-    type: 'FeatureCollection',
-    features: [place.geometry, placeOutline(place.geometry)].map((geometry) => ({
-      type: 'Feature',
-      properties: { color },
-      geometry,
-    })),
-  }
-}
 
 /**
  * Dev-only inspector (`?debug=places`, optionally `&place=<id or name>`): shows one place
@@ -55,7 +42,7 @@ export default function PlaceDebug({ map }: { map: MapLibreMap }) {
 
   useEffect(() => {
     // Runs after the layer effect above, which created the layer.
-    layerRef.current?.setFeatures(place ? placeFeatures(place) : noFeatures)
+    layerRef.current?.setFeatures(place ? placeFeatures(place.geometry, de.categories[place.category].color) : noFeatures)
     if (!place) return
     map.fitBounds(placeBounds(place.geometry), { padding: 40, maxZoom: 12, animate: false })
     // Ready for screenshots once the new view has rendered.

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { START_VIEW } from '../src/map/view'
-import { nameInput, openGlobe, readout, startTurn, stored, tapGlobeCenter } from './helpers'
+import { openGlobe, readout, setUpGame, startTurn, stored, tapGlobeCenter } from './helpers'
 
 const handover = (page: Page) => page.getByTestId('handover')
 const submit = (page: Page) => page.getByRole('button', { name: 'Abgeben' })
@@ -18,14 +18,6 @@ const circleTraces = (page: Page) =>
       features: source ? (await source.getData()).features.length : 0,
     }
   })
-
-async function setUpGame(page: Page, names: string[]) {
-  for (const [i, name] of names.entries()) {
-    if (i >= 2) await page.getByRole('button', { name: 'Spieler hinzufügen' }).click()
-    await nameInput(page, i + 1).fill(name)
-  }
-  await page.getByRole('button', { name: 'Spiel starten' }).click()
-}
 
 test('plays a round with three players: submit, pass, timeout', async ({ page }, testInfo) => {
   const isMobile = testInfo.project.name === 'mobile'

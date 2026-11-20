@@ -1,5 +1,7 @@
 import { expect, type Page } from '@playwright/test'
 import { STORAGE_KEY } from '../src/game/persistence'
+import type { Circle } from '../src/game/types'
+import { MAX_RADIUS_KM } from '../src/geo/circle'
 
 export const nameInput = (page: Page, n: number) => page.getByLabel(`Name von Spieler ${n}`)
 /** The radius readout. */
@@ -42,4 +44,32 @@ export async function startTurn(page: Page, playerName?: string) {
   if (playerName) await expect(handover).toContainText(playerName)
   await handover.click()
   await expect(page.locator('[data-testid="prompt"][data-ready="true"]')).toBeVisible()
+}
+
+/** Hits every place in the dataset (checked by a unit test in hitTest.test.ts). */
+export const HIT: Circle = { center: [0, 0], radiusKm: MAX_RADIUS_KM }
+
+/**
+ * Sets up the players by name (adding players as needed), optionally the target score and
+ * no timer, and starts the game.
+ */
+export async function setUpGame(page: Page, names: string[], options: { targetScore?: number; noTimer?: boolean } = {}) {
+  for (const [i, name] of names.entries()) {
+    if (i >= 2) await page.getByRole('button', { name: 'Spieler hinzufügen' }).click()
+    await nameInput(page, i + 1).fill(name)
+  }
+  if (options.noTimer) await page.getByLabel('Zeit pro Zug').selectOption({ label: 'Ohne Zeitlimit' })
+  const score = page.getByTestId('target-score')
+  while (options.targetScore !== undefined && Number(await score.textContent()) > options.targetScore) {
+    await page.getByRole('button', { name: 'Weniger' }).click()
+  }
+  await page.getByRole('button', { name: 'Spiel starten' }).click()
+}
+
+/** Plays one turn: submits `circle` (through the dev hook), or passes without one. */
+export async function playTurn(page: Page, name: string, circle: Circle | null) {
+  await startTurn(page, name)
+  if (!circle) return page.getByRole('button', { name: 'Passen' }).click()
+  await page.evaluate((c) => window.__eingekreist!.setCircle!(c), circle)
+  await page.getByRole('button', { name: 'Abgeben' }).click()
 }

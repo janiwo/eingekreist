@@ -1,20 +1,9 @@
 import { expect, test, type Page } from '@playwright/test'
 import { CIRCLES_LAYER_ID, PLACE_LAYER_ID } from '../src/map/RevealLayers'
-import { nameInput, openGlobe, startTurn, stored } from './helpers'
-
-/** Covers the whole globe but a tiny cap: hits every place. */
-const HIT = { center: [0, 0], radiusKm: 20_000 }
+import { HIT, nameInput, openGlobe, playTurn, setUpGame, stored } from './helpers'
 
 const reveal = (page: Page) => page.getByTestId('reveal')
 const handover = (page: Page) => page.getByTestId('handover')
-
-/** Plays one turn: submits `circle`, or passes without one. */
-async function playTurn(page: Page, name: string, circle: typeof HIT | null) {
-  await startTurn(page, name)
-  if (!circle) return page.getByRole('button', { name: 'Passen' }).click()
-  await page.evaluate((c) => window.__eingekreist!.setCircle!(c as never), circle)
-  await page.getByRole('button', { name: 'Abgeben' }).click()
-}
 
 /** Whether the reveal's layers are on the map. */
 const revealLayers = (page: Page) =>
@@ -28,12 +17,7 @@ const rows = (page: Page) => reveal(page).locator('tbody tr')
 test('plays a game to target score 2, through a tie and sudden death', async ({ page }) => {
   test.setTimeout(90_000)
   const { expectNoErrors } = await openGlobe(page)
-  await nameInput(page, 1).fill('Anna')
-  await nameInput(page, 2).fill('Ben')
-  await page.getByLabel('Zeit pro Zug').selectOption({ label: 'Ohne Zeitlimit' })
-  for (let i = 0; i < 8; i++) await page.getByRole('button', { name: 'Weniger' }).click()
-  await expect(page.getByTestId('target-score')).toHaveText('2')
-  await page.getByRole('button', { name: 'Spiel starten' }).click()
+  await setUpGame(page, ['Anna', 'Ben'], { targetScore: 2, noTimer: true })
 
   // Round 1: same radius, both hit → tie, both get a point.
   await playTurn(page, 'Anna', HIT)
@@ -85,11 +69,7 @@ test('plays a game to target score 2, through a tie and sudden death', async ({ 
 test('sudden death: a tie at the target score plays on until one leads alone', async ({ page }) => {
   test.setTimeout(90_000)
   const { expectNoErrors } = await openGlobe(page)
-  await nameInput(page, 1).fill('Anna')
-  await nameInput(page, 2).fill('Ben')
-  await page.getByLabel('Zeit pro Zug').selectOption({ label: 'Ohne Zeitlimit' })
-  for (let i = 0; i < 9; i++) await page.getByRole('button', { name: 'Weniger' }).click()
-  await page.getByRole('button', { name: 'Spiel starten' }).click()
+  await setUpGame(page, ['Anna', 'Ben'], { targetScore: 1, noTimer: true })
 
   // Both hit with the same radius at target score 1.
   await playTurn(page, 'Anna', HIT)

@@ -56,13 +56,9 @@ try {
         { timeout: 30_000 },
       )
       .catch(() => logs.push('timeout: globe not loaded'))
-    if (end) {
-      // Target score 1: the first round decides the game.
-      while ((await page.getByTestId('target-score').textContent()) !== '1') {
-        await page.getByRole('button', { name: 'Weniger' }).click()
-      }
-    }
-    if (game) await page.evaluate((seed) => window.__eingekreist!.startGame!(seed), seed)
+    // At --end, target score 1: the first round decides the game.
+    const settings = end ? { targetScore: 1 } : undefined
+    if (game) await page.evaluate(({ seed, settings }) => window.__eingekreist!.startGame!(seed, settings), { seed, settings })
     if (reveal) {
       const [lng, lat, radiusKm] = circle!.split(',').map(Number)
       // Every player has a turn; the radius grows by half per player. At --end the first circle
@@ -71,7 +67,7 @@ try {
       for (let i = 0; await page.getByTestId('handover').isVisible(); i++) {
         await page.getByTestId('handover').click()
         await page.locator('[data-testid="prompt"][data-ready="true"]').waitFor()
-        const r = end && i === 0 ? 20_000 : radiusKm * (1 + i / 2)
+        const r = end && i === 0 ? 20_000 /* MAX_RADIUS_KM */ : radiusKm * (1 + i / 2)
         await page.evaluate((c) => window.__eingekreist!.setCircle!(c), { center: [lng, lat], radiusKm: r })
         await page.getByRole('button', { name: 'Abgeben' }).click()
         await page.getByTestId('handover').or(page.getByTestId('reveal')).waitFor()

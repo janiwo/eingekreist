@@ -83,6 +83,8 @@ export interface RoundResult {
   hitIds: string[]
   /** Players who got a point: the smallest hitting circle(s). Empty if nobody hit. */
   winnerIds: string[]
+  /** This was the last round: someone leads alone at the target score, or no places are left. */
+  gameOver: boolean
 }
 
 export interface PlayingState {
@@ -125,8 +127,8 @@ export type GameAction =
   /** The timer ran out: a placed circle gets submitted, otherwise the turn is not submitted. */
   | { type: 'timeUp'; now: number }
   /** Every player has had a turn: scores the round against the place's area. */
-  | { type: 'reveal'; geometry: Polygon | MultiPolygon }
-  /** After the reveal: the next round, or the end of the game once there is a winner. */
+  | { type: 'reveal'; geometry: Polygon | MultiPolygon; pool: PlacePool }
+  /** After the reveal: the next round, or the end of the game. */
   | { type: 'nextRound'; pool: PlacePool }
   /** After the game: a new game with the same players and settings. */
   | { type: 'playAgain'; pool: PlacePool; seed: RngState }
@@ -268,20 +270,27 @@ function reduceRoundOver(state: PlayingState, action: GameAction): GameState {
   switch (action.type) {
     case 'reveal': {
       if (round.result) return state
-      const hitIds = round.turns.filter((t) => t.circle && circleHits(t.circle, action.geometry)).map((t) => t.playerId)
-      const winnerIds = roundWinners(round.turns, hitIds)
+      const hits = round.turns.flatMap(({ playerId, circle }) =>
+        circle && circleHits(circle, action.geometry) ? [{ playerId, radiusKm: circle.radiusKm }] : [],
+      )
+      const winnerIds = roundWinners(hits)
+      const players = state.players.map((p) => (winnerIds.includes(p.id) ? { ...p, score: p.score + 1 } : p))
+      const gameOver =
+        gameWinner(players, state.settings.targetScore) !== null ||
+        // Every place has been played: the game ends with the standings as they are.
+        drawPlace(action.pool, state.settings.categories, state.usedPlaceIds, state.rng) === null
       return {
         ...state,
-        players: state.players.map((p) => (winnerIds.includes(p.id) ? { ...p, score: p.score + 1 } : p)),
-        round: { ...round, result: { hitIds, winnerIds } },
+        players,
+        round: { ...round, result: { hitIds: hits.map((h) => h.playerId), winnerIds, gameOver } },
       }
     }
 
     case 'nextRound': {
       if (!round.result) return state
-      if (gameWinner(state.players, state.settings.targetScore)) return finish(state)
-      const draw = drawPlace(action.pool, state.settings.categories, state.usedPlaceIds, state.rng)
-      // Every place has been played: the game ends with the standings as they are.
+      const draw = round.result.gameOver
+        ? null
+        : drawPlace(action.pool, state.settings.categories, state.usedPlaceIds, state.rng)
       if (!draw) return finish(state)
       return {
         ...state,

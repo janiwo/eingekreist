@@ -1,21 +1,19 @@
-import type { Circle, Player } from './types'
+import type { Player } from './types'
 
-/** What scoring needs to know about a turn. */
-export interface ScoredTurn {
+/** A circle that touched the place. */
+export interface Hit {
   playerId: string
-  circle: Circle | null
+  radiusKm: number
 }
 
 /**
  * The round's winners (spec §1): whoever hit with the smallest circle. Players tied on the
- * smallest radius all win; nobody wins if no circle hit. `hitIds` are the players who hit.
- * Radii are stored rounded, so a tie is plain equality.
+ * smallest radius all win; nobody wins if no circle hit. Radii are stored rounded, so a tie
+ * is plain equality.
  */
-export function roundWinners(turns: readonly ScoredTurn[], hitIds: readonly string[]): string[] {
-  const hits = turns.filter((t) => t.circle && hitIds.includes(t.playerId))
-  if (hits.length === 0) return []
-  const smallest = Math.min(...hits.map((t) => t.circle!.radiusKm))
-  return hits.filter((t) => t.circle!.radiusKm === smallest).map((t) => t.playerId)
+export function roundWinners(hits: readonly Hit[]): string[] {
+  const smallest = Math.min(...hits.map((h) => h.radiusKm))
+  return hits.filter((h) => h.radiusKm === smallest).map((h) => h.playerId)
 }
 
 /** Players with the most points (all of them while tied). */

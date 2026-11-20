@@ -1,37 +1,20 @@
 import { describe, expect, it } from 'vitest'
-import { gameWinner, isSuddenDeath, ranking, roundWinners, type ScoredTurn } from './scoring'
+import { gameWinner, isSuddenDeath, ranking, roundWinners } from './scoring'
 
-const turn = (playerId: string, radiusKm: number | null): ScoredTurn => ({
-  playerId,
-  circle: radiusKm === null ? null : { center: [0, 0], radiusKm },
-})
+const hit = (playerId: string, radiusKm: number) => ({ playerId, radiusKm })
 const scores = (...s: number[]) => s.map((score, i) => ({ id: `p${i + 1}`, score }))
 
 describe('roundWinners', () => {
-  const turns = [turn('a', 300), turn('b', 50), turn('c', 20), turn('d', null)]
-
   it('the smallest hitting circle wins', () => {
-    expect(roundWinners(turns, ['a', 'b'])).toEqual(['b'])
-  })
-
-  it('a smaller circle that misses does not count', () => {
-    // c is smallest but missed.
-    expect(roundWinners(turns, ['a', 'b'])).not.toContain('c')
-    expect(roundWinners(turns, ['a'])).toEqual(['a'])
+    expect(roundWinners([hit('a', 300), hit('b', 50)])).toEqual(['b'])
   })
 
   it('all players tied on the smallest radius win', () => {
-    const tied = [turn('a', 40), turn('b', 40), turn('c', 41)]
-    expect(roundWinners(tied, ['a', 'b', 'c'])).toEqual(['a', 'b'])
+    expect(roundWinners([hit('a', 40), hit('b', 40), hit('c', 41)])).toEqual(['a', 'b'])
   })
 
   it('nobody wins if nobody hit', () => {
-    expect(roundWinners(turns, [])).toEqual([])
-    expect(roundWinners([turn('a', null), turn('b', null)], [])).toEqual([])
-  })
-
-  it('ignores turns without a circle even if listed as hits', () => {
-    expect(roundWinners([turn('a', null), turn('b', 10)], ['a', 'b'])).toEqual(['b'])
+    expect(roundWinners([])).toEqual([])
   })
 })
 

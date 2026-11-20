@@ -272,8 +272,9 @@ describe('reveal and end of game', () => {
     type: 'Polygon',
     coordinates: [[[-1, -1], [1, -1], [1, 1], [-1, 1], [-1, -1]]],
   }
-  const reveal: GameAction = { type: 'reveal', geometry }
-  const next: GameAction = { type: 'nextRound', pool }
+  const places: PlacePool = { country: ['a', 'b', 'c', 'd', 'e', 'f'] }
+  const reveal: GameAction = { type: 'reveal', geometry, pool: places }
+  const next: GameAction = { type: 'nextRound', pool: places }
   const hit = (radiusKm: number): Circle => ({ center: [0, 0], radiusKm })
   const miss = (radiusKm: number): Circle => ({ center: [20, 0], radiusKm })
   /** Plays one round: a circle submits, `null` passes. */
@@ -289,13 +290,13 @@ describe('reveal and end of game', () => {
       ...(three ? [add] : []),
       { type: 'updateSettings', settings: { targetScore } },
       // More places than rounds in these tests.
-      { type: 'start', pool: { country: ['a', 'b', 'c', 'd', 'e', 'f'] }, seed: 3 },
+      { type: 'start', pool: places, seed: 3 },
     ) as PlayingState
   const scoresOf = (s: GameState) => (s as PlayingState | FinishedState).players.map((p) => p.score)
 
   it('scores the round: the smallest hit gets the point', () => {
     const s = run(game(5, true), ...round(hit(50), miss(10), hit(80)), reveal) as PlayingState
-    expect(s.round.result).toEqual({ hitIds: ['p1', 'p3'], winnerIds: ['p1'] })
+    expect(s.round.result).toEqual({ hitIds: ['p1', 'p3'], winnerIds: ['p1'], gameOver: false })
     expect(scoresOf(s)).toEqual([1, 0, 0])
   })
 
@@ -306,7 +307,7 @@ describe('reveal and end of game', () => {
 
   it('gives nobody a point if nobody hit', () => {
     const s = run(game(5), ...round(miss(10), null), reveal) as PlayingState
-    expect(s.round.result).toEqual({ hitIds: [], winnerIds: [] })
+    expect(s.round.result).toEqual({ hitIds: [], winnerIds: [], gameOver: false })
     expect(scoresOf(s)).toEqual([0, 0])
   })
 
@@ -337,6 +338,7 @@ describe('reveal and end of game', () => {
   it('ends the game once a player reaches the target score alone', () => {
     const s = run(game(2), ...round(hit(5), null), reveal, next, ...round(hit(5), hit(9)), reveal)
     expect(s.phase).toBe('playing') // the reveal comes first
+    expect((s as PlayingState).round.result?.gameOver).toBe(true)
     const done = run(s, next)
     expect(done).toEqual({ phase: 'finished', players: expect.any(Array), settings: expect.any(Object), rounds: 2 })
     expect(scoresOf(done)).toEqual([2, 0])
@@ -362,10 +364,10 @@ describe('reveal and end of game', () => {
       setup(),
       { type: 'start', pool: single, seed: 1 },
       ...round(null, null),
-      reveal,
-      { type: 'nextRound', pool: single },
+      { type: 'reveal', geometry, pool: single },
     )
-    expect(s).toMatchObject({ phase: 'finished', rounds: 1 })
+    expect((s as PlayingState).round.result?.gameOver).toBe(true)
+    expect(run(s, { type: 'nextRound', pool: single })).toMatchObject({ phase: 'finished', rounds: 1 })
   })
 
   it('"play again" starts a new game with the same players and settings', () => {

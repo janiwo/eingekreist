@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { isSuddenDeath, gameWinner, ranking } from '../game/scoring'
+import { useCallback, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react'
+import { isSuddenDeath, leaders } from '../game/scoring'
 import type { PlayingState, RoundResult, Turn } from '../game/state'
 import type { Place } from '../game/types'
 import { de } from '../i18n/de'
@@ -17,6 +17,8 @@ interface RevealProps {
   result: RoundResult
   place: Place
   map: MapLibreMap | null
+  /** The bar above the globe; the place is kept clear of it. */
+  headerRef: RefObject<HTMLElement | null>
   onNext: () => void
 }
 
@@ -27,10 +29,11 @@ function circleText(turn: Turn | undefined): string {
 }
 
 /** After every turn: all circles and the place on the globe, plus the round's result and the standings. */
-export function Reveal({ state, result, place, map, onNext }: RevealProps) {
+export function Reveal({ state, result, place, map, headerRef, onNext }: RevealProps) {
   const { players, round, settings } = state
   const cardRef = useRef<HTMLElement>(null)
   const [arrived, setArrived] = useState(false)
+  const onArrived = useCallback(() => setArrived(true), [])
 
   const circles = useMemo(
     () =>
@@ -44,22 +47,21 @@ export function Reveal({ state, result, place, map, onNext }: RevealProps) {
   // Keeps the place clear of the header (top) and this card (bottom).
   const padding = useCallback((): PaddingOptions => {
     const height = window.innerHeight
-    const top = (document.querySelector('.game-bar')?.getBoundingClientRect().bottom ?? 0) + GAP
+    const top = (headerRef.current?.getBoundingClientRect().bottom ?? 0) + GAP
     const cardTop = cardRef.current?.getBoundingClientRect().top ?? height
     let bottom = height - cardTop + GAP
     // On a short screen the card may cover most of it; then let it overlap the place a little.
     if (height - top - bottom < MIN_VIEW) bottom = Math.max(GAP, height - top - MIN_VIEW)
     return { top, bottom, left: GAP * 2, right: GAP * 2 }
-  }, [])
+  }, [headerRef])
 
   const winners = players.filter((p) => result.winnerIds.includes(p.id))
-  const over = gameWinner(players, settings.targetScore) !== null
-  const suddenDeath = isSuddenDeath(players, settings.targetScore)
+  const suddenDeath = !result.gameOver && isSuddenDeath(players, settings.targetScore)
 
   return (
     <>
       {map && (
-        <RevealLayers map={map} place={place} circles={circles} padding={padding} onArrived={() => setArrived(true)} />
+        <RevealLayers map={map} place={place} circles={circles} padding={padding} onArrived={onArrived} />
       )}
       <div className="reveal-wrap">
         <section
@@ -88,7 +90,8 @@ export function Reveal({ state, result, place, map, onNext }: RevealProps) {
               </tr>
             </thead>
             <tbody>
-              {ranking(players).map(({ player }) => {
+              {/* Sorted by score: the standings. */}
+              {[...players].sort((a, b) => b.score - a.score).map((player) => {
                 const turn = round.turns.find((tu) => tu.playerId === player.id)
                 const won = result.winnerIds.includes(player.id)
                 const hit = result.hitIds.includes(player.id)
@@ -115,11 +118,11 @@ export function Reveal({ state, result, place, map, onNext }: RevealProps) {
           </table>
           {suddenDeath && (
             <p className="hint reveal__note" data-testid="sudden-death">
-              {t.suddenDeath(Math.max(...players.map((p) => p.score)))}
+              {t.suddenDeath(leaders(players)[0].score)}
             </p>
           )}
           <button type="button" className="button button--primary reveal__next" onClick={onNext}>
-            {over ? t.toResults : t.nextRound}
+            {result.gameOver ? t.toResults : t.nextRound}
           </button>
         </section>
       </div>

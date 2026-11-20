@@ -26,6 +26,7 @@ interface GameScreenProps {
 export function GameScreen({ state, place, placesFailed, onRetry, map, dispatch, onNextRound }: GameScreenProps) {
   const { round } = state
   const player = playerOnTurn(state)
+  const headerRef = useRef<HTMLElement>(null)
   const playing = player !== null && round.turnStartedAt !== null
   const loadError = !place && placesFailed && (
     <span className="load-error" role="alert">
@@ -38,10 +39,11 @@ export function GameScreen({ state, place, placesFailed, onRetry, map, dispatch,
 
   let body: ReactNode
   if (!player) {
+    // The app scores the round as soon as the place is there.
     body = round.result && place ? (
-      <Reveal state={state} result={round.result} place={place} map={map} onNext={onNextRound} />
+      <Reveal state={state} result={round.result} place={place} map={map} headerRef={headerRef} onNext={onNextRound} />
     ) : (
-      <Evaluating place={place} loadError={loadError} dispatch={dispatch} />
+      <Evaluating />
     )
   } else if (!playing) {
     body = (
@@ -63,7 +65,7 @@ export function GameScreen({ state, place, placesFailed, onRetry, map, dispatch,
     <>
       {body}
       {/* Always rendered in the same place, so an open dialog survives the end of a turn. */}
-      <header className="game-bar">
+      <header ref={headerRef} className="game-bar">
         {(playing || !player) && <Prompt state={state} player={player} place={place} loadError={loadError} />}
         <NewGameButton onConfirm={() => dispatch({ type: 'newGame' })} />
       </header>
@@ -209,25 +211,13 @@ function Turn({ state, player, map, dispatch }: TurnProps) {
   )
 }
 
-interface EvaluatingProps {
-  place: Place | undefined
-  loadError: ReactNode
-  dispatch: Dispatch<GameAction>
-}
-
-/** Every player has had a turn: scores the round as soon as the place's area is there. */
-function Evaluating({ place, loadError, dispatch }: EvaluatingProps) {
-  useEffect(() => {
-    if (place) dispatch({ type: 'reveal', geometry: place.geometry })
-  }, [place, dispatch])
+/** Every player has had a turn; the round is being scored (the prompt shows a load error, if any). */
+function Evaluating() {
   return (
     <div className="screen screen--opaque">
-      <div className="handover-wrap">
-        <p className="hint" data-ready="false">
-          {de.reveal.evaluating}
-        </p>
-        {loadError}
-      </div>
+      <p className="hint" data-ready="false">
+        {de.reveal.evaluating}
+      </p>
     </div>
   )
 }

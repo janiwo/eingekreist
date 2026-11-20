@@ -2,7 +2,7 @@ import { Map as MapLibreMap, type StyleSpecification } from './maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useEffect, useRef } from 'react'
 import { bordersGeoJson, landGeoJson } from './baseData'
-import type { Circle } from '../game/types'
+import type { Circle, Settings } from '../game/types'
 import { de } from '../i18n/de'
 import { START_VIEW } from './view'
 
@@ -40,8 +40,8 @@ declare global {
       map: MapLibreMap
       /** Places or changes the current player's circle. */
       setCircle?: (circle: Circle) => void
-      /** Starts a game with the current setup (optionally with a fixed seed). */
-      startGame?: (seed?: number) => Promise<void>
+      /** Starts a game with the current setup (optionally with a fixed seed and changed settings). */
+      startGame?: (seed?: number, settings?: Partial<Omit<Settings, 'categories'>>) => Promise<void>
     }
   }
 }
