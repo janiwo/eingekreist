@@ -21,6 +21,12 @@ test('opens the instructions from the start screen, with the current settings', 
   await expect(dialog(page)).toContainText('Es gibt kein Zeitlimit.')
   await dialog(page).getByRole('button', { name: 'Verstanden' }).click()
   await expect(dialog(page)).toBeHidden()
+  // Closing doesn't submit the setup form around the button.
+  await helpButton(page).click()
+  await dialog(page).getByRole('button', { name: 'Schließen' }).click()
+  await expect(dialog(page)).toBeHidden()
+  await expect(page.getByRole('button', { name: 'Spiel starten' })).toBeVisible()
+  await expect(page.getByTestId('handover')).toHaveCount(0)
   expectNoErrors()
 })
 

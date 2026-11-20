@@ -16,6 +16,8 @@ interface HowToPlayProps {
 export function HowToPlay({ settings, compact = false }: HowToPlayProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const titleId = useId()
+  // Whether the current click started on the backdrop (see onClick).
+  const pressedBackdrop = useRef(false)
 
   return (
     <>
@@ -28,17 +30,21 @@ export function HowToPlay({ settings, compact = false }: HowToPlayProps) {
       >
         {compact ? t.openSymbol : t.title}
       </button>
-      {/* Native modal: focus trap and Escape come for free. Portaled out of the setup form (and
-          its styles), so it can close through its own form. */}
+      {/* Native modal: focus trap and Escape come for free. Portaled out of the setup form's DOM
+          (and its styles), so it can close through its own form. */}
       {createPortal(
         <dialog
           ref={dialogRef}
           className="card dialog how-to-play"
           aria-labelledby={titleId}
-          // A click on the backdrop lands on the dialog element itself.
-          onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}
+          // A click on the backdrop lands on the dialog element itself (the form fills the rest and
+          // scrolls). Both press and release must hit it: a text selection dragged out of the
+          // dialog also ends in a click on it.
+          onPointerDown={(e) => (pressedBackdrop.current = e.target === e.currentTarget)}
+          onClick={(e) => pressedBackdrop.current && e.target === e.currentTarget && e.currentTarget.close()}
         >
-          <form method="dialog">
+          {/* React still bubbles the submit to the setup form, which would start the game. */}
+          <form method="dialog" onSubmit={(e) => e.stopPropagation()}>
             <div className="how-to-play__head">
               <h2 id={titleId}>{t.title}</h2>
               <button className="icon-button" aria-label={t.close}>
@@ -96,7 +102,7 @@ function ScoringFigure() {
           d="M60,50 C70,25 120,22 145,38 C165,50 168,80 152,100 C135,120 90,122 70,108 C50,94 50,70 60,50 Z"
         />
         <circle cx="105" cy="72" r="40" stroke={BIGGER} />
-        <circle cx="176" cy="70" r="13" stroke={WINNER} />
+        <circle cx="176" cy="70" r="14" stroke={WINNER} />
         <circle cx="38" cy="28" r="9" stroke={MISS} />
         <text x="176" y="48" textAnchor="middle" fontSize="14">
           {f.trophy}

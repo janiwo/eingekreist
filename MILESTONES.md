@@ -116,7 +116,7 @@ A build script (`npm run build:places`) generates the curated place dataset from
 - Unit tests for scoring, ties, no hits and sudden death pass.
 - An e2e test plays a short game (target score 2) to the end.
 
-## [ ] M6 – How to play
+## [x] M6 – How to play
 
 An instructions dialog explains the game, so new players understand it without a walkthrough.
 

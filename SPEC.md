@@ -39,6 +39,13 @@ Last updated: 2026-11-20
    - Each player's radius in km is shown, plus the round winner.
    - Then the standings and "Next round".
 
+### 2.1 Instructions
+
+- A „So wird gespielt“ dialog explains the game: goal, a round, scoring (including the 1 km minimum radius as a tip), end of the game and sudden death.
+- The text follows the current settings (target score, timer or no time limit).
+- It opens from the start screen and from the game bar on the handover and reveal screens. It is not available during a turn (the timer runs) or on the end screen.
+- It never opens by itself.
+
 ## 3. Settings
 
 | Setting | Default |

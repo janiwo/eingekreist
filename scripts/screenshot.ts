@@ -11,7 +11,7 @@
  *                                                     the radius growing per player) and show the reveal
  *   npm run screenshot -- --reveal --seed=135 / russia 170,65,500 → another seed: another first place
  *   npm run screenshot -- --end / end         → play a game to target score 1 and show the end screen
- *   npm run screenshot -- --help / help      → open the instructions (start screen; with --handover: game bar)
+ *   npm run screenshot -- --help / help      → open the instructions (start screen; with --handover/--reveal: game bar)
  *   npm run screenshot -- "/?debug=places&place=france" france → show a place (view fits to it)
  */
 import { chromium, devices } from '@playwright/test'
@@ -32,6 +32,8 @@ const [path = '/', prefix = ''] = positional
 const [view, circle] = reveal ? [undefined, positional[2] ?? '10,20,1000'] : positional.slice(2)
 if (circle && !game) throw new Error('drawing a circle needs --game (the circle editor is part of a turn)')
 if (circle && handover) throw new Error('--handover shows no circle')
+if (help && (end || (game && !handover && !reveal)))
+  throw new Error('--help works on the start screen, --handover or --reveal (no help button during a turn or at the end)')
 const outDir = 'screenshots'
 mkdirSync(outDir, { recursive: true })
 
@@ -126,7 +128,7 @@ try {
     console.log(`✓ ${base}.png`)
     if (help) {
       // The instructions scroll: also capture their end.
-      await page.getByRole('dialog').evaluate((d) => d.scrollTo(0, d.scrollHeight))
+      await page.getByRole('dialog').locator('form').evaluate((f) => f.scrollTo(0, f.scrollHeight))
       await page.screenshot({ path: `${base}-end.png` })
       console.log(`✓ ${base}-end.png`)
     }

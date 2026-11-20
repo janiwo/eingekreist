@@ -757,16 +757,17 @@ button:not(:disabled) {
 }
 
 .how-to-play {
-  /* The padding sits on the form: a click on the dialog element itself is a backdrop click. */
+  /* The form fills the dialog and scrolls: a click on the dialog element itself is a backdrop click. */
   padding: 0;
   width: min(520px, calc(100% - 32px));
-  max-height: calc(100dvh - 32px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  overflow: hidden;
 }
 
 .how-to-play > form {
+  max-height: calc(100dvh - 34px);
   padding: 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .how-to-play__head {
