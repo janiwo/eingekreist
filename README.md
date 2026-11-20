@@ -22,6 +22,10 @@ One-time setup for browser tests and screenshots: `npx playwright install chromi
 
 Browser tests and screenshots run in headless Chromium with software WebGL (SwiftShader). In the dev server, the MapLibre instance is available to tests as `window.__eingekreist.map`.
 
+## Deployment
+
+Live at https://janiwo.github.io/eingekreist/. The workflow [.github/workflows/pages.yml](.github/workflows/pages.yml) runs unit tests, lint and build on every PR; on `main` it also deploys `dist/` to GitHub Pages. Production builds use the base path `/eingekreist/` (see [vite.config.ts](vite.config.ts)); `npm run preview` serves the build the same way at http://localhost:4173/eingekreist/. The Node version for CI is pinned in `.node-version`.
+
 ## Structure
 
 ```
