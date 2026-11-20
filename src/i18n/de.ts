@@ -1,6 +1,8 @@
 import type { Category } from '../game/types'
 
 const kmFormat = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 })
+const listFormat = new Intl.ListFormat('de', { type: 'conjunction' })
+const points = (n: number) => `${n} ${n === 1 ? 'Punkt' : 'Punkte'}`
 
 export const de = {
   appName: 'Eingekreist',
@@ -36,7 +38,7 @@ export const de = {
   },
   game: {
     round: (n: number) => `Runde ${n}`,
-    targetScore: (n: number) => `Ziel: ${n} ${n === 1 ? 'Punkt' : 'Punkte'}`,
+    targetScore: (n: number) => `Ziel: ${points(n)}`,
     newGame: 'Neues Spiel',
     confirmNewGame: 'Das laufende Spiel wird beendet.',
     confirm: 'Neues Spiel starten',
@@ -51,12 +53,44 @@ export const de = {
     pass: 'Passen',
     timeLeft: 'Verbleibende Zeit',
     seconds: (n: number) => `${n} s`,
-    roundOver: (n: number) => `Runde ${n} beendet`,
     outcomes: {
       submitted: 'Kreis abgegeben',
       passed: 'Gepasst',
       timedOut: 'Zeit abgelaufen',
     },
+  },
+  reveal: {
+    title: (n: number) => `Auflösung Runde ${n}`,
+    evaluating: 'Auswertung …',
+    winners: (names: string[]) =>
+      `🏆 ${names.length === 1 ? `${names[0]} holt den Punkt` : `${listFormat.format(names)} holen je einen Punkt`}`,
+    noWinner: 'Niemand hat getroffen – kein Punkt in dieser Runde',
+    player: 'Spieler',
+    circle: 'Kreis',
+    result: 'Ergebnis',
+    score: 'Punkte',
+    hit: '✓ Treffer',
+    miss: '✗ Daneben',
+    /** In place of the radius for a player knocked out in sudden death. */
+    out: 'Ausgeschieden',
+    /** Badge next to the score of a round winner. */
+    pointGained: '+1',
+    suddenDeath: (names: string[], n: number) =>
+      `Gleichstand bei ${points(n)}: Stechen! Nur ${listFormat.format(names)} spielen weiter, bis einer allein vorne liegt.`,
+    nextRound: 'Nächste Runde',
+    toResults: 'Zum Ergebnis',
+  },
+  end: {
+    title: 'Spielende',
+    winner: (name: string) => `🏆 ${name} gewinnt!`,
+    /** Only when the places ran out with several players on top. */
+    draw: (names: string[]) => `Unentschieden: ${listFormat.format(names)}`,
+    rounds: (n: number) => `nach ${n} ${n === 1 ? 'Runde' : 'Runden'}`,
+    rank: (n: number) => `${n}.`,
+    points,
+    playAgain: 'Nochmal spielen',
+    playAgainHint: 'Gleiche Spieler, gleiche Einstellungen',
+    newGame: 'Neues Spiel',
   },
   circle: {
     placeHint: 'Tippe auf den Globus, um deinen Kreis zu setzen',

@@ -1,3 +1,4 @@
+import type { Polygon } from 'geojson'
 import { describe, expect, it } from 'vitest'
 import type { PlacePool } from './draw'
 import { loadGame, saveGame, STORAGE_KEY } from './persistence'
@@ -9,6 +10,7 @@ import {
   playerOnTurn,
   setupProblems,
   type GameAction,
+  type FinishedState,
   type GameState,
   type PlayingState,
   type SetupState,
@@ -261,6 +263,161 @@ describe('turns', () => {
     const s = run(game(), startTurn(), place(), submit, startTurn(T0 + 1), place({ center: [0, 0], radiusKm: 5 }))
     saveGame(s, storage)
     expect(loadGame(storage)).toEqual(s)
+  })
+})
+
+describe('reveal and end of game', () => {
+  /** A square around (0, 0), about 220 km across. */
+  const geometry: Polygon = {
+    type: 'Polygon',
+    coordinates: [[[-1, -1], [1, -1], [1, 1], [-1, 1], [-1, -1]]],
+  }
+  const places: PlacePool = { country: ['a', 'b', 'c', 'd', 'e', 'f'] }
+  const reveal: GameAction = { type: 'reveal', geometry, pool: places }
+  const next: GameAction = { type: 'nextRound', pool: places }
+  const hit = (radiusKm: number): Circle => ({ center: [0, 0], radiusKm })
+  const miss = (radiusKm: number): Circle => ({ center: [20, 0], radiusKm })
+  /** Plays one round: a circle submits, `null` passes. */
+  const round = (...circles: (Circle | null)[]): GameAction[] =>
+    circles.flatMap((c) => [
+      { type: 'startTurn', now: 0 } as GameAction,
+      ...(c ? [{ type: 'setDraft', circle: c } as GameAction, { type: 'submitTurn' } as GameAction] : [{ type: 'passTurn' } as GameAction]),
+    ])
+  /** A started game with two players (three with `three`) and the given target score. */
+  const game = (targetScore: number, three = false) =>
+    run(
+      setup(),
+      ...(three ? [add] : []),
+      { type: 'updateSettings', settings: { targetScore } },
+      // More places than rounds in these tests.
+      { type: 'start', pool: places, seed: 3 },
+    ) as PlayingState
+  const scoresOf = (s: GameState) => (s as PlayingState | FinishedState).players.map((p) => p.score)
+
+  it('scores the round: the smallest hit gets the point', () => {
+    const s = run(game(5, true), ...round(hit(50), miss(10), hit(80)), reveal) as PlayingState
+    expect(s.round.result).toEqual({ hitIds: ['p1', 'p3'], winnerIds: ['p1'], gameOver: false })
+    expect(scoresOf(s)).toEqual([1, 0, 0])
+  })
+
+  it('gives every tied player a point', () => {
+    const s = run(game(5, true), ...round(hit(50), hit(50), hit(51)), reveal)
+    expect(scoresOf(s)).toEqual([1, 1, 0])
+  })
+
+  it('gives nobody a point if nobody hit', () => {
+    const s = run(game(5), ...round(miss(10), null), reveal) as PlayingState
+    expect(s.round.result).toEqual({ hitIds: [], winnerIds: [], gameOver: false })
+    expect(scoresOf(s)).toEqual([0, 0])
+  })
+
+  it('counts a touch of the edge as a hit', () => {
+    // The square's edge is ~111 km from the center at (0, 2).
+    const s = run(game(5), ...round({ center: [0, 2], radiusKm: 112 }, { center: [0, 2], radiusKm: 100 }), reveal)
+    expect((s as PlayingState).round.result?.hitIds).toEqual(['p1'])
+  })
+
+  it('scores a round only once, and only after every turn', () => {
+    const midRound = run(game(5), ...round(hit(5)))
+    expect(run(midRound, reveal)).toBe(midRound)
+    const revealed = run(midRound, ...round(null), reveal)
+    expect(run(revealed, reveal)).toBe(revealed)
+  })
+
+  it('starts the next round with a new place after the reveal', () => {
+    const before = run(game(5), ...round(hit(5), null))
+    expect(run(before, next)).toBe(before) // not revealed yet
+    const s = run(before, reveal, next) as PlayingState
+    expect(s.round).toMatchObject({ number: 2, turns: [], result: null })
+    expect(s.usedPlaceIds).toHaveLength(2)
+    expect(new Set(s.usedPlaceIds).size).toBe(2)
+    expect(s.usedPlaceIds[1]).toBe(s.round.placeId)
+    expect(scoresOf(s)).toEqual([1, 0])
+  })
+
+  it('ends the game once a player reaches the target score alone', () => {
+    const s = run(game(2), ...round(hit(5), null), reveal, next, ...round(hit(5), hit(9)), reveal)
+    expect(s.phase).toBe('playing') // the reveal comes first
+    expect((s as PlayingState).round.result?.gameOver).toBe(true)
+    const done = run(s, next)
+    expect(done).toEqual({ phase: 'finished', players: expect.any(Array), settings: expect.any(Object), rounds: 2 })
+    expect(scoresOf(done)).toEqual([2, 0])
+  })
+
+  /** IDs of the players who play the round, and who is on turn. */
+  const roundPlayers = (s: GameState) => (s as PlayingState).round.playerIds
+  const onTurn = (s: GameState) => playerOnTurn(s as PlayingState)?.id
+
+  it('sudden death: only the players tied on top play on', () => {
+    // Target 1: p1 and p2 hit with the same radius, p3 passes → 1 : 1 : 0.
+    let s = run(game(1, true), ...round(hit(5), hit(5), null), reveal)
+    expect((s as PlayingState).round.result?.gameOver).toBe(false)
+    s = run(s, next)
+    expect(roundPlayers(s)).toEqual(['p1', 'p2'])
+    expect(onTurn(s)).toBe('p1')
+    // Two turns end the round: p3 is out and never on turn.
+    s = run(s, ...round(miss(5), null))
+    expect(onTurn(s)).toBeUndefined()
+    s = run(s, reveal) as PlayingState
+    expect(scoresOf(s)).toEqual([1, 1, 0])
+    // Nobody hit: still tied, the same two play on.
+    s = run(s, next, ...round(hit(20), hit(10)), reveal)
+    expect(scoresOf(s)).toEqual([1, 2, 0])
+    expect(run(s, next).phase).toBe('finished')
+  })
+
+  it('sudden death: a player who falls behind is out, the rest play on', () => {
+    // Four players, target 1: all four tie in round 1.
+    let s = run(setup(), add, add, { type: 'updateSettings', settings: { targetScore: 1 } }, { type: 'start', pool: places, seed: 3 })
+    s = run(s, ...round(hit(5), hit(5), hit(5), hit(5)), reveal, next)
+    expect(roundPlayers(s)).toEqual(['p1', 'p2', 'p3', 'p4'])
+    // Three tie again, p2 misses: p2 is out.
+    s = run(s, ...round(hit(5), miss(5), hit(5), hit(5)), reveal, next)
+    expect(scoresOf(s)).toEqual([2, 1, 2, 2])
+    expect(roundPlayers(s)).toEqual(['p1', 'p3', 'p4'])
+    // Two tie, p4 passes: p4 is out too.
+    s = run(s, ...round(hit(5), hit(5), null), reveal, next)
+    expect(roundPlayers(s)).toEqual(['p1', 'p3'])
+    // p3 wins alone.
+    s = run(s, ...round(hit(9), hit(8)), reveal, next)
+    expect(s.phase).toBe('finished')
+    expect(scoresOf(s)).toEqual([3, 1, 4, 2])
+  })
+
+  it('everyone plays while nobody has reached the target', () => {
+    const s = run(game(3, true), ...round(hit(5), hit(5), null), reveal, next)
+    expect(roundPlayers(s)).toEqual(['p1', 'p2', 'p3'])
+  })
+
+  it('ends the game when the places run out', () => {
+    const single: PlacePool = { country: ['only'] }
+    const s = run(
+      setup(),
+      { type: 'start', pool: single, seed: 1 },
+      ...round(null, null),
+      { type: 'reveal', geometry, pool: single },
+    )
+    expect((s as PlayingState).round.result?.gameOver).toBe(true)
+    expect(run(s, { type: 'nextRound', pool: single })).toMatchObject({ phase: 'finished', rounds: 1 })
+  })
+
+  it('"play again" starts a new game with the same players and settings', () => {
+    const done = run(game(1), ...round(hit(5), null), reveal, next) as FinishedState
+    const again = run(done, { type: 'playAgain', pool, seed: 9 }) as PlayingState
+    expect(again.phase).toBe('playing')
+    expect(again.players).toEqual(done.players.map((p) => ({ ...p, score: 0 })))
+    expect(again.settings).toEqual(done.settings)
+    expect(again.round.number).toBe(1)
+    expect(run(done, next, reveal)).toBe(done)
+  })
+
+  it('round-trips a revealed round and a finished game through persistence', () => {
+    const storage = memory()
+    const revealed = run(game(1), ...round(hit(5), null), reveal)
+    for (const state of [revealed, run(revealed, next)]) {
+      saveGame(state, storage)
+      expect(loadGame(storage)).toEqual(state)
+    }
   })
 })
 

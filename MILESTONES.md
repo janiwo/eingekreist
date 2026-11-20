@@ -97,7 +97,7 @@ A build script (`npm run build:places`) generates the curated place dataset from
 **Done when:**
 - An e2e test plays a complete round with 3 players (submit, pass, timeout with a fake timer).
 
-## [ ] M5 – Reveal, scoring, end of game
+## [x] M5 – Reveal, scoring, end of game
 
 - Reveal:
   - All circles in player colors, plus the place's outline.

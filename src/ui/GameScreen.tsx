@@ -5,6 +5,7 @@ import { de } from '../i18n/de'
 import { CircleEditor } from '../map/CircleEditor'
 import type { Map as MapLibreMap } from '../map/maplibre'
 import { START_VIEW } from '../map/view'
+import { Reveal } from './Reveal'
 import { TurnTimer } from './TurnTimer'
 
 const t = de.game
@@ -18,11 +19,14 @@ interface GameScreenProps {
   onRetry: () => void
   map: MapLibreMap | null
   dispatch: Dispatch<GameAction>
+  /** After the reveal: on to the next round (or the end of the game). */
+  onNextRound: () => void
 }
 
-export function GameScreen({ state, place, placesFailed, onRetry, map, dispatch }: GameScreenProps) {
+export function GameScreen({ state, place, placesFailed, onRetry, map, dispatch, onNextRound }: GameScreenProps) {
   const { round } = state
   const player = playerOnTurn(state)
+  const headerRef = useRef<HTMLElement>(null)
   const playing = player !== null && round.turnStartedAt !== null
   const loadError = !place && placesFailed && (
     <span className="load-error" role="alert">
@@ -35,7 +39,12 @@ export function GameScreen({ state, place, placesFailed, onRetry, map, dispatch 
 
   let body: ReactNode
   if (!player) {
-    body = <RoundOver state={state} />
+    // The app scores the round as soon as the place is there.
+    body = round.result && place ? (
+      <Reveal state={state} result={round.result} place={place} map={map} headerRef={headerRef} onNext={onNextRound} />
+    ) : (
+      <Evaluating />
+    )
   } else if (!playing) {
     body = (
       <Handover
@@ -56,8 +65,8 @@ export function GameScreen({ state, place, placesFailed, onRetry, map, dispatch 
     <>
       {body}
       {/* Always rendered in the same place, so an open dialog survives the end of a turn. */}
-      <header className="game-bar">
-        {playing && <Prompt state={state} player={player} place={place} loadError={loadError} />}
+      <header ref={headerRef} className="game-bar">
+        {(playing || !player) && <Prompt state={state} player={player} place={place} loadError={loadError} />}
         <NewGameButton onConfirm={() => dispatch({ type: 'newGame' })} />
       </header>
     </>
@@ -99,7 +108,8 @@ function Handover({ round, player, ready, loadError, onStart }: HandoverProps) {
 
 interface PromptProps {
   state: PlayingState
-  player: Player
+  /** The player on turn; `null` during the reveal. */
+  player: Player | null
   place: Place | undefined
   loadError: ReactNode
 }
@@ -115,10 +125,15 @@ function Prompt({ state, player, place, loadError }: PromptProps) {
       style={{ '--accent': category.color } as CSSProperties}
     >
       <span className="prompt__meta">
-        <span className="player-tag" style={{ '--player-color': player.color } as CSSProperties}>
-          {t.onTurn(player.name)}
-        </span>{' '}
-        · {t.round(round.number)} · {t.targetScore(settings.targetScore)}
+        {player && (
+          <>
+            <span className="player-tag" style={{ '--player-color': player.color } as CSSProperties}>
+              {t.onTurn(player.name)}
+            </span>{' '}
+            ·{' '}
+          </>
+        )}
+        {t.round(round.number)} · {t.targetScore(settings.targetScore)}
       </span>
       <span className="prompt__text">
         <span aria-hidden="true">{category.icon}</span> {category.label}:{' '}
@@ -196,28 +211,13 @@ function Turn({ state, player, map, dispatch }: TurnProps) {
   )
 }
 
-/**
- * Shown once every player has had a turn. Placeholder until the reveal (M5): it only says how
- * each turn ended, no circles.
- */
-function RoundOver({ state }: { state: PlayingState }) {
-  const { round, players } = state
+/** Every player has had a turn; the round is being scored (the prompt shows a load error, if any). */
+function Evaluating() {
   return (
-    <div className="screen">
-      <section className="card round-over" data-testid="round-over">
-        <h2>{t.roundOver(round.number)}</h2>
-        <ul className="outcome-list">
-          {round.turns.map((turn) => {
-            const p = players.find((pl) => pl.id === turn.playerId)
-            return (
-              <li key={turn.playerId} style={{ '--player-color': p?.color } as CSSProperties}>
-                <span className="player-tag">{p?.name}</span>
-                <span className="outcome">{t.outcomes[turn.outcome]}</span>
-              </li>
-            )
-          })}
-        </ul>
-      </section>
+    <div className="screen screen--opaque">
+      <p className="hint" data-ready="false">
+        {de.reveal.evaluating}
+      </p>
     </div>
   )
 }

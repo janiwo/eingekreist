@@ -1,10 +1,19 @@
-import type { FeatureCollection, Geometry } from 'geojson'
+import type { FeatureCollection, Geometry, MultiPolygon, Polygon } from 'geojson'
+import { placeOutline } from '../geo/placeView'
 import type { GeoJSONSource, Map as MapLibreMap } from './maplibre'
 
 /** Features whose `color` property sets their fill or line color. */
 export type ColoredFeatures = FeatureCollection<Geometry, { color: string }>
 
 export const noFeatures: ColoredFeatures = { type: 'FeatureCollection', features: [] }
+
+/** A place's area plus its outline (without the antimeridian cuts), in one color. */
+export function placeFeatures(geometry: Polygon | MultiPolygon, color: string): ColoredFeatures {
+  return {
+    type: 'FeatureCollection',
+    features: [geometry, placeOutline(geometry)].map((g) => ({ type: 'Feature', properties: { color }, geometry: g })),
+  }
+}
 
 /**
  * Adds a source plus fill and line layers: polygons are filled, lines are stroked, each in

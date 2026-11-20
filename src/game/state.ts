@@ -1,6 +1,9 @@
+import type { MultiPolygon, Polygon } from 'geojson'
 import { roundRadiusKm } from '../geo/circle'
+import { circleHits } from '../geo/hitTest'
 import { drawPlace, type PlacePool } from './draw'
 import type { RngState } from './rng'
+import { gameWinner, isSuddenDeath, leaders, roundWinners } from './scoring'
 import {
   CATEGORIES,
   DEFAULT_SETTINGS,
@@ -57,8 +60,13 @@ export interface Round {
   placeId: string
   category: Category
   /**
-   * Finished turns, in player order; the starting player is the same every round. The player
-   * on turn is `players[turns.length]`; once every player has had a turn, the round is over.
+   * Who plays this round, in player order: everyone, or in sudden death only the players tied
+   * on top. The starting player is the same every round (unless they are out).
+   */
+  playerIds: string[]
+  /**
+   * Finished turns, in `playerIds` order. The player on turn is `playerIds[turns.length]`;
+   * once every player of the round has had a turn, the round is over.
    */
   turns: Turn[]
   /**
@@ -71,6 +79,17 @@ export interface Round {
    * reload mid-turn keeps it; cleared when the turn ends.
    */
   draft: Circle | null
+  /** Set once every player has had a turn and the round has been scored (the reveal). */
+  result: RoundResult | null
+}
+
+export interface RoundResult {
+  /** Players whose circle touched the place. */
+  hitIds: string[]
+  /** Players who got a point: the smallest hitting circle(s). Empty if nobody hit. */
+  winnerIds: string[]
+  /** This was the last round: someone leads alone at the target score, or no places are left. */
+  gameOver: boolean
 }
 
 export interface PlayingState {
@@ -84,7 +103,16 @@ export interface PlayingState {
   round: Round
 }
 
-export type GameState = SetupState | PlayingState
+/** The game is over: someone reached the target score alone (or the places ran out). */
+export interface FinishedState {
+  phase: 'finished'
+  players: Player[]
+  settings: Settings
+  /** Number of rounds played. */
+  rounds: number
+}
+
+export type GameState = SetupState | PlayingState | FinishedState
 
 export type GameAction =
   | { type: 'addPlayer' }
@@ -103,6 +131,12 @@ export type GameAction =
   | { type: 'passTurn' }
   /** The timer ran out: a placed circle gets submitted, otherwise the turn is not submitted. */
   | { type: 'timeUp'; now: number }
+  /** Every player has had a turn: scores the round against the place's area. */
+  | { type: 'reveal'; geometry: Polygon | MultiPolygon; pool: PlacePool }
+  /** After the reveal: the next round, or the end of the game. */
+  | { type: 'nextRound'; pool: PlacePool }
+  /** After the game: a new game with the same players and settings. */
+  | { type: 'playAgain'; pool: PlacePool; seed: RngState }
   /** Abandons whatever is going on and returns to a fresh setup. */
   | { type: 'newGame' }
 
@@ -195,7 +229,7 @@ function reduceSetup(state: SetupState, action: GameAction, defaultName: Default
         settings: state.settings,
         rng: draw.rng,
         usedPlaceIds: [draw.placeId],
-        round: { number: 1, placeId: draw.placeId, category: draw.category, turns: [], turnStartedAt: null, draft: null },
+        round: newRound(1, draw.placeId, draw.category, state.players.map((p) => p.id)),
       }
     }
 
@@ -204,9 +238,23 @@ function reduceSetup(state: SetupState, action: GameAction, defaultName: Default
   }
 }
 
-/** The player whose turn it is, or `null` once every player has had a turn this round. */
+function newRound(number: number, placeId: string, category: Category, playerIds: string[]): Round {
+  return { number, placeId, category, playerIds, turns: [], turnStartedAt: null, draft: null, result: null }
+}
+
+/** The player whose turn it is, or `null` once every player of the round has had a turn. */
 export function playerOnTurn(state: PlayingState): Player | null {
-  return state.players[state.round.turns.length] ?? null
+  const id = state.round.playerIds[state.round.turns.length]
+  return state.players.find((p) => p.id === id) ?? null
+}
+
+/**
+ * Who plays the next round. In sudden death only the players tied on top go on; everyone
+ * behind them is out for good, since they don't play and so can't catch up.
+ */
+function nextPlayerIds({ players, settings }: PlayingState): string[] {
+  const contenders = isSuddenDeath(players, settings.targetScore) ? leaders(players) : players
+  return contenders.map((p) => p.id)
 }
 
 /** When the current turn's time runs out (ms since the epoch); `null` without a timer or before the turn started. */
@@ -227,9 +275,54 @@ function endTurn(state: PlayingState, player: Player, outcome: TurnOutcome, circ
   return { ...state, round: { ...state.round, turns: [...state.round.turns, turn], turnStartedAt: null, draft: null } }
 }
 
+function finish(state: PlayingState): FinishedState {
+  return { phase: 'finished', players: state.players, settings: state.settings, rounds: state.round.number }
+}
+
+/** After every turn of the round: the reveal, then the next round. */
+function reduceRoundOver(state: PlayingState, action: GameAction): GameState {
+  const { round } = state
+  switch (action.type) {
+    case 'reveal': {
+      if (round.result) return state
+      const hits = round.turns.flatMap(({ playerId, circle }) =>
+        circle && circleHits(circle, action.geometry) ? [{ playerId, radiusKm: circle.radiusKm }] : [],
+      )
+      const winnerIds = roundWinners(hits)
+      const players = state.players.map((p) => (winnerIds.includes(p.id) ? { ...p, score: p.score + 1 } : p))
+      const gameOver =
+        gameWinner(players, state.settings.targetScore) !== null ||
+        // Every place has been played: the game ends with the standings as they are.
+        drawPlace(action.pool, state.settings.categories, state.usedPlaceIds, state.rng) === null
+      return {
+        ...state,
+        players,
+        round: { ...round, result: { hitIds: hits.map((h) => h.playerId), winnerIds, gameOver } },
+      }
+    }
+
+    case 'nextRound': {
+      if (!round.result) return state
+      const draw = round.result.gameOver
+        ? null
+        : drawPlace(action.pool, state.settings.categories, state.usedPlaceIds, state.rng)
+      if (!draw) return finish(state)
+      return {
+        ...state,
+        rng: draw.rng,
+        usedPlaceIds: [...state.usedPlaceIds, draw.placeId],
+        round: newRound(round.number + 1, draw.placeId, draw.category, nextPlayerIds(state)),
+      }
+    }
+
+    default:
+      return state
+  }
+}
+
 function reducePlaying(state: PlayingState, action: GameAction): GameState {
   const player = playerOnTurn(state)
-  if (!player) return state
+  if (!player) return reduceRoundOver(state, action)
   if (action.type === 'startTurn') {
     if (state.round.turnStartedAt !== null) return state
     return { ...state, round: { ...state.round, turnStartedAt: action.now } }
@@ -263,6 +356,11 @@ function reducePlaying(state: PlayingState, action: GameAction): GameState {
   }
 }
 
+/** The finished game's players and settings, as a setup to start again from. */
+function setupOf({ players, settings }: FinishedState): SetupState {
+  return { phase: 'setup', players: players.map(({ id, name, color }) => ({ id, name, color })), settings }
+}
+
 /**
  * The game's state machine. `defaultName` names new players; it comes from the UI, which owns
  * the texts, and is bound here so that actions stay plain data.
@@ -270,6 +368,13 @@ function reducePlaying(state: PlayingState, action: GameAction): GameState {
 export function createGameReducer(defaultName: DefaultName) {
   return function gameReducer(state: GameState, action: GameAction): GameState {
     if (action.type === 'newGame') return createSetup(defaultName)
-    return state.phase === 'setup' ? reduceSetup(state, action, defaultName) : reducePlaying(state, action)
+    switch (state.phase) {
+      case 'setup':
+        return reduceSetup(state, action, defaultName)
+      case 'playing':
+        return reducePlaying(state, action)
+      case 'finished':
+        return action.type === 'playAgain' ? reduceSetup(setupOf(state), { ...action, type: 'start' }, defaultName) : state
+    }
   }
 }

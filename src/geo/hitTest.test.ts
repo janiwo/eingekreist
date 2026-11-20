@@ -1,5 +1,6 @@
 import type { MultiPolygon, Polygon } from 'geojson'
 import { describe, expect, it } from 'vitest'
+import { MAX_RADIUS_KM } from './circle'
 import { circleHits, distanceToAreaKm } from './hitTest'
 
 // 1°×1° square on the equator (0..1° E, 0..1° N)
@@ -47,5 +48,20 @@ describe('circleHits', () => {
 
   it('hits when the center is inside', () => {
     expect(circleHits({ center: [0.5, 0.5], radiusKm: 1 }, square)).toBe(true)
+  })
+})
+
+describe('circles the e2e tests rely on', async () => {
+  const { loadPlaces } = await import('../data/places')
+  const places = await loadPlaces()
+
+  it('a circle of the maximum radius around (0, 0) hits every place', () => {
+    const misses = places.filter((p) => !circleHits({ center: [0, 0], radiusKm: MAX_RADIUS_KM }, p.geometry))
+    expect(misses.map((p) => p.id)).toEqual([])
+  })
+
+  it('a 1 km circle in the far South Pacific hits no place', () => {
+    const hits = places.filter((p) => circleHits({ center: [-150, -60], radiusKm: 1 }, p.geometry))
+    expect(hits.map((p) => p.id)).toEqual([])
   })
 })

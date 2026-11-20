@@ -6,14 +6,14 @@ export const STORAGE_KEY = 'eingekreist.game'
  * Bump whenever the shape of `GameState` changes: saved games of another version are dropped
  * rather than checked field by field.
  */
-const VERSION = 3
+const VERSION = 5
 
 interface Stored {
   version: typeof VERSION
   state: GameState
 }
 
-const PHASES: readonly string[] = ['setup', 'playing'] satisfies GameState['phase'][]
+const PHASES: readonly string[] = ['setup', 'playing', 'finished'] satisfies GameState['phase'][]
 
 /** The saved game, or `null` if there is none or it can't be used. Never throws. */
 export function loadGame(storage: Pick<Storage, 'getItem'> | undefined = globalThis.localStorage): GameState | null {

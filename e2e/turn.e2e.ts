@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { START_VIEW } from '../src/map/view'
-import { nameInput, openGlobe, readout, startTurn, stored, tapGlobeCenter } from './helpers'
+import { openGlobe, readout, setUpGame, startTurn, stored, tapGlobeCenter } from './helpers'
 
 const handover = (page: Page) => page.getByTestId('handover')
 const submit = (page: Page) => page.getByRole('button', { name: 'Abgeben' })
@@ -18,14 +18,6 @@ const circleTraces = (page: Page) =>
       features: source ? (await source.getData()).features.length : 0,
     }
   })
-
-async function setUpGame(page: Page, names: string[]) {
-  for (const [i, name] of names.entries()) {
-    if (i >= 2) await page.getByRole('button', { name: 'Spieler hinzufügen' }).click()
-    await nameInput(page, i + 1).fill(name)
-  }
-  await page.getByRole('button', { name: 'Spiel starten' }).click()
-}
 
 test('plays a round with three players: submit, pass, timeout', async ({ page }, testInfo) => {
   const isMobile = testInfo.project.name === 'mobile'
@@ -69,10 +61,12 @@ test('plays a round with three players: submit, pass, timeout', async ({ page },
   await expect(page.getByRole('timer')).toHaveClass(/timer--low/) // last 10 s
   await page.clock.fastForward(11_000)
 
-  await expect(page.getByTestId('round-over')).toBeVisible()
-  await expect(page.getByTestId('round-over')).toContainText('Runde 1 beendet')
-  const rows = page.getByTestId('round-over').getByRole('listitem')
-  await expect(rows).toHaveText(['AnnaKreis abgegeben', 'BenGepasst', 'CemZeit abgelaufen'])
+  // The reveal lists how each turn ended (sorted by score: Anna's circle may or may not hit).
+  const reveal = page.getByTestId('reveal')
+  await expect(reveal).toContainText('Auflösung Runde 1')
+  await expect(reveal.getByRole('row', { name: /^Anna / })).toContainText(/\d km/)
+  await expect(reveal.getByRole('row', { name: /^Ben / })).toContainText('Gepasst')
+  await expect(reveal.getByRole('row', { name: /^Cem / })).toContainText('Zeit abgelaufen')
 
   const { round } = await stored(page)
   expect(round.turns.map((t: { outcome: string }) => t.outcome)).toEqual(['submitted', 'passed', 'timedOut'])
