@@ -79,6 +79,8 @@ export function Globe({ showBorders, onMapReady }: GlobeProps) {
       pitchWithRotate: false,
     })
     map.touchZoomRotate.disableRotation()
+    // Shift + arrow keys would rotate and tilt the globe; keyboard players only pan and zoom.
+    map.keyboard.disableRotation()
     mapRef.current = map
     map.once('load', () => {
       // A compact attribution starts expanded and would cover the UI on phones; collapse it.

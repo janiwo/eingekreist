@@ -103,6 +103,12 @@ export const de = {
     radius: 'Radius',
     moveCenter: 'Mittelpunkt verschieben',
     changeRadius: 'Radius ändern',
+    /** Accessible descriptions of the handles' keys. */
+    moveCenterKeys: 'Pfeiltasten verschieben den Kreis, mit Umschalt in großen Schritten.',
+    changeRadiusKeys: 'Pfeil hoch oder rechts vergrößert, runter oder links verkleinert, mit Umschalt in großen Schritten.',
+    /** The globe's accessible name during a turn. */
+    globeLabel:
+      'Globus. Pfeiltasten drehen ihn, Plus und Minus zoomen, die Eingabetaste setzt den Kreis in die Mitte.',
   },
   howToPlay: {
     title: 'So wird gespielt',
@@ -166,8 +172,7 @@ export const de = {
   },
   /** MapLibre's own UI strings (only those of the controls and handlers in use). */
   mapLocale: {
-    'Map.Title':
-      'Globus. Pfeiltasten drehen ihn, Plus und Minus zoomen, die Eingabetaste setzt den Kreis in die Mitte.',
+    'Map.Title': 'Globus. Pfeiltasten drehen ihn, Plus und Minus zoomen.',
     'Marker.Title': 'Markierung',
     'AttributionControl.ToggleAttribution': 'Quellenangaben ein- oder ausblenden',
     'AttributionControl.MapFeedback': 'Feedback zur Karte',

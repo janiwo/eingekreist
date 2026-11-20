@@ -746,10 +746,21 @@ button:not(:disabled) {
 /* Short landscape screens (phones): the card goes beside the place, below the game bar. */
 @media (orientation: landscape) and (max-height: 540px) {
   .reveal-wrap {
-    top: calc(max(12px, env(safe-area-inset-top)) + 60px);
+    /* Below the game bar (measured by Reveal; the fallback fits a one-line prompt). */
+    top: calc(var(--bar-bottom, 84px) + 12px);
     left: auto;
-    width: min(400px, 48%);
+    width: min(440px, 52%);
     align-items: flex-end;
+  }
+
+  /* The prompt above already names the round; screen readers keep the heading (as .sr-only). */
+  .reveal__title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .reveal {

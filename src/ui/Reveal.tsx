@@ -6,6 +6,7 @@ import { de } from '../i18n/de'
 import type { ColoredCircle } from '../map/circleLayer'
 import type { Map as MapLibreMap, PaddingOptions } from '../map/maplibre'
 import { RevealLayers } from '../map/RevealLayers'
+import { ignoreKeyRepeat } from './keys'
 
 const t = de.reveal
 const GAP = 16
@@ -46,7 +47,7 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
   )
 
   // Keeps the place clear of the header (top) and of this card: in the larger free area,
-  // above the card or beside it (left), whichever layout the CSS chose.
+  // above the card or left of it (the card sits at the bottom, or at the right in landscape).
   const padding = useCallback((): PaddingOptions => {
     const { innerWidth: width, innerHeight: height } = window
     const top = (headerRef.current?.getBoundingClientRect().bottom ?? 0) + GAP
@@ -62,6 +63,16 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
     return { top, bottom, left: GAP * 2, right: GAP * 2 }
   }, [headerRef])
 
+  // Where the game bar ends; the card stays below it when it sits at the side (landscape CSS).
+  const [barBottom, setBarBottom] = useState<number | null>(null)
+  useEffect(() => {
+    const header = headerRef.current
+    if (!header) return
+    const observer = new ResizeObserver(() => setBarBottom(header.getBoundingClientRect().bottom))
+    observer.observe(header)
+    return () => observer.disconnect()
+  }, [headerRef])
+
   // For keyboard players; not `autoFocus`, which would scroll the card past its title.
   useEffect(() => nextRef.current?.focus({ preventScroll: true }), [])
 
@@ -74,7 +85,10 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
       {map && (
         <RevealLayers map={map} place={place} circles={circles} padding={padding} onArrived={onArrived} />
       )}
-      <div className="reveal-wrap">
+      <div
+        className="reveal-wrap"
+        style={barBottom === null ? undefined : ({ '--bar-bottom': `${barBottom}px` } as CSSProperties)}
+      >
         <section
           ref={cardRef}
           className="card reveal"
@@ -132,7 +146,13 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
               {t.suddenDeath(top.map((p) => p.name), top[0].score)}
             </p>
           )}
-          <button ref={nextRef} type="button" className="button button--primary reveal__next" onClick={onNext}>
+          <button
+            ref={nextRef}
+            type="button"
+            className="button button--primary reveal__next"
+            onKeyDown={ignoreKeyRepeat}
+            onClick={onNext}
+          >
             {result.gameOver ? t.toResults : t.nextRound}
           </button>
         </section>

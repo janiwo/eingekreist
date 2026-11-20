@@ -6,6 +6,7 @@ import { CircleEditor } from '../map/CircleEditor'
 import type { Map as MapLibreMap } from '../map/maplibre'
 import { START_VIEW } from '../map/view'
 import { HowToPlay } from './HowToPlay'
+import { ignoreKeyRepeat } from './keys'
 import { Reveal } from './Reveal'
 import { TurnTimer } from './TurnTimer'
 
@@ -88,6 +89,13 @@ interface HandoverProps {
 
 /** Covers the globe until the next player takes the device. */
 function Handover({ round, player, ready, loadError, onStart }: HandoverProps) {
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  // The previous turn's controls are gone; give keyboard players a place to start. Only once
+  // the button is enabled (a disabled button can't take the focus).
+  useEffect(() => {
+    if (ready) buttonRef.current?.focus({ preventScroll: true })
+  }, [ready])
+
   return (
     <div className="screen screen--opaque">
       <div className="handover-wrap">
@@ -96,9 +104,9 @@ function Handover({ round, player, ready, loadError, onStart }: HandoverProps) {
           className="card handover"
           data-testid="handover"
           style={{ '--player-color': player.color } as CSSProperties}
+          ref={buttonRef}
           disabled={!ready}
-          // The previous turn's controls are gone; give keyboard players a place to start.
-          autoFocus
+          onKeyDown={ignoreKeyRepeat}
           onClick={onStart}
         >
           <span className="handover__meta">{t.round(round)}</span>

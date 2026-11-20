@@ -140,7 +140,7 @@ An instructions dialog explains the game, so new players understand it without a
 - An e2e test opens the dialog from the start screen and closes it with Esc, opens it from the handover, and checks that the button is missing during a turn.
 - Screenshots of the open dialog on desktop and mobile have been checked (the screenshot script gets a `--help` option).
 
-## [ ] M7 – Polish
+## [x] M7 – Polish
 
 - Prompt card with the category's icon and accent color.
 - Responsive for smartphone (portrait and landscape), tablet and desktop.
