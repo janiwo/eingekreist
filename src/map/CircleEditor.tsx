@@ -1,15 +1,26 @@
 import { useEffect, useRef } from 'react'
 import type { Circle, LngLat } from '../game/types'
-import { initialRadiusKm, roundRadiusKm } from '../geo/circle'
+import { initialRadiusKm, roundRadiusKm, stepRadiusKm } from '../geo/circle'
 import { bearingDeg, destination, distanceKm } from '../geo/sphere'
 import { de } from '../i18n/de'
 import { addCircleLayer } from './circleLayer'
-import { Marker, type Map as MapLibreMap, type MapMouseEvent } from './maplibre'
+import { Marker, Point, type Map as MapLibreMap, type MapMouseEvent } from './maplibre'
 
 const LAYER_ID = 'edit-circle'
 
 /** Bearing of the radius handle when a circle is first placed: east. */
 const DEFAULT_HANDLE_BEARING = 90
+
+/** Screen pixels the center moves per arrow key press (with Shift: the large step). */
+const CENTER_KEY_STEP_PX = { small: 10, large: 50 }
+
+/** Arrow keys as screen directions [x, y]. */
+const ARROWS: Record<string, [number, number]> = {
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1],
+}
 
 interface CircleEditorProps {
   map: MapLibreMap
@@ -23,6 +34,9 @@ function handleElement(kind: 'center' | 'radius', label: string): HTMLElement {
   el.className = `handle handle--${kind}`
   el.setAttribute('role', 'button')
   el.setAttribute('aria-label', label)
+  // Custom marker elements get no keyboard support from MapLibre; the editor adds it.
+  el.tabIndex = 0
+  el.setAttribute('aria-keyshortcuts', 'ArrowUp ArrowDown ArrowLeft ArrowRight')
   el.dataset.testid = `handle-${kind}`
   return el
 }
@@ -66,12 +80,14 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
 
     const center = new Marker({
       element: handleElement('center', de.circle.moveCenter),
-      draggable: true,      // Hide handles on the far side of the globe (CSS also makes them unclickable).
+      draggable: true,
+      // Hide handles on the far side of the globe (CSS also makes them unclickable).
       opacityWhenCovered: '0',
     })
     const radius = new Marker({
       element: handleElement('radius', de.circle.changeRadius),
-      draggable: true,      // Hide handles on the far side of the globe (CSS also makes them unclickable).
+      draggable: true,
+      // Hide handles on the far side of the globe (CSS also makes them unclickable).
       opacityWhenCovered: '0',
     })
     editorRef.current = { layer, center, radius }
@@ -98,24 +114,64 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
       if (current) radius.setLngLat(destination(current.center, current.radiusKm, bearingRef.current))
     })
 
+    // Arrow keys on a focused handle: move the center on screen, or step the radius
+    // (up/right larger, down/left smaller). Shift takes larger steps.
+    const onKey = (kind: 'center' | 'radius') => (e: KeyboardEvent) => {
+      const arrow = ARROWS[e.key]
+      const current = circleRef.current
+      if (!arrow || !current || e.altKey || e.ctrlKey || e.metaKey) return
+      e.preventDefault()
+      // The handles live in the map's canvas container: the map would pan as well.
+      e.stopPropagation()
+      if (kind === 'radius') {
+        const direction = arrow[0] - arrow[1] > 0 ? 1 : -1
+        onChangeRef.current({ ...current, radiusKm: stepRadiusKm(current.radiusKm, direction, e.shiftKey) })
+        return
+      }
+      const step = e.shiftKey ? CENTER_KEY_STEP_PX.large : CENTER_KEY_STEP_PX.small
+      const at = map.project(current.center)
+      const to = map.unproject(new Point(at.x + arrow[0] * step, at.y + arrow[1] * step))
+      onChangeRef.current({ ...current, center: to.toArray() as LngLat })
+    }
+    const onCenterKey = onKey('center')
+    const onRadiusKey = onKey('radius')
+    center.getElement().addEventListener('keydown', onCenterKey)
+    radius.getElement().addEventListener('keydown', onRadiusKey)
+
+    const place = (at: LngLat) => {
+      const current = circleRef.current
+      if (current) {
+        onChangeRef.current({ ...current, center: at })
+      } else {
+        bearingRef.current = DEFAULT_HANDLE_BEARING
+        onChangeRef.current({ center: at, radiusKm: initialRadiusFor(map) })
+      }
+    }
+
+    // Enter or Space on the focused globe places the circle at the center of the view
+    // (the arrow keys turn the globe there, + and - zoom).
+    const canvas = map.getCanvas()
+    const onCanvasKey = (e: KeyboardEvent) => {
+      if ((e.key !== 'Enter' && e.key !== ' ') || e.target !== canvas) return
+      e.preventDefault()
+      place(map.getCenter().toArray() as LngLat)
+    }
+    canvas.addEventListener('keydown', onCanvasKey)
+
     const onClick = (e: MapMouseEvent) => {
       // Taps on a handle bubble up to the map; they must not move the circle.
       if ((e.originalEvent.target as Element).closest('.maplibregl-marker')) return
       // Taps in space next to the globe unproject to the nearest point on its edge.
       if (!hitsGlobe(map, e)) return
-      const tapped = e.lngLat.toArray() as LngLat
-      const current = circleRef.current
-      if (current) {
-        onChangeRef.current({ ...current, center: tapped })
-      } else {
-        bearingRef.current = DEFAULT_HANDLE_BEARING
-        onChangeRef.current({ center: tapped, radiusKm: initialRadiusFor(map) })
-      }
+      place(e.lngLat.toArray() as LngLat)
     }
     map.on('click', onClick)
 
     return () => {
       map.off('click', onClick)
+      canvas.removeEventListener('keydown', onCanvasKey)
+      center.getElement().removeEventListener('keydown', onCenterKey)
+      radius.getElement().removeEventListener('keydown', onRadiusKey)
       center.remove()
       radius.remove()
       draggingRadius.current = false

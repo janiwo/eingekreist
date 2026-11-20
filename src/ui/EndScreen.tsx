@@ -38,7 +38,13 @@ export function EndScreen({ state, loadFailed, onPlayAgain, onNewGame }: EndScre
           ))}
         </ol>
         <div className="end__actions">
-          <button type="button" className="button button--primary" title={t.playAgainHint} onClick={onPlayAgain}>
+          <button
+            type="button"
+            className="button button--primary"
+            title={t.playAgainHint}
+            autoFocus
+            onClick={onPlayAgain}
+          >
             {t.playAgain}
           </button>
           <button type="button" className="button button--secondary" onClick={onNewGame}>

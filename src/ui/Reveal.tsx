@@ -44,13 +44,18 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
     [round.turns, players],
   )
 
-  // Keeps the place clear of the header (top) and this card (bottom).
+  // Keeps the place clear of the header (top) and this card: below the place, or beside it on
+  // short landscape screens.
   const padding = useCallback((): PaddingOptions => {
-    const height = window.innerHeight
+    const { innerWidth: width, innerHeight: height } = window
     const top = (headerRef.current?.getBoundingClientRect().bottom ?? 0) + GAP
-    const cardTop = cardRef.current?.getBoundingClientRect().top ?? height
-    let bottom = height - cardTop + GAP
-    // On a short screen the card may cover most of it; then let it overlap the place a little.
+    const card = cardRef.current?.getBoundingClientRect()
+    if (card && card.left > width / 2) {
+      // On a narrow screen the card may cover most of it; then let it overlap the place a little.
+      const right = Math.min(width - card.left + GAP, Math.max(GAP, width - GAP - MIN_VIEW))
+      return { top, bottom: GAP, left: GAP, right }
+    }
+    let bottom = height - (card?.top ?? height) + GAP
     if (height - top - bottom < MIN_VIEW) bottom = Math.max(GAP, height - top - MIN_VIEW)
     return { top, bottom, left: GAP * 2, right: GAP * 2 }
   }, [headerRef])
@@ -122,7 +127,7 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
               {t.suddenDeath(top.map((p) => p.name), top[0].score)}
             </p>
           )}
-          <button type="button" className="button button--primary reveal__next" onClick={onNext}>
+          <button type="button" className="button button--primary reveal__next" autoFocus onClick={onNext}>
             {result.gameOver ? t.toResults : t.nextRound}
           </button>
         </section>

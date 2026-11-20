@@ -53,6 +53,7 @@ body,
 .handle {
   width: 44px;
   height: 44px;
+  border-radius: 50%;
   display: grid;
   place-items: center;
   cursor: grab;
@@ -85,38 +86,6 @@ body,
   height: 16px;
   background: #fff;
   border: 3px solid var(--handle-color);
-}
-
-/* Dev-only place inspector (?debug=places) */
-.debug-panel {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  left: auto;
-  width: min(320px, calc(100% - 24px));
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  background: var(--panel);
-  font-size: 14px;
-}
-
-.debug-panel input {
-  font: inherit;
-  padding: 6px 8px;
-  border-radius: 6px;
-  border: 1px solid #556;
-  background: #11182c;
-  color: var(--text);
-}
-
-@media (max-width: 600px) {
-  .debug-panel {
-    top: 96px;
-    left: 12px;
-  }
 }
 
 /* ---------- Shared controls ---------- */
@@ -172,7 +141,7 @@ button:not(:disabled) {
 }
 
 .button--small {
-  min-height: 40px;
+  min-height: 44px;
   padding: 6px 14px;
   font-size: 14px;
 }
@@ -190,8 +159,8 @@ button:not(:disabled) {
 
 .icon-button--small {
   /* As high as .button--small. */
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
 }
 
 .icon-button:disabled {
@@ -293,8 +262,8 @@ button:not(:disabled) {
 }
 
 .swatch {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 2px solid transparent;
 }
@@ -367,6 +336,17 @@ button:not(:disabled) {
   gap: 8px;
 }
 
+.credits {
+  margin: -4px 0 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.credits a {
+  color: inherit;
+}
+
 /* ---------- Game screen ---------- */
 
 .game-bar {
@@ -390,15 +370,63 @@ button:not(:disabled) {
   white-space: nowrap;
 }
 
+/* The round's place. Only this card carries the category's icon and color (spec §5). */
 .prompt {
+  --category-ink: color-mix(in srgb, var(--category-color) 55%, #fff);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 16px 10px 10px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--category-color) 55%, transparent);
+  background:
+    linear-gradient(100deg, color-mix(in srgb, var(--category-color) 28%, transparent), transparent 70%),
+    var(--panel);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+.prompt__icon {
+  width: 48px;
+  height: 48px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--category-color) 40%, var(--bg));
+  font-size: 26px;
+  line-height: 1;
+}
+
+.prompt__body {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 10px 16px;
-  border-radius: 14px;
-  background: var(--panel);
-  border-left: 4px solid var(--accent);
   min-width: 0;
+}
+
+.prompt__text {
+  display: flex;
+  flex-direction: column;
+}
+
+.prompt__category {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--category-ink);
+}
+
+.prompt__place {
+  font-size: 22px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.prompt__qualifier {
+  font-size: 16px;
+  color: var(--muted);
 }
 
 .prompt__meta {
@@ -406,12 +434,30 @@ button:not(:disabled) {
   color: var(--muted);
 }
 
-.prompt__text {
-  font-size: 18px;
+@media (max-width: 420px) {
+  .prompt {
+    gap: 10px;
+    padding: 8px 12px 8px 8px;
+  }
+
+  .prompt__icon {
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+  }
+
+  .prompt__place {
+    font-size: 19px;
+  }
 }
 
-.prompt__qualifier {
-  color: var(--muted);
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .dialog {
@@ -513,15 +559,21 @@ button:not(:disabled) {
 }
 
 .player-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
   font-weight: 600;
   color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+/* Keeps „… ist dran“ etc. together; the line wraps between them. */
+.nowrap,
+.prompt .player-tag {
+  white-space: nowrap;
 }
 
 .player-tag::before {
   content: '';
+  display: inline-block;
+  margin-right: 6px;
   width: 10px;
   height: 10px;
   flex: none;
@@ -532,7 +584,8 @@ button:not(:disabled) {
 
 .turn-bar {
   position: absolute;
-  bottom: max(16px, env(safe-area-inset-bottom));
+  /* Clear of the map's attribution in the bottom corner. */
+  bottom: calc(max(12px, env(safe-area-inset-bottom)) + 28px);
   left: 12px;
   right: 12px;
   display: flex;
@@ -669,6 +722,31 @@ button:not(:disabled) {
   font-weight: 700;
 }
 
+/* Short landscape screens (phones): the card goes beside the place, below the game bar. */
+@media (orientation: landscape) and (max-height: 540px) {
+  .reveal-wrap {
+    top: calc(max(12px, env(safe-area-inset-top)) + 60px);
+    left: auto;
+    width: min(400px, 48%);
+    align-items: flex-end;
+  }
+
+  .reveal {
+    max-height: 100%;
+    padding: 10px 14px;
+    gap: 6px;
+  }
+
+  .reveal__winner {
+    font-size: 16px;
+  }
+
+  .results th,
+  .results td {
+    padding: 4px;
+  }
+}
+
 /* ---------- End of game ---------- */
 
 .end {
@@ -746,7 +824,8 @@ button:not(:disabled) {
 }
 
 .how-to-play-link {
-  min-height: 32px;
+  min-height: 44px;
+  padding: 0 12px;
   color: var(--accent);
   font-size: 15px;
 }

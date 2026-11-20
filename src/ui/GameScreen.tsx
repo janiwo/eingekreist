@@ -97,6 +97,8 @@ function Handover({ round, player, ready, loadError, onStart }: HandoverProps) {
           data-testid="handover"
           style={{ '--player-color': player.color } as CSSProperties}
           disabled={!ready}
+          // The previous turn's controls are gone; give keyboard players a place to start.
+          autoFocus
           onClick={onStart}
         >
           <span className="handover__meta">{t.round(round)}</span>
@@ -127,25 +129,36 @@ function Prompt({ state, player, place, loadError }: PromptProps) {
       className="prompt"
       data-testid="prompt"
       data-ready={place !== undefined}
-      style={{ '--accent': category.color } as CSSProperties}
+      style={{ '--category-color': category.color } as CSSProperties}
     >
-      <span className="prompt__meta">
-        {player && (
-          <>
-            <span className="player-tag" style={{ '--player-color': player.color } as CSSProperties}>
-              {t.onTurn(player.name)}
-            </span>{' '}
-            ·{' '}
-          </>
-        )}
-        {t.round(round.number)} · {t.targetScore(settings.targetScore)}
+      <span className="prompt__icon" aria-hidden="true">
+        {category.icon}
       </span>
-      <span className="prompt__text">
-        <span aria-hidden="true">{category.icon}</span> {category.label}:{' '}
-        <strong>{place ? place.name : t.placeLoading}</strong>
-        {place?.qualifier && <span className="prompt__qualifier"> ({place.qualifier})</span>}
-      </span>
-      {loadError}
+      <div className="prompt__body">
+        <span className="prompt__text">
+          <span className="prompt__category">
+            {category.label}
+            <span className="sr-only">: </span>
+          </span>
+          <span className="prompt__place">
+            <strong>{place ? place.name : t.placeLoading}</strong>
+            {place?.qualifier && <span className="prompt__qualifier"> ({place.qualifier})</span>}
+          </span>
+        </span>
+        <span className="prompt__meta">
+          {player && (
+            <>
+              <span className="player-tag" style={{ '--player-color': player.color } as CSSProperties}>
+                {t.onTurn(player.name)}
+              </span>{' '}
+              ·{' '}
+            </>
+          )}
+          <span className="nowrap">{t.round(round.number)}</span> ·{' '}
+          <span className="nowrap">{t.targetScore(settings.targetScore)}</span>
+        </span>
+        {loadError}
+      </div>
     </div>
   )
 }
@@ -167,6 +180,8 @@ function Turn({ state, player, map, dispatch }: TurnProps) {
     if (!map) return
     map.stop()
     map.jumpTo(START_VIEW)
+    // Keyboard players continue right on the globe (the handover button they used is gone).
+    map.getCanvas().focus({ preventScroll: true })
   }, [map])
 
   useEffect(() => {

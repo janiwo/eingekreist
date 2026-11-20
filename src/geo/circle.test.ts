@@ -4,7 +4,7 @@ import { point } from '@turf/helpers'
 import type { Position } from 'geojson'
 import { describe, expect, it } from 'vitest'
 import { MIN_RADIUS_KM, type Circle, type LngLat } from '../game/types'
-import { MAX_RADIUS_KM, circleOutline, circlePolygon, initialRadiusKm, roundRadiusKm } from './circle'
+import { MAX_RADIUS_KM, circleOutline, circlePolygon, initialRadiusKm, roundRadiusKm, stepRadiusKm } from './circle'
 import { distanceKm, normalizeLng } from './sphere'
 
 /** Point-in-circle check that, like MapLibre, treats longitudes beyond ±180° as wrapped. */
@@ -130,5 +130,28 @@ describe('circleOutline', () => {
     }
     for (let i = 1; i < ring.length; i++)
       expect(Math.abs(ring[i][0] - ring[i - 1][0])).toBeLessThan(180)
+  })
+})
+
+describe('stepRadiusKm', () => {
+  it('grows and shrinks by about 5 % (25 % with Shift)', () => {
+    expect(stepRadiusKm(400, 1)).toBe(420)
+    expect(stepRadiusKm(420, -1)).toBe(400)
+    expect(stepRadiusKm(400, 1, true)).toBe(500)
+    expect(stepRadiusKm(500, -1, true)).toBe(400)
+  })
+
+  it('always changes the radius between the limits', () => {
+    for (let km = MIN_RADIUS_KM; km < MAX_RADIUS_KM; km = stepRadiusKm(km, 1)) {
+      expect(stepRadiusKm(km, 1)).toBeGreaterThan(km)
+    }
+    for (let km = MAX_RADIUS_KM; km > MIN_RADIUS_KM; km = stepRadiusKm(km, -1)) {
+      expect(stepRadiusKm(km, -1)).toBeLessThan(km)
+    }
+  })
+
+  it('stays within the limits', () => {
+    expect(stepRadiusKm(MIN_RADIUS_KM, -1, true)).toBe(MIN_RADIUS_KM)
+    expect(stepRadiusKm(MAX_RADIUS_KM, 1, true)).toBe(MAX_RADIUS_KM)
   })
 })

@@ -13,6 +13,7 @@
  *   npm run screenshot -- --end / end         → play a game to target score 1 and show the end screen
  *   npm run screenshot -- --help / help      → open the instructions (start screen; with --handover/--reveal: game bar)
  *   npm run screenshot -- "/?debug=places&place=france" france → show a place (view fits to it)
+ *   npm run screenshot -- --all …           → also landscape phone, tablet and a small phone
  */
 import { chromium, devices } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
@@ -22,6 +23,7 @@ import { webglArgs } from '../playwright.config.ts'
 const args = process.argv.slice(2)
 const handover = args.includes('--handover')
 const help = args.includes('--help')
+const allDevices = args.includes('--all')
 const end = args.includes('--end')
 const reveal = end || args.includes('--reveal')
 const game = handover || reveal || args.includes('--game')
@@ -45,7 +47,15 @@ const url = new URL(path, server.resolvedUrls!.local[0]).toString()
 
 const browser = await chromium.launch({ args: webglArgs })
 try {
-  const targets = { desktop: devices['Desktop Chrome'], mobile: devices['Pixel 7'] }
+  const targets: Record<string, (typeof devices)[string]> = { desktop: devices['Desktop Chrome'], mobile: devices['Pixel 7'] }
+  if (allDevices) {
+    // Chromium only; WebKit device descriptors still give the viewport, touch and scale.
+    Object.assign(targets, {
+      landscape: devices['Pixel 7 landscape'],
+      tablet: { ...devices['iPad (gen 7)'], defaultBrowserType: 'chromium' },
+      small: { ...devices['iPhone SE'], defaultBrowserType: 'chromium' },
+    })
+  }
   for (const [name, device] of Object.entries(targets)) {
     const context = await browser.newContext(device)
     const page = await context.newPage()

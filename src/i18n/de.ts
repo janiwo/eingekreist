@@ -7,6 +7,11 @@ const formatKm = (km: number) => `${kmFormat.format(km)} km`
 // Shared by the turn buttons and the instructions that name them.
 const submit = 'Abgeben'
 const pass = 'Passen'
+/** Map data sources; OSM requires the credit (ODbL). */
+const dataSources = [
+  { name: 'Natural Earth', href: 'https://www.naturalearthdata.com' },
+  { name: '© OpenStreetMap-Mitwirkende', href: 'https://www.openstreetmap.org/copyright' },
+]
 
 export const de = {
   appName: 'Eingekreist',
@@ -156,11 +161,21 @@ export const de = {
     },
   },
   formatKm,
+  /** Credit line on the start screen (the map's attribution collapses on phones). */
+  credits: {
+    label: 'Kartendaten:',
+    sources: dataSources,
+  },
+  /** MapLibre's own UI strings (only those of the controls and handlers in use). */
+  mapLocale: {
+    'Map.Title':
+      'Globus. Pfeiltasten drehen ihn, Plus und Minus zoomen, die Eingabetaste setzt den Kreis in die Mitte.',
+    'Marker.Title': 'Markierung',
+    'AttributionControl.ToggleAttribution': 'Quellenangaben ein- oder ausblenden',
+    'AttributionControl.MapFeedback': 'Feedback zur Karte',
+  },
   /** Map data credits (shown in the map's attribution control; HTML). */
-  attribution: [
-    '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap-Mitwirkende</a>',
-    '<a href="https://www.naturalearthdata.com" target="_blank" rel="noopener">Natural Earth</a>',
-  ],
+  attribution: dataSources.map((c) => `<a href="${c.href}" target="_blank" rel="noopener">${c.name}</a>`),
   /** Dev-only place inspector (`?debug=places`). */
   debugPlaces: {
     search: 'Ort (Name oder ID)',

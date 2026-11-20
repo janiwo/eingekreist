@@ -70,6 +70,7 @@ export function Globe({ showBorders, onMapReady }: GlobeProps) {
       zoom: START_VIEW.zoom,
       // Compact (behind an ⓘ button) on narrow maps only; MapLibre decides by width.
       attributionControl: { customAttribution: de.attribution },
+      locale: de.mapLocale,
       renderWorldCopies: false,
       dragRotate: false,
       // A tap places the circle, so a double tap must not also zoom.
