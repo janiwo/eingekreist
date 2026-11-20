@@ -40,12 +40,7 @@ body,
 }
 
 .radius-readout {
-  position: absolute;
-  bottom: max(16px, env(safe-area-inset-bottom));
-  left: 16px;
-  right: 16px;
-  width: fit-content;
-  margin: 0 auto;
+  max-width: 100%;
   padding: 8px 16px;
   border-radius: 999px;
   background: var(--panel);
@@ -439,4 +434,155 @@ button:not(:disabled) {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
+}
+
+/* ---------- Turn ---------- */
+
+.screen--opaque {
+  /* Hides the globe (and any previous circle) completely between turns. */
+  background: var(--bg);
+  align-items: center;
+}
+
+.corner {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  right: 12px;
+}
+
+.corner .button--secondary {
+  background: var(--panel);
+}
+
+.handover {
+  width: min(420px, 100%);
+  min-height: 240px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+  border-top: 6px solid var(--player-color);
+}
+
+.handover__meta {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.handover__title {
+  font-size: 24px;
+  line-height: 1.25;
+}
+
+.handover__name {
+  display: block;
+  font-size: 34px;
+  color: var(--player-color);
+  overflow-wrap: anywhere;
+}
+
+.handover__hint {
+  margin-top: 6px;
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #1b1405;
+  font-weight: 600;
+}
+
+.player-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.player-tag::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--player-color);
+  box-shadow: 0 0 0 1.5px #fff;
+}
+
+.turn-bar {
+  position: absolute;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.turn-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.turn-actions .button {
+  min-width: 112px;
+}
+
+.turn-actions .button--secondary {
+  background: var(--panel);
+}
+
+.timer {
+  min-width: 64px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: var(--panel);
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.timer--low {
+  color: var(--danger);
+}
+
+.round-over {
+  width: min(420px, 100%);
+  margin: auto 0;
+  padding: 18px 20px;
+}
+
+.round-over h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+
+.outcome-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.outcome-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.outcome-list li + li {
+  border-top: 1px solid var(--line);
+}
+
+.outcome {
+  color: var(--muted);
 }

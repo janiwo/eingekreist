@@ -3,7 +3,8 @@
  *
  *   npm run screenshot                      → screenshots/desktop.png + screenshots/mobile.png
  *   npm run screenshot -- /pfad?x=1 name    → custom path / file name prefix
- *   npm run screenshot -- --game / game      → start a game (seed 1) first
+ *   npm run screenshot -- --game / game      → start a game (seed 1) and its first turn
+ *   npm run screenshot -- --handover / handover → start a game, stay on the handover screen
  *   npm run screenshot -- --game / arctic 0,80,2   → set camera to lng,lat,zoom
  *   npm run screenshot -- --game / pole 0,80,2 0,85,1500 → also draw a circle at lng,lat with radius km
  *   npm run screenshot -- "/?debug=places&place=france" france → show a place (view fits to it)
@@ -14,8 +15,9 @@ import { createServer } from 'vite'
 import { webglArgs } from '../playwright.config.ts'
 
 const args = process.argv.slice(2)
-const game = args.includes('--game')
-const [path = '/', prefix = '', view, circle] = args.filter((a) => a !== '--game')
+const handover = args.includes('--handover')
+const game = handover || args.includes('--game')
+const [path = '/', prefix = '', view, circle] = args.filter((a) => a !== '--game' && a !== '--handover')
 if (circle && !game) throw new Error('drawing a circle needs --game (the circle editor is part of the game screen)')
 const outDir = 'screenshots'
 mkdirSync(outDir, { recursive: true })
@@ -44,6 +46,7 @@ try {
       )
       .catch(() => logs.push('timeout: globe not loaded'))
     if (game) await page.evaluate(() => window.__eingekreist!.startGame!(1))
+    if (game && !handover) await page.getByTestId('handover').click()
     // Components that settle asynchronously mark themselves data-ready="false" until done.
     await page.evaluate(() => new Promise(requestAnimationFrame))
     await page

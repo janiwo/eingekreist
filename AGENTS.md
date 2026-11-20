@@ -40,7 +40,7 @@ npm run lint
 npm run build
 ```
 
-- **Look at the result.** Run `npm run screenshot` (start screen; `-- --game / name` for the game screen, plus `lng,lat,zoom` for a camera view) and inspect the PNGs in `screenshots/`, for both desktop and mobile. After geometry changes, also check polar and antimeridian views.
+- **Look at the result.** Run `npm run screenshot` (start screen; `-- --game / name` for the game screen, `-- --handover / name` for the handover screen, plus `lng,lat,zoom` for a camera view) and inspect the PNGs in `screenshots/`, for both desktop and mobile. After geometry changes, also check polar and antimeridian views.
 - New logic gets unit tests. New user flows get at least one e2e test.
 - No console errors in the browser (the e2e helper `openGlobe` checks this).
 

@@ -62,7 +62,7 @@ export default function App() {
         placesFailed={placesFailed}
         onRetry={() => loadPlaces().catch((e: unknown) => console.warn(e))}
         map={map}
-        onNewGame={() => dispatch({ type: 'newGame' })}
+        dispatch={dispatch}
       />
     )
   }

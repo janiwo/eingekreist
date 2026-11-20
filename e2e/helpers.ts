@@ -13,8 +13,16 @@ export async function openGlobe(page: Page, path = '/') {
   }
 }
 
-/** Starts a game from the setup screen with its current players and settings. */
+/** Starts a game from the setup screen with its current players and settings, and the first turn. */
 export async function startGame(page: Page) {
   await page.getByRole('button', { name: 'Spiel starten' }).click()
+  await startTurn(page)
+}
+
+/** Taps the handover screen and waits for the turn (with the prompt) to be ready. */
+export async function startTurn(page: Page, playerName?: string) {
+  const handover = page.getByTestId('handover')
+  if (playerName) await expect(handover).toContainText(playerName)
+  await handover.click()
   await expect(page.locator('[data-testid="prompt"][data-ready="true"]')).toBeVisible()
 }

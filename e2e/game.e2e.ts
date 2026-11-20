@@ -38,6 +38,8 @@ test('creates a game that survives a reload', async ({ page }) => {
   await startGame(page)
   await expect(prompt(page)).toContainText('Runde 1 · Ziel: 9 Punkte')
   await expect(prompt(page)).toContainText(/Gewässer|Sehenswürdigkeit/)
+  // Timer disabled: none is shown.
+  await expect(page.getByRole('timer')).toHaveCount(0)
   const promptText = await prompt(page).textContent()
   const before = await stored(page)
   expect(before.phase).toBe('playing')
