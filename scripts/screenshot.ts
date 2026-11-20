@@ -11,6 +11,7 @@
  *                                                     the radius growing per player) and show the reveal
  *   npm run screenshot -- --reveal --seed=135 / russia 170,65,500 → another seed: another first place
  *   npm run screenshot -- --end / end         → play a game to target score 1 and show the end screen
+ *   npm run screenshot -- --help / help      → open the instructions (start screen; with --handover: game bar)
  *   npm run screenshot -- "/?debug=places&place=france" france → show a place (view fits to it)
  */
 import { chromium, devices } from '@playwright/test'
@@ -20,6 +21,7 @@ import { webglArgs } from '../playwright.config.ts'
 
 const args = process.argv.slice(2)
 const handover = args.includes('--handover')
+const help = args.includes('--help')
 const end = args.includes('--end')
 const reveal = end || args.includes('--reveal')
 const game = handover || reveal || args.includes('--game')
@@ -79,6 +81,10 @@ try {
         await page.getByTestId('end').waitFor()
       }
     } else if (game && !handover) await page.getByTestId('handover').click()
+    if (help) {
+      await page.getByRole('button', { name: 'So wird gespielt' }).click()
+      await page.getByRole('dialog').waitFor()
+    }
     // Components that settle asynchronously mark themselves data-ready="false" until done.
     await page.evaluate(() => new Promise(requestAnimationFrame))
     await page
@@ -118,6 +124,13 @@ try {
     const file = `${outDir}/${prefix ? `${prefix}-` : ''}${name}.png`
     await page.screenshot({ path: file })
     console.log(`✓ ${file}`)
+    if (help) {
+      // The instructions scroll: also capture their end.
+      await page.getByRole('dialog').evaluate((d) => d.scrollTo(0, d.scrollHeight))
+      const endFile = `${outDir}/${prefix ? `${prefix}-` : ''}${name}-end.png`
+      await page.screenshot({ path: endFile })
+      console.log(`✓ ${endFile}`)
+    }
     for (const l of logs) console.log(`  ${l}`)
     await context.close()
   }

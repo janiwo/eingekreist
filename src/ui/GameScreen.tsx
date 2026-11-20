@@ -5,6 +5,7 @@ import { de } from '../i18n/de'
 import { CircleEditor } from '../map/CircleEditor'
 import type { Map as MapLibreMap } from '../map/maplibre'
 import { START_VIEW } from '../map/view'
+import { HowToPlay } from './HowToPlay'
 import { Reveal } from './Reveal'
 import { TurnTimer } from './TurnTimer'
 
@@ -67,7 +68,11 @@ export function GameScreen({ state, place, placesFailed, onRetry, map, dispatch,
       {/* Always rendered in the same place, so an open dialog survives the end of a turn. */}
       <header ref={headerRef} className="game-bar">
         {(playing || !player) && <Prompt state={state} player={player} place={place} loadError={loadError} />}
-        <NewGameButton onConfirm={() => dispatch({ type: 'newGame' })} />
+        <div className="game-bar__actions">
+          {/* Not during a turn: the timer runs, and the dialog would hide the globe. */}
+          {!playing && <HowToPlay settings={state.settings} variant="icon" />}
+          <NewGameButton onConfirm={() => dispatch({ type: 'newGame' })} />
+        </div>
       </header>
     </>
   )

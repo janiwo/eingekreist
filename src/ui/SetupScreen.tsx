@@ -9,6 +9,7 @@ import {
 } from '../game/state'
 import { CATEGORIES, MAX_PLAYERS, MIN_PLAYERS } from '../game/types'
 import { de } from '../i18n/de'
+import { HowToPlay } from './HowToPlay'
 
 const t = de.setup
 const TIMER_OPTIONS = [30, 45, 60, 90, 120] as const
@@ -49,7 +50,10 @@ export function SetupScreen({ state, dispatch, onStart }: SetupScreenProps) {
           start()
         }}
       >
-        <h1 className="brand">{de.appName}</h1>
+        <div className="setup-head">
+          <h1 className="brand">{de.appName}</h1>
+          <HowToPlay settings={settings} variant="link" />
+        </div>
 
         <section aria-labelledby="setup-players">
           <h2 id="setup-players">{t.players}</h2>
