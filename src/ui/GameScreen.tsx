@@ -70,7 +70,7 @@ export function GameScreen({ state, place, placesFailed, onRetry, map, dispatch,
         {(playing || !player) && <Prompt state={state} player={player} place={place} loadError={loadError} />}
         <div className="game-bar__actions">
           {/* Not during a turn: the timer runs, and the dialog would hide the globe. */}
-          {!playing && <HowToPlay settings={state.settings} variant="icon" />}
+          {!playing && <HowToPlay settings={state.settings} compact />}
           <NewGameButton onConfirm={() => dispatch({ type: 'newGame' })} />
         </div>
       </header>

@@ -1,4 +1,5 @@
 import { useId, useRef, type CSSProperties, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { PLAYER_COLORS } from '../game/state'
 import type { Settings } from '../game/types'
 import { de } from '../i18n/de'
@@ -7,67 +8,62 @@ const t = de.howToPlay
 
 interface HowToPlayProps {
   settings: Pick<Settings, 'targetScore' | 'turnSeconds'>
-  /** `link`: a text link (start screen); `icon`: a round "?" button (game bar). */
-  variant: 'link' | 'icon'
+  /** A round "?" button over the globe (game bar) instead of a text link (start screen). */
+  compact?: boolean
 }
 
 /** A button that opens the instructions in a modal dialog. */
-export function HowToPlay({ settings, variant }: HowToPlayProps) {
+export function HowToPlay({ settings, compact = false }: HowToPlayProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const titleId = useId()
-  const close = () => dialogRef.current?.close()
-  const { goal, round, scoring, end } = t.sections(settings)
 
   return (
     <>
-      {variant === 'link' ? (
-        <button type="button" className="link-button how-to-play-link" onClick={() => dialogRef.current?.showModal()}>
-          {t.title}
-        </button>
-      ) : (
-        <button
-          type="button"
-          className="icon-button icon-button--panel"
-          aria-label={t.title}
-          title={t.title}
-          onClick={() => dialogRef.current?.showModal()}
-        >
-          {t.openSymbol}
-        </button>
-      )}
-      {/* Native modal: focus trap and Escape come for free. No inner <form method="dialog">: on the
-          start screen this sits inside the setup form. */}
-      <dialog
-        ref={dialogRef}
-        className="card dialog how-to-play"
-        aria-labelledby={titleId}
-        // A click on the backdrop lands on the dialog element itself.
-        onClick={(e) => e.target === e.currentTarget && close()}
+      <button
+        type="button"
+        className={compact ? 'icon-button icon-button--small icon-button--panel' : 'link-button how-to-play-link'}
+        aria-label={compact ? t.title : undefined}
+        title={compact ? t.title : undefined}
+        onClick={() => dialogRef.current?.showModal()}
       >
-        <div className="how-to-play__head">
-          <h2 id={titleId}>{t.title}</h2>
-          <button type="button" className="icon-button" aria-label={t.close} onClick={close}>
-            {t.closeSymbol}
-          </button>
-        </div>
-        <Section {...goal} />
-        <Section {...round} />
-        <Section {...scoring}>
-          <ScoringFigure />
-          <p className="how-to-play__tip">{scoring.tip}</p>
-        </Section>
-        <Section {...end} />
-        <div className="dialog__actions">
-          <button type="button" className="button button--primary" onClick={close}>
-            {t.done}
-          </button>
-        </div>
-      </dialog>
+        {compact ? t.openSymbol : t.title}
+      </button>
+      {/* Native modal: focus trap and Escape come for free. Portaled out of the setup form (and
+          its styles), so it can close through its own form. */}
+      {createPortal(
+        <dialog
+          ref={dialogRef}
+          className="card dialog how-to-play"
+          aria-labelledby={titleId}
+          // A click on the backdrop lands on the dialog element itself.
+          onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}
+        >
+          <form method="dialog">
+            <div className="how-to-play__head">
+              <h2 id={titleId}>{t.title}</h2>
+              <button className="icon-button" aria-label={t.close}>
+                {t.closeSymbol}
+              </button>
+            </div>
+            <Section {...t.goal} />
+            <Section title={t.round.title} text={[...t.round.text, t.turnTime(settings.turnSeconds)]} />
+            <Section {...t.scoring}>
+              <ScoringFigure />
+              <p className="how-to-play__tip">{t.tip}</p>
+            </Section>
+            <Section title={t.end.title} text={[t.winAt(settings.targetScore), ...t.end.text]} />
+            <div className="dialog__actions">
+              <button className="button button--primary">{t.done}</button>
+            </div>
+          </form>
+        </dialog>,
+        document.body,
+      )}
     </>
   )
 }
 
-function Section({ title, text, children }: { title: string; text: string[]; children?: ReactNode }) {
+function Section({ title, text, children }: { title: string; text: readonly string[]; children?: ReactNode }) {
   return (
     <section className="how-to-play__section">
       <h3>{title}</h3>

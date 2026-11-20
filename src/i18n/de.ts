@@ -1,4 +1,4 @@
-import { MIN_RADIUS_KM, type Category, type Settings } from '../game/types'
+import { MIN_RADIUS_KM, type Category } from '../game/types'
 
 const kmFormat = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 })
 const listFormat = new Intl.ListFormat('de', { type: 'conjunction' })
@@ -109,43 +109,43 @@ export const de = {
     close: 'Schließen',
     closeSymbol: '✕',
     done: 'Verstanden',
-    /** The instructions, by section; the text follows the current settings. */
-    sections: ({ targetScore, turnSeconds }: Pick<Settings, 'targetScore' | 'turnSeconds'>) => ({
-      goal: {
-        title: 'Ziel',
-        text: [
-          'Jede Runde wird ein Ort genannt. Zeichne auf dem Globus einen Kreis, der ihn berührt – je kleiner, desto besser. Der kleinste Kreis, der trifft, holt den Punkt.',
-        ],
-      },
-      round: {
-        title: 'Eine Runde',
-        text: [
-          'Ihr spielt reihum auf einem Gerät. Wer dran ist, tippt zum Starten.',
-          'Tippe auf den Globus, um den Mittelpunkt zu setzen. Mit den Griffen verschiebst du den Kreis oder änderst den Radius.',
-          `Bist du zufrieden, tippe auf „${submit}“. Keine Ahnung? Dann „${pass}“.`,
-          turnSeconds === null
-            ? 'Es gibt kein Zeitlimit.'
-            : `Du hast ${turnSeconds} Sekunden. Läuft die Zeit ab, wird dein Kreis automatisch abgegeben.`,
-          'Alle zeichnen geheim. Die Kreise der anderen siehst du erst bei der Auflösung.',
-        ],
-      },
-      scoring: {
-        title: 'Wertung',
-        text: [
-          'Jede Berührung zählt, auch ganz knapp am Rand. Besteht ein Ort aus mehreren Teilen, reicht einer davon.',
-          'Es gilt der Umriss, der bei der Auflösung gezeigt wird.',
-          'Sind die kleinsten Treffer gleich groß, bekommen alle einen Punkt. Trifft niemand, gibt es keinen Punkt.',
-        ],
-        tip: `Tipp: Kreise schrumpfen bis auf ${formatKm(MIN_RADIUS_KM)} – wenn du dir sicher bist, mach ihn ganz klein.`,
-      },
-      end: {
-        title: 'Spielende',
-        text: [
-          `Wer zuerst ${points(targetScore)} hat, gewinnt.`,
-          'Erreichen mehrere das Ziel in derselben Runde, geht es ins Stechen: Nur wer gemeinsam vorne liegt, spielt weiter, bis einer allein führt.',
-        ],
-      },
-    }),
+    goal: {
+      title: 'Ziel',
+      text: [
+        'Jede Runde wird ein Ort genannt. Zeichne auf dem Globus einen Kreis, der ihn berührt – je kleiner, desto besser. Der kleinste Kreis, der trifft, holt den Punkt.',
+      ],
+    },
+    round: {
+      title: 'Eine Runde',
+      text: [
+        'Ihr spielt reihum auf einem Gerät. Wer dran ist, tippt zum Starten.',
+        'Tippe auf den Globus, um den Mittelpunkt zu setzen. Mit den Griffen verschiebst du den Kreis oder änderst den Radius.',
+        `Bist du zufrieden, tippe auf „${submit}“. Keine Ahnung? Dann „${pass}“.`,
+        'Alle zeichnen geheim. Die Kreise der anderen siehst du erst bei der Auflösung.',
+      ],
+    },
+    /** Last line of the round section; follows the timer setting. */
+    turnTime: (seconds: number | null) =>
+      seconds === null
+        ? 'Es gibt kein Zeitlimit.'
+        : `Du hast ${seconds} Sekunden. Läuft die Zeit ab, wird dein Kreis automatisch abgegeben.`,
+    scoring: {
+      title: 'Wertung',
+      text: [
+        'Jede Berührung zählt, auch ganz knapp am Rand. Besteht ein Ort aus mehreren Teilen, reicht einer davon.',
+        'Es gilt der Umriss, der bei der Auflösung gezeigt wird.',
+        'Sind die kleinsten Treffer gleich groß, bekommen alle einen Punkt. Trifft niemand, gibt es keinen Punkt.',
+      ],
+    },
+    tip: `Tipp: Kreise schrumpfen bis auf ${formatKm(MIN_RADIUS_KM)} – wenn du dir sicher bist, mach ihn ganz klein.`,
+    end: {
+      title: 'Spielende',
+      text: [
+        'Erreichen mehrere das Ziel in derselben Runde, geht es ins Stechen: Nur wer gemeinsam vorne liegt, spielt weiter, bis einer allein führt.',
+      ],
+    },
+    /** First line of the end section; follows the target score. */
+    winAt: (targetScore: number) => `Wer zuerst ${points(targetScore)} hat, gewinnt.`,
     /** The scoring illustration. */
     figure: {
       label: 'Beispiel: Drei Kreise um einen Ort',

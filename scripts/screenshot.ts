@@ -121,15 +121,14 @@ try {
     })
     logs.push(`canvas: ${canvas}`)
 
-    const file = `${outDir}/${prefix ? `${prefix}-` : ''}${name}.png`
-    await page.screenshot({ path: file })
-    console.log(`✓ ${file}`)
+    const base = `${outDir}/${prefix ? `${prefix}-` : ''}${name}`
+    await page.screenshot({ path: `${base}.png` })
+    console.log(`✓ ${base}.png`)
     if (help) {
       // The instructions scroll: also capture their end.
       await page.getByRole('dialog').evaluate((d) => d.scrollTo(0, d.scrollHeight))
-      const endFile = `${outDir}/${prefix ? `${prefix}-` : ''}${name}-end.png`
-      await page.screenshot({ path: endFile })
-      console.log(`✓ ${endFile}`)
+      await page.screenshot({ path: `${base}-end.png` })
+      console.log(`✓ ${base}-end.png`)
     }
     for (const l of logs) console.log(`  ${l}`)
     await context.close()

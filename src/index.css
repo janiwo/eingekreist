@@ -188,6 +188,12 @@ button:not(:disabled) {
   line-height: 1;
 }
 
+.icon-button--small {
+  /* As high as .button--small. */
+  width: 40px;
+  height: 40px;
+}
+
 .icon-button:disabled {
   opacity: 0.35;
 }
@@ -240,7 +246,8 @@ button:not(:disabled) {
   letter-spacing: 0.02em;
 }
 
-.setup h2 {
+.setup h2,
+.how-to-play h3 {
   margin: 0 0 10px;
   font-size: 13px;
   font-weight: 600;
@@ -429,7 +436,7 @@ button:not(:disabled) {
   text-decoration: underline;
 }
 
-.dialog p {
+.dialog > p {
   margin: 0 0 16px;
 }
 
@@ -750,10 +757,16 @@ button:not(:disabled) {
 }
 
 .how-to-play {
+  /* The padding sits on the form: a click on the dialog element itself is a backdrop click. */
+  padding: 0;
   width: min(520px, calc(100% - 32px));
   max-height: calc(100dvh - 32px);
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+.how-to-play > form {
+  padding: 20px;
 }
 
 .how-to-play__head {
@@ -765,12 +778,8 @@ button:not(:disabled) {
 }
 
 .how-to-play h2 {
-  /* Also inside the setup form: undo `.setup h2`. */
   margin: 0;
   font-size: 22px;
-  text-transform: none;
-  letter-spacing: normal;
-  color: var(--text);
 }
 
 .how-to-play__section {
@@ -778,15 +787,10 @@ button:not(:disabled) {
 }
 
 .how-to-play h3 {
-  margin: 0 0 6px;
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
+  margin-bottom: 6px;
 }
 
-.how-to-play .how-to-play__section p {
+.how-to-play__section p {
   margin: 0 0 6px;
 }
 
@@ -810,7 +814,7 @@ button:not(:disabled) {
 }
 
 .how-to-play__place {
-  fill: rgba(242, 239, 232, 0.12);
+  fill: color-mix(in srgb, var(--text) 12%, transparent);
   stroke: var(--text);
   stroke-width: 1.5;
   stroke-dasharray: 4 3;
@@ -841,17 +845,11 @@ button:not(:disabled) {
   border: 2.5px solid var(--player-color);
 }
 
-.how-to-play .how-to-play__tip {
+.how-to-play__section .how-to-play__tip {
   margin: 10px 0 0;
   padding: 8px 12px;
   border-left: 3px solid var(--accent);
   border-radius: 6px;
-  background: rgba(242, 181, 68, 0.1);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
   font-size: 14px;
-}
-
-/* Same height as the small "Neues Spiel" button next to it. */
-.game-bar .icon-button {
-  width: 40px;
-  height: 40px;
 }
