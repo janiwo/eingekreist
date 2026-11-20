@@ -188,6 +188,12 @@ button:not(:disabled) {
   line-height: 1;
 }
 
+.icon-button--small {
+  /* As high as .button--small. */
+  width: 40px;
+  height: 40px;
+}
+
 .icon-button:disabled {
   opacity: 0.35;
 }
@@ -240,7 +246,8 @@ button:not(:disabled) {
   letter-spacing: 0.02em;
 }
 
-.setup h2 {
+.setup h2,
+.how-to-play h3 {
   margin: 0 0 10px;
   font-size: 13px;
   font-weight: 600;
@@ -429,7 +436,7 @@ button:not(:disabled) {
   text-decoration: underline;
 }
 
-.dialog p {
+.dialog > p {
   margin: 0 0 16px;
 }
 
@@ -448,8 +455,11 @@ button:not(:disabled) {
   align-items: center;
 }
 
-.game-bar > .button {
+.game-bar__actions {
   margin-left: auto;
+  flex: none;
+  display: flex;
+  gap: 8px;
 }
 
 .handover-wrap {
@@ -724,4 +734,123 @@ button:not(:disabled) {
   flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
+}
+
+/* ---------- How to play ---------- */
+
+.setup-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.how-to-play-link {
+  min-height: 32px;
+  color: var(--accent);
+  font-size: 15px;
+}
+
+.icon-button--panel {
+  background: var(--panel);
+  font-weight: 700;
+}
+
+.how-to-play {
+  /* The form fills the dialog and scrolls: a click on the dialog element itself is a backdrop click. */
+  padding: 0;
+  width: min(520px, calc(100% - 32px));
+  overflow: hidden;
+}
+
+.how-to-play > form {
+  max-height: calc(100dvh - 34px);
+  padding: 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.how-to-play__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.how-to-play h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.how-to-play__section {
+  margin-bottom: 16px;
+}
+
+.how-to-play h3 {
+  margin-bottom: 6px;
+}
+
+.how-to-play__section p {
+  margin: 0 0 6px;
+}
+
+.how-to-play__figure {
+  margin: 10px 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.how-to-play__figure svg {
+  width: 210px;
+  max-width: 100%;
+  height: auto;
+}
+
+.how-to-play__figure circle {
+  fill: none;
+  stroke-width: 2.5;
+}
+
+.how-to-play__place {
+  fill: color-mix(in srgb, var(--text) 12%, transparent);
+  stroke: var(--text);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+
+.how-to-play__legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.how-to-play__legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.how-to-play__legend li::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2.5px solid var(--player-color);
+}
+
+.how-to-play__section .how-to-play__tip {
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  font-size: 14px;
 }

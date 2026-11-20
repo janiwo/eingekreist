@@ -11,6 +11,7 @@
  *                                                     the radius growing per player) and show the reveal
  *   npm run screenshot -- --reveal --seed=135 / russia 170,65,500 → another seed: another first place
  *   npm run screenshot -- --end / end         → play a game to target score 1 and show the end screen
+ *   npm run screenshot -- --help / help      → open the instructions (start screen; with --handover/--reveal: game bar)
  *   npm run screenshot -- "/?debug=places&place=france" france → show a place (view fits to it)
  */
 import { chromium, devices } from '@playwright/test'
@@ -20,6 +21,7 @@ import { webglArgs } from '../playwright.config.ts'
 
 const args = process.argv.slice(2)
 const handover = args.includes('--handover')
+const help = args.includes('--help')
 const end = args.includes('--end')
 const reveal = end || args.includes('--reveal')
 const game = handover || reveal || args.includes('--game')
@@ -30,6 +32,8 @@ const [path = '/', prefix = ''] = positional
 const [view, circle] = reveal ? [undefined, positional[2] ?? '10,20,1000'] : positional.slice(2)
 if (circle && !game) throw new Error('drawing a circle needs --game (the circle editor is part of a turn)')
 if (circle && handover) throw new Error('--handover shows no circle')
+if (help && (end || (game && !handover && !reveal)))
+  throw new Error('--help works on the start screen, --handover or --reveal (no help button during a turn or at the end)')
 const outDir = 'screenshots'
 mkdirSync(outDir, { recursive: true })
 
@@ -79,6 +83,10 @@ try {
         await page.getByTestId('end').waitFor()
       }
     } else if (game && !handover) await page.getByTestId('handover').click()
+    if (help) {
+      await page.getByRole('button', { name: 'So wird gespielt' }).click()
+      await page.getByRole('dialog').waitFor()
+    }
     // Components that settle asynchronously mark themselves data-ready="false" until done.
     await page.evaluate(() => new Promise(requestAnimationFrame))
     await page
@@ -115,9 +123,15 @@ try {
     })
     logs.push(`canvas: ${canvas}`)
 
-    const file = `${outDir}/${prefix ? `${prefix}-` : ''}${name}.png`
-    await page.screenshot({ path: file })
-    console.log(`✓ ${file}`)
+    const base = `${outDir}/${prefix ? `${prefix}-` : ''}${name}`
+    await page.screenshot({ path: `${base}.png` })
+    console.log(`✓ ${base}.png`)
+    if (help) {
+      // The instructions scroll: also capture their end.
+      await page.getByRole('dialog').locator('form').evaluate((f) => f.scrollTo(0, f.scrollHeight))
+      await page.screenshot({ path: `${base}-end.png` })
+      console.log(`✓ ${base}-end.png`)
+    }
     for (const l of logs) console.log(`  ${l}`)
     await context.close()
   }

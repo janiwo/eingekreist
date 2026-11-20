@@ -1,8 +1,12 @@
-import type { Category } from '../game/types'
+import { MIN_RADIUS_KM, type Category } from '../game/types'
 
 const kmFormat = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 })
 const listFormat = new Intl.ListFormat('de', { type: 'conjunction' })
 const points = (n: number) => `${n} ${n === 1 ? 'Punkt' : 'Punkte'}`
+const formatKm = (km: number) => `${kmFormat.format(km)} km`
+// Shared by the turn buttons and the instructions that name them.
+const submit = 'Abgeben'
+const pass = 'Passen'
 
 export const de = {
   appName: 'Eingekreist',
@@ -49,8 +53,8 @@ export const de = {
     onTurn: (name: string) => `${name} ist dran`,
     handOver: 'Gib das Gerät an',
     tapToStart: 'Tippen zum Starten',
-    submit: 'Abgeben',
-    pass: 'Passen',
+    submit,
+    pass,
     timeLeft: 'Verbleibende Zeit',
     seconds: (n: number) => `${n} s`,
     outcomes: {
@@ -98,7 +102,60 @@ export const de = {
     moveCenter: 'Mittelpunkt verschieben',
     changeRadius: 'Radius ändern',
   },
-  formatKm: (km: number) => `${kmFormat.format(km)} km`,
+  howToPlay: {
+    title: 'So wird gespielt',
+    /** Label of the compact button in the game bar. */
+    openSymbol: '?',
+    close: 'Schließen',
+    closeSymbol: '✕',
+    done: 'Verstanden',
+    goal: {
+      title: 'Ziel',
+      text: [
+        'Jede Runde wird ein Ort genannt. Zeichne auf dem Globus einen Kreis, der ihn berührt – je kleiner, desto besser. Der kleinste Kreis, der trifft, holt den Punkt.',
+      ],
+    },
+    round: {
+      title: 'Eine Runde',
+      text: [
+        'Ihr spielt reihum auf einem Gerät. Wer dran ist, tippt zum Starten.',
+        'Tippe auf den Globus, um den Mittelpunkt zu setzen. Mit den Griffen verschiebst du den Kreis oder änderst den Radius.',
+        `Bist du zufrieden, tippe auf „${submit}“. Keine Ahnung? Dann „${pass}“.`,
+        'Alle zeichnen geheim. Die Kreise der anderen siehst du erst bei der Auflösung.',
+      ],
+    },
+    /** Last line of the round section; follows the timer setting. */
+    turnTime: (seconds: number | null) =>
+      seconds === null
+        ? 'Es gibt kein Zeitlimit.'
+        : `Du hast ${seconds} Sekunden. Läuft die Zeit ab, wird dein Kreis automatisch abgegeben.`,
+    scoring: {
+      title: 'Wertung',
+      text: [
+        'Jede Berührung zählt, auch ganz knapp am Rand. Besteht ein Ort aus mehreren Teilen, reicht einer davon.',
+        'Es gilt der Umriss, der bei der Auflösung gezeigt wird.',
+        'Sind die kleinsten Treffer gleich groß, bekommen alle einen Punkt. Trifft niemand, gibt es keinen Punkt.',
+      ],
+    },
+    tip: `Tipp: Kreise schrumpfen bis auf ${formatKm(MIN_RADIUS_KM)} – wenn du dir sicher bist, mach ihn ganz klein.`,
+    end: {
+      title: 'Spielende',
+      text: [
+        'Erreichen mehrere das Ziel in derselben Runde, geht es ins Stechen: Nur wer gemeinsam vorne liegt, spielt weiter, bis einer allein führt.',
+      ],
+    },
+    /** First line of the end section; follows the target score. */
+    winAt: (targetScore: number) => `Wer zuerst ${points(targetScore)} hat, gewinnt.`,
+    /** The scoring illustration. */
+    figure: {
+      label: 'Beispiel: Drei Kreise um einen Ort',
+      winner: 'Kleinster Treffer – holt den Punkt',
+      bigger: 'Trifft auch, ist aber größer',
+      miss: 'Noch kleiner, aber daneben',
+      trophy: '🏆',
+    },
+  },
+  formatKm,
   /** Map data credits (shown in the map's attribution control; HTML). */
   attribution: [
     '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap-Mitwirkende</a>',
