@@ -117,7 +117,7 @@ Last updated: 2026-11-20
 ## 6. Technology
 
 - Static web app **without a backend**: TypeScript, React (Vite), MapLibre GL JS in globe mode, Turf.js.
-- Hosting as a static site (to be decided once the local version is approved).
+- Hosting as a static site on GitHub Pages (https://janiwo.github.io/eingekreist/), deployed automatically from `main`.
 - **Circle size**: true radius on the Earth's surface in km. The circle is rendered as a geodesic circle.
 - **Hit test**: a circle hits if and only if
   - the center lies inside the place **or**

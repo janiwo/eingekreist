@@ -158,7 +158,7 @@ An instructions dialog explains the game, so new players understand it without a
 
 ## Later (only after approval)
 
-- Hosting and deployment, once the local version is approved
+- [x] Hosting and deployment: GitHub Pages, deployed from `main` by GitHub Actions
 - Provinces
 - Online multiplayer
 - Satellite map
