@@ -17,7 +17,7 @@ import { webglArgs } from '../playwright.config.ts'
 const args = process.argv.slice(2)
 const handover = args.includes('--handover')
 const game = handover || args.includes('--game')
-const [path = '/', prefix = '', view, circle] = args.filter((a) => a !== '--game' && a !== '--handover')
+const [path = '/', prefix = '', view, circle] = args.filter((a) => !a.startsWith('--'))
 if (circle && !game) throw new Error('drawing a circle needs --game (the circle editor is part of the game screen)')
 const outDir = 'screenshots'
 mkdirSync(outDir, { recursive: true })

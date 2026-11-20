@@ -1,13 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
-import { STORAGE_KEY } from '../src/game/persistence'
-import { openGlobe, startGame } from './helpers'
+import { nameInput, openGlobe, startGame, stored } from './helpers'
 
-const nameInput = (page: Page, n: number) => page.getByLabel(`Name von Spieler ${n}`)
 const prompt = (page: Page) => page.getByTestId('prompt')
-
-/** The persisted game state, as the app stored it. */
-const stored = (page: Page) =>
-  page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? 'null')?.state, STORAGE_KEY)
 
 test('creates a game that survives a reload', async ({ page }) => {
   const { expectNoErrors } = await openGlobe(page)

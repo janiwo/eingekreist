@@ -12,9 +12,12 @@ interface TurnTimerProps {
   onTimeUp: (now: number) => void
 }
 
+const secondsLeft = (deadline: number, now: number) => Math.max(0, Math.ceil((deadline - now) / 1000))
+
 /** Counts down to `deadline`. Works off the wall clock, so it keeps running across a reload. */
 export function TurnTimer({ deadline, onTimeUp }: TurnTimerProps) {
-  const [now, setNow] = useState(Date.now)
+  // Seconds rather than the time: ticks within the same second don't re-render.
+  const [seconds, setSeconds] = useState(() => secondsLeft(deadline, Date.now()))
   const onTimeUpRef = useRef(onTimeUp)
 
   useEffect(() => {
@@ -24,7 +27,7 @@ export function TurnTimer({ deadline, onTimeUp }: TurnTimerProps) {
   useEffect(() => {
     const id = setInterval(() => {
       const t = Date.now()
-      setNow(t)
+      setSeconds(secondsLeft(deadline, t))
       if (t >= deadline) {
         clearInterval(id)
         onTimeUpRef.current(t)
@@ -33,13 +36,11 @@ export function TurnTimer({ deadline, onTimeUp }: TurnTimerProps) {
     return () => clearInterval(id)
   }, [deadline])
 
-  const seconds = Math.max(0, Math.ceil((deadline - now) / 1000))
   return (
     <div
       className={`timer${seconds <= LOW_SECONDS ? ' timer--low' : ''}`}
       role="timer"
       aria-label={de.game.timeLeft}
-      data-testid="timer"
     >
       {de.game.seconds(seconds)}
     </div>

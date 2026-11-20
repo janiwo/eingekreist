@@ -26,6 +26,14 @@ const asSetup = (s: GameState) => {
   return s as SetupState
 }
 const add: GameAction = { type: 'addPlayer' }
+/** In-memory stand-in for localStorage. */
+const memory = () => {
+  const data = new Map<string, string>()
+  return {
+    getItem: (k: string) => data.get(k) ?? null,
+    setItem: (k: string, v: string) => void data.set(k, v),
+  }
+}
 
 describe('setup', () => {
   it('starts with two players, distinct colors and the default settings', () => {
@@ -229,6 +237,8 @@ describe('turns', () => {
     expect(run(s, { type: 'submitTurn', circle: { center: [Number.NaN, 0], radiusKm: 10 } })).toBe(s)
     const tiny = playing(run(s, { type: 'submitTurn', circle: { center: [0, 0], radiusKm: 0.2 } }))
     expect(tiny.round.turns[0].circle?.radiusKm).toBe(1)
+    const huge = playing(run(s, { type: 'submitTurn', circle: { center: [0, 0], radiusKm: 1e6 } }))
+    expect(huge.round.turns[0].circle?.radiusKm).toBe(20_000)
   })
 
   it('ignores turn actions once every player has had a turn', () => {
@@ -238,8 +248,7 @@ describe('turns', () => {
   })
 
   it('round-trips a game mid-turn through persistence', () => {
-    const data = new Map<string, string>()
-    const storage = { getItem: (k: string) => data.get(k) ?? null, setItem: (k: string, v: string) => void data.set(k, v) }
+    const storage = memory()
     const s = run(game(), startTurn(), { type: 'submitTurn', circle }, startTurn(T0 + 1))
     saveGame(s, storage)
     expect(loadGame(storage)).toEqual(s)
@@ -247,14 +256,6 @@ describe('turns', () => {
 })
 
 describe('persistence', () => {
-  const memory = () => {
-    const data = new Map<string, string>()
-    return {
-      getItem: (k: string) => data.get(k) ?? null,
-      setItem: (k: string, v: string) => void data.set(k, v),
-    }
-  }
-
   it('round-trips setup and playing states', () => {
     const storage = memory()
     for (const state of [setup(), run(setup(), { type: 'start', pool, seed: 5 })]) {

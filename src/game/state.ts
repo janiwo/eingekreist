@@ -1,3 +1,4 @@
+import { roundRadiusKm } from '../geo/circle'
 import { drawPlace, type PlacePool } from './draw'
 import type { RngState } from './rng'
 import {
@@ -5,7 +6,6 @@ import {
   DEFAULT_SETTINGS,
   MAX_PLAYERS,
   MIN_PLAYERS,
-  MIN_RADIUS_KM,
   type Category,
   type Circle,
   type Player,
@@ -201,10 +201,17 @@ export function playerOnTurn(state: PlayingState): Player | null {
   return state.players[state.round.turns.length] ?? null
 }
 
-/** A circle that can be stored: finite coordinates on the globe, radius of at least 1 km. */
+/** When the current turn's time runs out (ms since the epoch); `null` without a timer or before the turn started. */
+export function turnDeadline(state: PlayingState): number | null {
+  const { turnStartedAt } = state.round
+  const { turnSeconds } = state.settings
+  return turnStartedAt === null || turnSeconds === null ? null : turnStartedAt + turnSeconds * 1000
+}
+
+/** A circle that can be stored: finite coordinates on the globe, radius clamped and rounded like the editor's. */
 function validCircle({ center: [lng, lat], radiusKm }: Circle): Circle | null {
   if (![lng, lat, radiusKm].every(Number.isFinite) || Math.abs(lat) > 90) return null
-  return { center: [lng, lat], radiusKm: Math.max(MIN_RADIUS_KM, radiusKm) }
+  return { center: [lng, lat], radiusKm: roundRadiusKm(radiusKm) }
 }
 
 function endTurn(state: PlayingState, player: Player, outcome: TurnOutcome, circle: Circle | null): PlayingState {
@@ -215,27 +222,26 @@ function endTurn(state: PlayingState, player: Player, outcome: TurnOutcome, circ
 function reducePlaying(state: PlayingState, action: GameAction): GameState {
   const player = playerOnTurn(state)
   if (!player) return state
-  const { turnStartedAt } = state.round
-  const { turnSeconds } = state.settings
+  if (action.type === 'startTurn') {
+    if (state.round.turnStartedAt !== null) return state
+    return { ...state, round: { ...state.round, turnStartedAt: action.now } }
+  }
+  // Everything else needs a running turn.
+  if (state.round.turnStartedAt === null) return state
 
   switch (action.type) {
-    case 'startTurn':
-      if (turnStartedAt !== null) return state
-      return { ...state, round: { ...state.round, turnStartedAt: action.now } }
-
     case 'submitTurn': {
       const circle = validCircle(action.circle)
-      if (turnStartedAt === null || !circle) return state
-      return endTurn(state, player, 'submitted', circle)
+      return circle ? endTurn(state, player, 'submitted', circle) : state
     }
 
     case 'passTurn':
-      if (turnStartedAt === null) return state
       return endTurn(state, player, 'passed', null)
 
     case 'timeUp': {
       // Only counts once the time is really up (and there is a timer at all).
-      if (turnStartedAt === null || turnSeconds === null || action.now < turnStartedAt + turnSeconds * 1000) return state
+      const deadline = turnDeadline(state)
+      if (deadline === null || action.now < deadline) return state
       const circle = action.circle && validCircle(action.circle)
       return circle ? endTurn(state, player, 'submitted', circle) : endTurn(state, player, 'timedOut', null)
     }

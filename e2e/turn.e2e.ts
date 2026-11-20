@@ -1,19 +1,15 @@
 import { expect, test, type Page } from '@playwright/test'
-import { STORAGE_KEY } from '../src/game/persistence'
 import { START_VIEW } from '../src/map/view'
-import { openGlobe, startTurn } from './helpers'
+import { nameInput, openGlobe, readout, startTurn, stored, tapGlobeCenter } from './helpers'
 
-const nameInput = (page: Page, n: number) => page.getByLabel(`Name von Spieler ${n}`)
 const handover = (page: Page) => page.getByTestId('handover')
 const submit = (page: Page) => page.getByRole('button', { name: 'Abgeben' })
 const pass = (page: Page) => page.getByRole('button', { name: 'Passen' })
 
-const stored = (page: Page) =>
-  page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? 'null')?.state, STORAGE_KEY)
-
 /** Any trace of a circle: handles in the DOM, circle features on the map. */
 const circleTraces = (page: Page) =>
   page.evaluate(async () => {
+    // LAYER_ID in CircleEditor.tsx (not importable here: it pulls in MapLibre).
     const source = window.__eingekreist!.map.getSource('edit-circle') as
       | { getData: () => Promise<GeoJSON.FeatureCollection> }
       | undefined
@@ -22,13 +18,6 @@ const circleTraces = (page: Page) =>
       features: source ? (await source.getData()).features.length : 0,
     }
   })
-
-async function tapGlobeCenter(page: Page, isMobile: boolean) {
-  const { width, height } = page.viewportSize()!
-  if (isMobile) await page.touchscreen.tap(width / 2, height / 2)
-  else await page.mouse.click(width / 2, height / 2)
-  await expect(page.getByRole('status')).toContainText('Radius:')
-}
 
 async function setUpGame(page: Page, names: string[]) {
   for (const [i, name] of names.entries()) {
@@ -64,7 +53,7 @@ test('plays a round with three players: submit, pass, timeout', async ({ page },
   expect(await circleTraces(page)).toEqual({ handles: 0, features: 0 })
   await startTurn(page, 'Ben')
   expect(await circleTraces(page)).toEqual({ handles: 0, features: 0 })
-  await expect(page.getByRole('status')).toContainText('Tippe auf den Globus')
+  await expect(readout(page)).toContainText('Tippe auf den Globus')
   const view = await page.evaluate(() => {
     const map = window.__eingekreist!.map
     return { center: map.getCenter().toArray(), zoom: map.getZoom() }

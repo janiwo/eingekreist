@@ -1,4 +1,21 @@
 import { expect, type Page } from '@playwright/test'
+import { STORAGE_KEY } from '../src/game/persistence'
+
+export const nameInput = (page: Page, n: number) => page.getByLabel(`Name von Spieler ${n}`)
+/** The radius readout. */
+export const readout = (page: Page) => page.getByRole('status')
+
+/** The persisted game state, as the app stored it. */
+export const stored = (page: Page) =>
+  page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? 'null')?.state, STORAGE_KEY)
+
+/** Taps (mobile) or clicks (desktop) the middle of the viewport and waits for the circle. */
+export async function tapGlobeCenter(page: Page, isMobile: boolean) {
+  const { width, height } = page.viewportSize()!
+  if (isMobile) await page.touchscreen.tap(width / 2, height / 2)
+  else await page.mouse.click(width / 2, height / 2)
+  await expect(readout(page)).toContainText('Radius:')
+}
 
 /** Loads the app (at `path`) and waits until the globe has finished rendering. */
 export async function openGlobe(page: Page, path = '/') {

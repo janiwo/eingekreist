@@ -166,6 +166,11 @@ button:not(:disabled) {
   border-color: var(--line);
 }
 
+/* Over the globe: needs a backdrop to stay readable. */
+.button--panel {
+  background: var(--panel);
+}
+
 .button--small {
   min-height: 40px;
   padding: 6px 14px;
@@ -376,7 +381,6 @@ button:not(:disabled) {
 .game-bar .button--secondary {
   flex: none;
   white-space: nowrap;
-  background: var(--panel);
 }
 
 .prompt {
@@ -448,10 +452,6 @@ button:not(:disabled) {
   position: absolute;
   top: max(12px, env(safe-area-inset-top));
   right: 12px;
-}
-
-.corner .button--secondary {
-  background: var(--panel);
 }
 
 .handover {
@@ -534,10 +534,6 @@ button:not(:disabled) {
 
 .turn-actions .button {
   min-width: 112px;
-}
-
-.turn-actions .button--secondary {
-  background: var(--panel);
 }
 
 .timer {

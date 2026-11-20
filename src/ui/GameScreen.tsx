@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type Dispatch, type ReactNode } from 'react'
-import { playerOnTurn, type GameAction, type PlayingState } from '../game/state'
+import { playerOnTurn, turnDeadline, type GameAction, type PlayingState } from '../game/state'
 import type { Circle, Place, Player } from '../game/types'
 import { de } from '../i18n/de'
 import { CircleEditor } from '../map/CircleEditor'
@@ -25,38 +25,25 @@ export function GameScreen({ state, place, placesFailed, onRetry, map, dispatch 
   const player = playerOnTurn(state)
   const newGame = <NewGameButton onConfirm={() => dispatch({ type: 'newGame' })} />
 
-  if (!player) {
+  if (player && round.turnStartedAt !== null) {
     return (
-      <>
-        <RoundOver state={state} />
-        <div className="corner">{newGame}</div>
-      </>
-    )
-  }
-
-  if (round.turnStartedAt === null) {
-    return (
-      <>
-        <Handover round={round.number} player={player} onStart={() => dispatch({ type: 'startTurn', now: Date.now() })} />
-        <div className="corner">{newGame}</div>
-      </>
+      // Keyed by turn: a new turn starts with no circle and no trace of the previous one.
+      <Turn
+        key={round.turns.length}
+        {...{ state, place, placesFailed, onRetry, map, dispatch, player, newGame }}
+      />
     )
   }
 
   return (
-    // Keyed by turn: a new turn starts with no circle and no trace of the previous one.
-    <Turn
-      key={round.turns.length}
-      state={state}
-      player={player}
-      startedAt={round.turnStartedAt}
-      place={place}
-      placesFailed={placesFailed}
-      onRetry={onRetry}
-      map={map}
-      dispatch={dispatch}
-      newGame={newGame}
-    />
+    <>
+      {player ? (
+        <Handover round={round.number} player={player} onStart={() => dispatch({ type: 'startTurn', now: Date.now() })} />
+      ) : (
+        <RoundOver state={state} />
+      )}
+      <div className="corner">{newGame}</div>
+    </>
   )
 }
 
@@ -82,22 +69,16 @@ function Handover({ round, player, onStart }: { round: number; player: Player; o
   )
 }
 
-interface TurnProps extends Omit<GameScreenProps, 'state'> {
-  state: PlayingState
+interface TurnProps extends GameScreenProps {
   player: Player
-  startedAt: number
   newGame: ReactNode
 }
 
-function Turn({ state, player, startedAt, place, placesFailed, onRetry, map, dispatch, newGame }: TurnProps) {
+function Turn({ state, player, place, placesFailed, onRetry, map, dispatch, newGame }: TurnProps) {
   const { round, settings } = state
   const category = de.categories[round.category]
+  const deadline = turnDeadline(state)
   const [circle, setCircle] = useState<Circle | null>(null)
-  const circleRef = useRef(circle)
-
-  useEffect(() => {
-    circleRef.current = circle
-  })
 
   // Every player starts from the same view (spec §2).
   useEffect(() => {
@@ -159,14 +140,16 @@ function Turn({ state, player, startedAt, place, placesFailed, onRetry, map, dis
           )}
         </div>
         <div className="turn-actions">
-          <button type="button" className="button button--secondary" onClick={() => dispatch({ type: 'passTurn' })}>
+          <button
+            type="button"
+            className="button button--secondary button--panel"
+            onClick={() => dispatch({ type: 'passTurn' })}
+          >
             {t.pass}
           </button>
-          {settings.turnSeconds !== null && (
-            <TurnTimer
-              deadline={startedAt + settings.turnSeconds * 1000}
-              onTimeUp={(now) => dispatch({ type: 'timeUp', circle: circleRef.current, now })}
-            />
+          {deadline !== null && (
+            // TurnTimer always calls the latest onTimeUp, so this sees the current circle.
+            <TurnTimer deadline={deadline} onTimeUp={(now) => dispatch({ type: 'timeUp', circle, now })} />
           )}
           <button
             type="button"
@@ -214,7 +197,7 @@ function NewGameButton({ onConfirm }: { onConfirm: () => void }) {
     <>
       <button
         type="button"
-        className="button button--secondary button--small"
+        className="button button--secondary button--panel button--small"
         onClick={() => dialogRef.current?.showModal()}
       >
         {t.newGame}
