@@ -69,10 +69,12 @@ test('plays a round with three players: submit, pass, timeout', async ({ page },
   await expect(page.getByRole('timer')).toHaveClass(/timer--low/) // last 10 s
   await page.clock.fastForward(11_000)
 
-  await expect(page.getByTestId('round-over')).toBeVisible()
-  await expect(page.getByTestId('round-over')).toContainText('Runde 1 beendet')
-  const rows = page.getByTestId('round-over').getByRole('listitem')
-  await expect(rows).toHaveText(['AnnaKreis abgegeben', 'BenGepasst', 'CemZeit abgelaufen'])
+  // The reveal lists how each turn ended (sorted by score: Anna's circle may or may not hit).
+  const reveal = page.getByTestId('reveal')
+  await expect(reveal).toContainText('Auflösung Runde 1')
+  await expect(reveal.getByRole('row', { name: /^Anna / })).toContainText(/\d km/)
+  await expect(reveal.getByRole('row', { name: /^Ben / })).toContainText('Gepasst')
+  await expect(reveal.getByRole('row', { name: /^Cem / })).toContainText('Zeit abgelaufen')
 
   const { round } = await stored(page)
   expect(round.turns.map((t: { outcome: string }) => t.outcome)).toEqual(['submitted', 'passed', 'timedOut'])

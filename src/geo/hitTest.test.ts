@@ -49,3 +49,18 @@ describe('circleHits', () => {
     expect(circleHits({ center: [0.5, 0.5], radiusKm: 1 }, square)).toBe(true)
   })
 })
+
+describe('circles the e2e tests rely on', async () => {
+  const { loadPlaces } = await import('../data/places')
+  const places = await loadPlaces()
+
+  it('a 20 000 km circle around (0, 0) hits every place', () => {
+    const misses = places.filter((p) => !circleHits({ center: [0, 0], radiusKm: 20_000 }, p.geometry))
+    expect(misses.map((p) => p.id)).toEqual([])
+  })
+
+  it('a 1 km circle in the far South Pacific hits no place', () => {
+    const hits = places.filter((p) => circleHits({ center: [-150, -60], radiusKm: 1 }, p.geometry))
+    expect(hits.map((p) => p.id)).toEqual([])
+  })
+})

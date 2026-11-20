@@ -7,6 +7,9 @@
  *   npm run screenshot -- --handover / handover → start a game, stay on the handover screen
  *   npm run screenshot -- --game / arctic 0,80,2   → set camera to lng,lat,zoom
  *   npm run screenshot -- --game / pole 0,80,2 0,85,1500 → also draw a circle at lng,lat with radius km
+ *   npm run screenshot -- --reveal / reveal 2,47,300 → play a round (each player draws a circle at lng,lat,
+ *                                                     the radius growing per player) and show the reveal
+ *   npm run screenshot -- --end / end         → play a game to target score 1 and show the end screen
  *   npm run screenshot -- "/?debug=places&place=france" france → show a place (view fits to it)
  */
 import { chromium, devices } from '@playwright/test'
@@ -16,9 +19,15 @@ import { webglArgs } from '../playwright.config.ts'
 
 const args = process.argv.slice(2)
 const handover = args.includes('--handover')
-const game = handover || args.includes('--game')
-const [path = '/', prefix = '', view, circle] = args.filter((a) => !a.startsWith('--'))
-if (circle && (!game || handover)) throw new Error('drawing a circle needs --game (the circle editor is part of a turn)')
+const end = args.includes('--end')
+const reveal = end || args.includes('--reveal')
+const game = handover || reveal || args.includes('--game')
+const positional = args.filter((a) => !a.startsWith('--'))
+const [path = '/', prefix = ''] = positional
+// --reveal takes the circle right after the prefix; it has no camera view (the reveal sets it).
+const [view, circle] = reveal ? [undefined, positional[2] ?? '10,20,1000'] : positional.slice(2)
+if (circle && !game) throw new Error('drawing a circle needs --game (the circle editor is part of a turn)')
+if (circle && handover) throw new Error('--handover shows no circle')
 const outDir = 'screenshots'
 mkdirSync(outDir, { recursive: true })
 
@@ -45,8 +54,31 @@ try {
         { timeout: 30_000 },
       )
       .catch(() => logs.push('timeout: globe not loaded'))
+    if (end) {
+      // Target score 1: the first round decides the game.
+      while ((await page.getByTestId('target-score').textContent()) !== '1') {
+        await page.getByRole('button', { name: 'Weniger' }).click()
+      }
+    }
     if (game) await page.evaluate(() => window.__eingekreist!.startGame!(1))
-    if (game && !handover) await page.getByTestId('handover').click()
+    if (reveal) {
+      const [lng, lat, radiusKm] = circle!.split(',').map(Number)
+      // Every player has a turn; the radius grows by half per player. At --end the first circle
+      // covers the whole globe, so someone surely hits and the game ends.
+      await page.getByTestId('handover').waitFor()
+      for (let i = 0; await page.getByTestId('handover').isVisible(); i++) {
+        await page.getByTestId('handover').click()
+        await page.locator('[data-testid="prompt"][data-ready="true"]').waitFor()
+        const r = end && i === 0 ? 20_000 : radiusKm * (1 + i / 2)
+        await page.evaluate((c) => window.__eingekreist!.setCircle!(c), { center: [lng, lat], radiusKm: r })
+        await page.getByRole('button', { name: 'Abgeben' }).click()
+        await page.getByTestId('handover').or(page.getByTestId('reveal')).waitFor()
+      }
+      if (end) {
+        await page.getByTestId('reveal').getByRole('button').click()
+        await page.getByTestId('end').waitFor()
+      }
+    } else if (game && !handover) await page.getByTestId('handover').click()
     // Components that settle asynchronously mark themselves data-ready="false" until done.
     await page.evaluate(() => new Promise(requestAnimationFrame))
     await page
@@ -64,7 +96,7 @@ try {
         { lng, lat, zoom },
       )
     }
-    if (circle) {
+    if (circle && !reveal) {
       const [lng, lat, radiusKm] = circle.split(',').map(Number)
       await page.evaluate(
         ({ lng, lat, radiusKm }) =>

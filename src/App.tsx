@@ -7,6 +7,7 @@ import { createGameReducer, createSetup, type GameState } from './game/state'
 import { de } from './i18n/de'
 import { Globe } from './map/Globe'
 import type { Map as MapLibreMap } from './map/maplibre'
+import { EndScreen } from './ui/EndScreen'
 import { GameScreen } from './ui/GameScreen'
 import { SetupScreen } from './ui/SetupScreen'
 
@@ -39,6 +40,21 @@ export default function App() {
     dispatch({ type: 'start', pool: poolOf(await loadPlaces()), seed })
   }, [loadPlaces])
 
+  // The places are loaded by now: the reveal needed them.
+  const nextRound = useCallback(() => {
+    loadPlaces().then(
+      (loaded) => dispatch({ type: 'nextRound', pool: poolOf(loaded) }),
+      (e: unknown) => console.warn(e),
+    )
+  }, [loadPlaces])
+
+  const playAgain = useCallback(() => {
+    loadPlaces().then(
+      (loaded) => dispatch({ type: 'playAgain', pool: poolOf(loaded), seed: randomSeed() }),
+      (e: unknown) => console.warn(e),
+    )
+  }, [loadPlaces])
+
   useEffect(() => {
     if (import.meta.env.DEV && map && window.__eingekreist) window.__eingekreist.startGame = startGame
   }, [map, startGame])
@@ -53,6 +69,8 @@ export default function App() {
     )
   } else if (state.phase === 'setup') {
     screen = <SetupScreen state={state} dispatch={dispatch} onStart={() => startGame()} />
+  } else if (state.phase === 'finished') {
+    screen = <EndScreen state={state} onPlayAgain={playAgain} onNewGame={() => dispatch({ type: 'newGame' })} />
   } else {
     screen = (
       <GameScreen
@@ -63,6 +81,7 @@ export default function App() {
         onRetry={() => loadPlaces().catch((e: unknown) => console.warn(e))}
         map={map}
         dispatch={dispatch}
+        onNextRound={nextRound}
       />
     )
   }
