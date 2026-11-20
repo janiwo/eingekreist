@@ -18,7 +18,7 @@ const args = process.argv.slice(2)
 const handover = args.includes('--handover')
 const game = handover || args.includes('--game')
 const [path = '/', prefix = '', view, circle] = args.filter((a) => !a.startsWith('--'))
-if (circle && !game) throw new Error('drawing a circle needs --game (the circle editor is part of the game screen)')
+if (circle && (!game || handover)) throw new Error('drawing a circle needs --game (the circle editor is part of a turn)')
 const outDir = 'screenshots'
 mkdirSync(outDir, { recursive: true })
 

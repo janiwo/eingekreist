@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type Dispatch, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, type CSSProperties, type Dispatch, type ReactNode } from 'react'
 import { playerOnTurn, turnDeadline, type GameAction, type PlayingState } from '../game/state'
 import type { Circle, Place, Player } from '../game/types'
 import { de } from '../i18n/de'
@@ -23,62 +23,124 @@ interface GameScreenProps {
 export function GameScreen({ state, place, placesFailed, onRetry, map, dispatch }: GameScreenProps) {
   const { round } = state
   const player = playerOnTurn(state)
-  const newGame = <NewGameButton onConfirm={() => dispatch({ type: 'newGame' })} />
+  const playing = player !== null && round.turnStartedAt !== null
+  const loadError = !place && placesFailed && (
+    <span className="load-error" role="alert">
+      {t.loadError}{' '}
+      <button type="button" className="link-button" onClick={onRetry}>
+        {t.retry}
+      </button>
+    </span>
+  )
 
-  if (player && round.turnStartedAt !== null) {
-    return (
-      // Keyed by turn: a new turn starts with no circle and no trace of the previous one.
-      <Turn
-        key={round.turns.length}
-        {...{ state, place, placesFailed, onRetry, map, dispatch, player, newGame }}
+  let body: ReactNode
+  if (!player) {
+    body = <RoundOver state={state} />
+  } else if (!playing) {
+    body = (
+      <Handover
+        round={round.number}
+        player={player}
+        // The timer must not start before the player can see the place.
+        ready={place !== undefined}
+        loadError={loadError}
+        onStart={() => dispatch({ type: 'startTurn', now: Date.now() })}
       />
     )
+  } else {
+    // Keyed by turn: nothing of the previous turn's editor survives.
+    body = <Turn key={round.turns.length} state={state} player={player} map={map} dispatch={dispatch} />
   }
 
   return (
     <>
-      {player ? (
-        <Handover round={round.number} player={player} onStart={() => dispatch({ type: 'startTurn', now: Date.now() })} />
-      ) : (
-        <RoundOver state={state} />
-      )}
-      <div className="corner">{newGame}</div>
+      {body}
+      {/* Always rendered in the same place, so an open dialog survives the end of a turn. */}
+      <header className="game-bar">
+        {playing && <Prompt state={state} player={player} place={place} loadError={loadError} />}
+        <NewGameButton onConfirm={() => dispatch({ type: 'newGame' })} />
+      </header>
     </>
   )
 }
 
+interface HandoverProps {
+  round: number
+  player: Player
+  ready: boolean
+  loadError: ReactNode
+  onStart: () => void
+}
+
 /** Covers the globe until the next player takes the device. */
-function Handover({ round, player, onStart }: { round: number; player: Player; onStart: () => void }) {
+function Handover({ round, player, ready, loadError, onStart }: HandoverProps) {
   return (
     <div className="screen screen--opaque">
-      <button
-        type="button"
-        className="card handover"
-        data-testid="handover"
-        style={{ '--player-color': player.color } as CSSProperties}
-        onClick={onStart}
-        autoFocus
-      >
-        <span className="handover__meta">{t.round(round)}</span>
-        <span className="handover__title">
-          {t.handOver} <strong className="handover__name">{player.name}</strong>
-        </span>
-        <span className="handover__hint">{t.tapToStart}</span>
-      </button>
+      <div className="handover-wrap">
+        <button
+          type="button"
+          className="card handover"
+          data-testid="handover"
+          style={{ '--player-color': player.color } as CSSProperties}
+          disabled={!ready}
+          onClick={onStart}
+        >
+          <span className="handover__meta">{t.round(round)}</span>
+          <span className="handover__title">
+            {t.handOver} <strong className="handover__name">{player.name}</strong>
+          </span>
+          <span className="handover__hint">{ready ? t.tapToStart : de.setup.loading}</span>
+        </button>
+        {loadError}
+      </div>
     </div>
   )
 }
 
-interface TurnProps extends GameScreenProps {
+interface PromptProps {
+  state: PlayingState
   player: Player
-  newGame: ReactNode
+  place: Place | undefined
+  loadError: ReactNode
 }
 
-function Turn({ state, player, place, placesFailed, onRetry, map, dispatch, newGame }: TurnProps) {
+function Prompt({ state, player, place, loadError }: PromptProps) {
   const { round, settings } = state
   const category = de.categories[round.category]
+  return (
+    <div
+      className="prompt"
+      data-testid="prompt"
+      data-ready={place !== undefined}
+      style={{ '--accent': category.color } as CSSProperties}
+    >
+      <span className="prompt__meta">
+        <span className="player-tag" style={{ '--player-color': player.color } as CSSProperties}>
+          {t.onTurn(player.name)}
+        </span>{' '}
+        · {t.round(round.number)} · {t.targetScore(settings.targetScore)}
+      </span>
+      <span className="prompt__text">
+        <span aria-hidden="true">{category.icon}</span> {category.label}:{' '}
+        <strong>{place ? place.name : t.placeLoading}</strong>
+        {place?.qualifier && <span className="prompt__qualifier"> ({place.qualifier})</span>}
+      </span>
+      {loadError}
+    </div>
+  )
+}
+
+interface TurnProps {
+  state: PlayingState
+  player: Player
+  map: MapLibreMap | null
+  dispatch: Dispatch<GameAction>
+}
+
+function Turn({ state, player, map, dispatch }: TurnProps) {
+  const circle = state.round.draft
   const deadline = turnDeadline(state)
-  const [circle, setCircle] = useState<Circle | null>(null)
+  const setCircle = useCallback((c: Circle) => dispatch({ type: 'setDraft', circle: c }), [dispatch])
 
   // Every player starts from the same view (spec §2).
   useEffect(() => {
@@ -93,41 +155,11 @@ function Turn({ state, player, place, placesFailed, onRetry, map, dispatch, newG
     return () => {
       if (window.__eingekreist) delete window.__eingekreist.setCircle
     }
-  }, [map])
+  }, [map, setCircle])
 
   return (
     <>
       {map && <CircleEditor map={map} circle={circle} onChange={setCircle} color={player.color} />}
-
-      <header className="game-bar">
-        <div
-          className="prompt"
-          data-testid="prompt"
-          data-ready={place !== undefined}
-          style={{ '--accent': category.color } as CSSProperties}
-        >
-          <span className="prompt__meta">
-            <span className="player-tag" style={{ '--player-color': player.color } as CSSProperties}>
-              {t.onTurn(player.name)}
-            </span>{' '}
-            · {t.round(round.number)} · {t.targetScore(settings.targetScore)}
-          </span>
-          <span className="prompt__text">
-            <span aria-hidden="true">{category.icon}</span> {category.label}:{' '}
-            <strong>{place ? place.name : t.placeLoading}</strong>
-            {place?.qualifier && <span className="prompt__qualifier"> ({place.qualifier})</span>}
-          </span>
-          {!place && placesFailed && (
-            <span className="prompt__error" role="alert">
-              {t.loadError}{' '}
-              <button type="button" className="link-button" onClick={onRetry}>
-                {t.retry}
-              </button>
-            </span>
-          )}
-        </div>
-        {newGame}
-      </header>
 
       <footer className="turn-bar">
         <div className="radius-readout" role="status" aria-live="polite">
@@ -148,14 +180,13 @@ function Turn({ state, player, place, placesFailed, onRetry, map, dispatch, newG
             {t.pass}
           </button>
           {deadline !== null && (
-            // TurnTimer always calls the latest onTimeUp, so this sees the current circle.
-            <TurnTimer deadline={deadline} onTimeUp={(now) => dispatch({ type: 'timeUp', circle, now })} />
+            <TurnTimer deadline={deadline} onTimeUp={(now) => dispatch({ type: 'timeUp', now })} />
           )}
           <button
             type="button"
             className="button button--primary"
             disabled={!circle}
-            onClick={() => circle && dispatch({ type: 'submitTurn', circle })}
+            onClick={() => dispatch({ type: 'submitTurn' })}
           >
             {t.submit}
           </button>

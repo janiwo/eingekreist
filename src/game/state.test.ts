@@ -176,6 +176,9 @@ describe('turns', () => {
     return s as PlayingState
   }
   const startTurn = (now = T0): GameAction => ({ type: 'startTurn', now })
+  const place = (c: Circle = circle): GameAction => ({ type: 'setDraft', circle: c })
+  const submit: GameAction = { type: 'submitTurn' }
+  const timeUp = (now: number): GameAction => ({ type: 'timeUp', now })
 
   it('starts each round on the handover screen of the first player', () => {
     const s = game()
@@ -189,11 +192,12 @@ describe('turns', () => {
       run(
         game(),
         startTurn(),
-        { type: 'submitTurn', circle },
+        place(),
+        submit,
         startTurn(T0 + 5000),
         { type: 'passTurn' },
         startTurn(T0 + 9000),
-        { type: 'timeUp', circle: null, now: T0 + 69_000 },
+        timeUp(T0 + 69_000),
       ),
     )
     expect(s.round.turns).toEqual([
@@ -202,6 +206,7 @@ describe('turns', () => {
       { playerId: 'p3', outcome: 'timedOut', circle: null },
     ])
     expect(s.round.turnStartedAt).toBeNull()
+    expect(s.round.draft).toBeNull()
     expect(playerOnTurn(s)).toBeNull()
   })
 
@@ -215,30 +220,34 @@ describe('turns', () => {
   })
 
   it('submits a placed circle automatically when time runs out', () => {
-    const s = playing(run(game(30), startTurn(), { type: 'timeUp', circle, now: T0 + 30_000 }))
+    const s = playing(run(game(30), startTurn(), place(), timeUp(T0 + 30_000)))
     expect(s.round.turns).toEqual([{ playerId: 'p1', outcome: 'submitted', circle }])
+    expect(s.round.draft).toBeNull() // no trace for the next player
   })
 
   it('ignores a time-up before the time is up or without a timer', () => {
     const early = playing(run(game(30), startTurn()))
-    expect(run(early, { type: 'timeUp', circle, now: T0 + 29_999 })).toBe(early)
+    expect(run(early, timeUp(T0 + 29_999))).toBe(early)
     const untimed = playing(run(game(null), startTurn()))
-    expect(run(untimed, { type: 'timeUp', circle, now: T0 + 1e9 })).toBe(untimed)
+    expect(run(untimed, timeUp(T0 + 1e9))).toBe(untimed)
   })
 
   it('ignores turn actions on the handover screen', () => {
     const s = game()
-    expect(run(s, { type: 'submitTurn', circle }, { type: 'passTurn' }, { type: 'timeUp', circle, now: T0 + 1e9 })).toBe(s)
+    expect(run(s, place(), submit, { type: 'passTurn' }, timeUp(T0 + 1e9))).toBe(s)
+  })
+
+  it('cannot submit without a circle', () => {
+    const s = playing(run(game(), startTurn()))
+    expect(run(s, submit)).toBe(s)
   })
 
   it('rejects invalid circles and enforces the minimum radius', () => {
     const s = playing(run(game(), startTurn()))
-    expect(run(s, { type: 'submitTurn', circle: { center: [0, 95], radiusKm: 10 } })).toBe(s)
-    expect(run(s, { type: 'submitTurn', circle: { center: [Number.NaN, 0], radiusKm: 10 } })).toBe(s)
-    const tiny = playing(run(s, { type: 'submitTurn', circle: { center: [0, 0], radiusKm: 0.2 } }))
-    expect(tiny.round.turns[0].circle?.radiusKm).toBe(1)
-    const huge = playing(run(s, { type: 'submitTurn', circle: { center: [0, 0], radiusKm: 1e6 } }))
-    expect(huge.round.turns[0].circle?.radiusKm).toBe(20_000)
+    expect(run(s, place({ center: [0, 95], radiusKm: 10 }))).toBe(s)
+    expect(run(s, place({ center: [Number.NaN, 0], radiusKm: 10 }))).toBe(s)
+    expect(playing(run(s, place({ center: [0, 0], radiusKm: 0.2 }))).round.draft?.radiusKm).toBe(1)
+    expect(playing(run(s, place({ center: [0, 0], radiusKm: 1e6 }))).round.draft?.radiusKm).toBe(20_000)
   })
 
   it('ignores turn actions once every player has had a turn', () => {
@@ -249,7 +258,7 @@ describe('turns', () => {
 
   it('round-trips a game mid-turn through persistence', () => {
     const storage = memory()
-    const s = run(game(), startTurn(), { type: 'submitTurn', circle }, startTurn(T0 + 1))
+    const s = run(game(), startTurn(), place(), submit, startTurn(T0 + 1), place({ center: [0, 0], radiusKm: 5 }))
     saveGame(s, storage)
     expect(loadGame(storage)).toEqual(s)
   })
@@ -267,7 +276,7 @@ describe('persistence', () => {
   it('returns null for missing, corrupt or outdated entries', () => {
     const storage = memory()
     expect(loadGame(storage)).toBeNull()
-    for (const raw of ['{', '"x"', '{"version":0,"state":{}}', '{"version":1,"state":{"phase":"setup"}}', '{"version":2,"state":{"phase":"bogus"}}', '{"version":2}']) {
+    for (const raw of ['{', '"x"', '{"version":0,"state":{}}', '{"version":2,"state":{"phase":"setup"}}', '{"version":3,"state":{"phase":"bogus"}}', '{"version":3}']) {
       storage.setItem(STORAGE_KEY, raw)
       expect(loadGame(storage)).toBeNull()
     }

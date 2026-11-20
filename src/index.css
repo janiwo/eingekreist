@@ -417,7 +417,7 @@ button:not(:disabled) {
   background: rgba(0, 0, 0, 0.5);
 }
 
-.prompt__error {
+.load-error {
   font-size: 14px;
   color: var(--danger);
 }
@@ -448,14 +448,21 @@ button:not(:disabled) {
   align-items: center;
 }
 
-.corner {
-  position: absolute;
-  top: max(12px, env(safe-area-inset-top));
-  right: 12px;
+.game-bar > .button {
+  margin-left: auto;
+}
+
+.handover-wrap {
+  width: min(420px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
 }
 
 .handover {
-  width: min(420px, 100%);
+  width: 100%;
   min-height: 240px;
   padding: 28px 24px;
   display: flex;

@@ -96,16 +96,22 @@ test('submits a placed circle when the time runs out', async ({ page }, testInfo
   expectNoErrors()
 })
 
-test('a reload keeps the turn and its timer running', async ({ page }) => {
+test('a reload keeps the turn, its timer and the placed circle', async ({ page }, testInfo) => {
   await page.clock.install()
   await openGlobe(page)
   await setUpGame(page, ['Anna', 'Ben'])
   await startTurn(page, 'Anna')
+  await tapGlobeCenter(page, testInfo.project.name === 'mobile')
+  const radius = await readout(page).textContent()
   await page.clock.fastForward(20_000)
-  await openGlobe(page)
+  const { expectNoErrors } = await openGlobe(page)
   await expect(page.getByTestId('prompt')).toContainText('Anna ist dran')
   // Not reset to 60 s (some real time passes while the page reloads).
   const seconds = Number((await page.getByRole('timer').textContent())?.replace(' s', ''))
   expect(seconds).toBeLessThanOrEqual(40)
   expect(seconds).toBeGreaterThan(20)
+  // …and the circle placed before the reload.
+  await expect(readout(page)).toHaveText(radius!)
+  await expect(page.getByTestId('handle-center')).toBeVisible()
+  expectNoErrors()
 })

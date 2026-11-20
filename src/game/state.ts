@@ -66,6 +66,11 @@ export interface Round {
    * running; `null` while the handover screen is shown.
    */
   turnStartedAt: number | null
+  /**
+   * The circle the player on turn has placed so far, if any. Part of the saved game, so a
+   * reload mid-turn keeps it; cleared when the turn ends.
+   */
+  draft: Circle | null
 }
 
 export interface PlayingState {
@@ -91,10 +96,13 @@ export type GameAction =
   | { type: 'start'; pool: PlacePool; seed: RngState }
   /** The player on turn tapped the handover screen; `now` in ms since the epoch. */
   | { type: 'startTurn'; now: number }
-  | { type: 'submitTurn'; circle: Circle }
+  /** The player placed or changed their circle. */
+  | { type: 'setDraft'; circle: Circle }
+  /** Submits the placed circle. */
+  | { type: 'submitTurn' }
   | { type: 'passTurn' }
-  /** The timer ran out; `circle` is whatever was placed, and gets submitted. */
-  | { type: 'timeUp'; circle: Circle | null; now: number }
+  /** The timer ran out: a placed circle gets submitted, otherwise the turn is not submitted. */
+  | { type: 'timeUp'; now: number }
   /** Abandons whatever is going on and returns to a fresh setup. */
   | { type: 'newGame' }
 
@@ -187,7 +195,7 @@ function reduceSetup(state: SetupState, action: GameAction, defaultName: Default
         settings: state.settings,
         rng: draw.rng,
         usedPlaceIds: [draw.placeId],
-        round: { number: 1, placeId: draw.placeId, category: draw.category, turns: [], turnStartedAt: null },
+        round: { number: 1, placeId: draw.placeId, category: draw.category, turns: [], turnStartedAt: null, draft: null },
       }
     }
 
@@ -216,7 +224,7 @@ function validCircle({ center: [lng, lat], radiusKm }: Circle): Circle | null {
 
 function endTurn(state: PlayingState, player: Player, outcome: TurnOutcome, circle: Circle | null): PlayingState {
   const turn: Turn = { playerId: player.id, outcome, circle }
-  return { ...state, round: { ...state.round, turns: [...state.round.turns, turn], turnStartedAt: null } }
+  return { ...state, round: { ...state.round, turns: [...state.round.turns, turn], turnStartedAt: null, draft: null } }
 }
 
 function reducePlaying(state: PlayingState, action: GameAction): GameState {
@@ -229,11 +237,16 @@ function reducePlaying(state: PlayingState, action: GameAction): GameState {
   // Everything else needs a running turn.
   if (state.round.turnStartedAt === null) return state
 
+  const { draft } = state.round
+
   switch (action.type) {
-    case 'submitTurn': {
+    case 'setDraft': {
       const circle = validCircle(action.circle)
-      return circle ? endTurn(state, player, 'submitted', circle) : state
+      return circle ? { ...state, round: { ...state.round, draft: circle } } : state
     }
+
+    case 'submitTurn':
+      return draft ? endTurn(state, player, 'submitted', draft) : state
 
     case 'passTurn':
       return endTurn(state, player, 'passed', null)
@@ -242,8 +255,7 @@ function reducePlaying(state: PlayingState, action: GameAction): GameState {
       // Only counts once the time is really up (and there is a timer at all).
       const deadline = turnDeadline(state)
       if (deadline === null || action.now < deadline) return state
-      const circle = action.circle && validCircle(action.circle)
-      return circle ? endTurn(state, player, 'submitted', circle) : endTurn(state, player, 'timedOut', null)
+      return draft ? endTurn(state, player, 'submitted', draft) : endTurn(state, player, 'timedOut', null)
     }
 
     default:
