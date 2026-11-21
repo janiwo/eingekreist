@@ -42,6 +42,7 @@ export const waters: Entry[] = [
   ),
   sea('north-sea', 'Nordsee', 'North Sea'),
   sea('baltic-sea', 'Ostsee', 'Baltic Sea', 'Gulf of Bothnia', 'Gulf of Finland', 'Gulf of Riga', 'Mecklenburger Bucht'),
+  sea('oresund', 'Öresund', 'Øresund'),
   sea('black-sea', 'Schwarzes Meer', 'Black Sea'),
   sea('caspian-sea', 'Kaspisches Meer', 'Caspian Sea'),
   sea('red-sea', 'Rotes Meer', 'Red Sea'),
@@ -51,7 +52,6 @@ export const waters: Entry[] = [
   sea('english-channel', 'Ärmelkanal', 'English Channel'),
   sea('bay-of-biscay', 'Golf von Biskaya', 'Bay of Biscay'),
   sea('irish-sea', 'Irische See', 'Irish Sea'),
-  sea('strait-of-gibraltar', 'Straße von Gibraltar', 'Strait of Gibraltar'),
   sea('bosphorus', 'Bosporus', 'Bosporus'),
   sea('sea-of-azov', 'Asowsches Meer', 'Sea of Azov'),
   sea('white-sea', 'Weißes Meer', 'White Sea'),
@@ -73,6 +73,7 @@ export const waters: Entry[] = [
   sea('bering-sea', 'Beringmeer', 'Bering Sea'),
   sea('tasman-sea', 'Tasmansee', 'Tasman Sea'),
   sea('coral-sea', 'Korallenmeer', 'Coral Sea'),
+  sea('strait-of-magellan', 'Magellanstraße', 'Estrecho de Magellanes'),
   // Lakes
   lake('lake-constance', 'Bodensee', 'Bodensee'),
   lake('lake-geneva', 'Genfersee', 'Lake Geneva'),

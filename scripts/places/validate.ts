@@ -1,6 +1,7 @@
 /**
  * Checks the generated place dataset: valid geometries, no empty places, counts per category,
- * unique IDs and names, plausible city sizes, file size.
+ * unique IDs and names, plausible city sizes, file size, and that every place is visible on the
+ * globe (spec §4.5).
  *
  *   npm run validate:places
  */
@@ -8,12 +9,16 @@ import { readFileSync } from 'node:fs'
 import { gzipSync } from 'node:zlib'
 import { area } from '@turf/area'
 import { bbox } from '@turf/bbox'
+import { booleanPointInPolygon } from '@turf/boolean-point-in-polygon'
 import type { Position } from 'geojson'
+import { decodePolygons, type PolygonFile } from '../../src/data/basemapCodec.ts'
 import { decodePlaces, type PlaceFile } from '../../src/data/placeCodec.ts'
 import { CATEGORIES, type Category, type Place } from '../../src/game/types.ts'
 import { distanceKm } from '../../src/geo/sphere.ts'
-import { crossings, polygonsOf } from './geometry.ts'
+import { crossings, polygonsOf, type Polys } from './geometry.ts'
+import { placeSources } from './list/index.ts'
 import { PLACES_FILE } from './output.ts'
+import type { BBox } from './types.ts'
 
 /** Allowed number of places per category (spec §4.1, "approx."). */
 export const COUNT_RANGES: Record<Category, [number, number]> = {
@@ -41,7 +46,60 @@ export interface Report {
   largest: { id: string; vertices: number }[]
 }
 
+/** A sea or strait whose largest part holds less of its area is a set of slivers. */
+export const MIN_MARINE_MAIN_PART = 0.5
+
 const ID_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
+
+/** What the globe shows, to check that every place is visible on it. */
+export interface Globe {
+  land: { poly: Position[][]; bbox: BBox }[]
+  /** IDs of places built from Natural Earth marine polygons. */
+  marine: Set<string>
+}
+
+export function makeGlobe(land: Polys, marine: Iterable<string>): Globe {
+  return {
+    land: land.map((poly) => ({ poly, bbox: bbox({ type: 'Polygon', coordinates: poly }) as BBox })),
+    marine: new Set(marine),
+  }
+}
+
+/** The globe's land (src/data/basemap/) and the marine places of the curated list. */
+export function loadGlobe(): Globe {
+  const file = JSON.parse(readFileSync('src/data/basemap/land.json', 'utf8')) as PolygonFile
+  const land = decodePolygons(file).features[0].geometry.coordinates
+  return makeGlobe(land, placeSources.filter((s) => s.source.kind === 'marine').map((s) => s.id))
+}
+
+const overlaps = (a: BBox, b: BBox) => a[0] <= b[2] && a[2] >= b[0] && a[1] <= b[3] && a[3] >= b[1]
+const inBox = ([lng, lat]: Position, b: BBox) => lng >= b[0] && lng <= b[2] && lat >= b[1] && lat <= b[3]
+
+/**
+ * Whether the area overlaps the globe's land: one of its vertices lies on land, or a land vertex
+ * lies inside it. Misses only edges that cross without any vertex inside, which needs both
+ * outlines to be far coarser than ours.
+ */
+function touchesLand(polys: Polys, globe: Globe): boolean {
+  for (const poly of polys) {
+    const box = bbox({ type: 'Polygon', coordinates: poly }) as BBox
+    const geometry = { type: 'Polygon' as const, coordinates: poly }
+    for (const { poly: land, bbox: landBox } of globe.land) {
+      if (!overlaps(box, landBox)) continue
+      const landGeometry = { type: 'Polygon' as const, coordinates: land }
+      if (poly[0].some((v) => inBox(v, landBox) && booleanPointInPolygon(v, landGeometry))) return true
+      if (land[0].some((v) => inBox(v, box) && booleanPointInPolygon(v, geometry))) return true
+    }
+  }
+  return false
+}
+
+/** Share of the area held by the largest part. */
+function mainPartShare(polys: Polys): number {
+  const areas = polys.map((p) => area({ type: 'Polygon', coordinates: p }))
+  const total = areas.reduce((a, b) => a + b, 0)
+  return total > 0 ? Math.max(...areas) / total : 0
+}
 
 function ringErrors(ring: Position[]): string | undefined {
   if (ring.length < 4) return `ring with ${ring.length} points`
@@ -56,7 +114,8 @@ function ringErrors(ring: Position[]): string | undefined {
   }
 }
 
-export function validatePlaces(places: Place[], json: string): Report {
+/** Without `globe`, the checks against the globe (spec §4.5) are skipped. */
+export function validatePlaces(places: Place[], json: string, globe?: Globe): Report {
   const errors: string[] = []
   const counts = Object.fromEntries(CATEGORIES.map((c) => [c, 0])) as Record<Category, number>
   const ids = new Set<string>()
@@ -89,6 +148,13 @@ export function validatePlaces(places: Place[], json: string): Report {
     sizes.push({ id: p.id, vertices })
     const crossed = crossings(polys)
     if (crossed > 0) err(`${crossed} self-intersections`)
+
+    // Visible on the globe (spec §4.5): faulty entries are left out of the list, not patched.
+    if (globe && p.category !== 'water' && !touchesLand(polys, globe)) err('does not touch the land drawn on the globe')
+    if (globe?.marine.has(p.id)) {
+      const share = mainPartShare(polys)
+      if (share < MIN_MARINE_MAIN_PART) err(`fragmented: largest part holds only ${Math.round(share * 100)}% of the area`)
+    }
 
     const km2 = area(p.geometry) / 1e6
     if (!(km2 > 0)) err('zero area')
@@ -128,7 +194,7 @@ export function formatReport(r: Report): string {
 
 if (import.meta.main) {
   const json = readFileSync(PLACES_FILE, 'utf8')
-  const report = validatePlaces(decodePlaces(JSON.parse(json) as PlaceFile), json)
+  const report = validatePlaces(decodePlaces(JSON.parse(json) as PlaceFile), json, loadGlobe())
   console.log(formatReport(report))
   if (report.errors.length > 0) process.exit(1)
 }

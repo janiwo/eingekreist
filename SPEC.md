@@ -104,6 +104,7 @@ Last updated: 2026-11-20
 - The curated list stores per place the source reference (Natural Earth feature, OSM relation, coordinate), the optional buffer size and excluded parts; the build script applies them.
 - A **build script** fetches the geometries from Natural Earth and OSM and generates the dataset.
 - The initial list is proposed by Claude and maintained manually afterwards.
+- Every place must be **visible on the globe**: the globe is drawn from the same Natural Earth 1:10m data and simplification as the places. A place on land must touch drawn land; a sea or strait must be one coherent shape, not slivers. Entries whose source data fails this are **left out**, not patched by hand.
 
 ## 5. Presentation
 

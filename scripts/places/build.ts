@@ -28,7 +28,7 @@ import { placeSources } from './list/index.ts'
 import { PLACES_FILE, serializePlaces } from './output.ts'
 import { CACHE_DIR, naturalEarth, osmBoundaries, type NeLayer } from './sources.ts'
 import type { BBox, PlaceSource, Source } from './types.ts'
-import { formatReport, validatePlaces } from './validate.ts'
+import { formatReport, loadGlobe, validatePlaces } from './validate.ts'
 
 type OsmAreas = Map<number, Polygon | MultiPolygon>
 type AreaSource = Exclude<Source, { kind: 'point' | 'river' }>
@@ -177,7 +177,7 @@ if (failures.length > 0) {
 }
 
 const json = serializePlaces(places)
-const report = validatePlaces(places, json)
+const report = validatePlaces(places, json, loadGlobe())
 console.log(formatReport(report))
 // An invalid dataset goes to the cache for inspection, never into the source tree.
 const out = report.errors.length === 0 ? PLACES_FILE : `${CACHE_DIR}/places.invalid.json`

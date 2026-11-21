@@ -5,7 +5,7 @@ import { loadPlaces } from '../../src/data/places'
 import type { Circle, LngLat, Place } from '../../src/game/types'
 import { circleHits } from '../../src/geo/hitTest'
 import { PLACES_FILE } from './output'
-import { formatReport, validatePlaces } from './validate'
+import { formatReport, loadGlobe, makeGlobe, validatePlaces } from './validate'
 
 const json = readFileSync(PLACES_FILE, 'utf8')
 const places = decodePlaces(JSON.parse(json) as PlaceFile)
@@ -21,8 +21,8 @@ const hits = (id: string, center: LngLat, radiusKm: number) =>
   circleHits({ center, radiusKm } satisfies Circle, place(id).geometry)
 
 describe('place dataset', () => {
-  it('passes validation', () => {
-    const report = validatePlaces(places, json)
+  it('passes validation, including the checks against the globe', () => {
+    const report = validatePlaces(places, json, loadGlobe())
     expect(report.errors, formatReport(report)).toEqual([])
   })
 
@@ -36,6 +36,43 @@ describe('place dataset', () => {
     expect(validatePlaces([wrapped], '').errors).toContain('wrapped: edge across the antimeridian at -179.9,0')
   })
 
+  describe('visibility on the globe', () => {
+    const square = (w: number, s: number, size: number) => [
+      [[w, s], [w + size, s], [w + size, s + size], [w, s + size], [w, s]],
+    ]
+    // One continent from 0° to 10°.
+    const globe = makeGlobe([square(0, 0, 10)], ['sea', 'slivers'])
+    const place = (id: string, category: Place['category'], polygons: number[][][][]): Place => ({
+      id,
+      name: id,
+      category,
+      geometry: { type: 'MultiPolygon', coordinates: polygons },
+    })
+    const errors = (p: Place) => validatePlaces([p], '', globe).errors.filter((e) => !/places, expected/.test(e))
+
+    it('rejects a land place that does not touch the drawn land', () => {
+      expect(errors(place('cape', 'landmark', [square(10.5, 5, 0.2)]))).toEqual([
+        'cape: does not touch the land drawn on the globe',
+      ])
+    })
+
+    it('accepts a land place that only partly lies on land, or contains a whole island', () => {
+      expect(errors(place('coast', 'landmark', [square(9.9, 5, 0.2)]))).toEqual([])
+      expect(errors(place('around', 'island', [square(-1, -1, 12)]))).toEqual([])
+    })
+
+    it('rejects a sea made of slivers, but not one coherent shape', () => {
+      expect(errors(place('slivers', 'water', [square(20, 0, 1), square(22, 0, 1), square(24, 0, 1)]))).toEqual([
+        'slivers: fragmented: largest part holds only 33% of the area',
+      ])
+      expect(errors(place('sea', 'water', [square(20, 0, 3), square(24, 0, 1)]))).toEqual([])
+    })
+
+    it('does not require water places to touch land', () => {
+      expect(errors(place('lake', 'water', [square(20, 0, 1)]))).toEqual([])
+    })
+  })
+
   it('loads through loadPlaces', async () => {
     // The codec round trip itself is covered in placeCodec.test.ts.
     expect((await loadPlaces()).map((p) => p.id)).toEqual(places.map((p) => p.id))
@@ -43,6 +80,16 @@ describe('place dataset', () => {
 })
 
 describe('hit test on real places', () => {
+  it('finds the replacement places', () => {
+    expect(hits('times-square', [-73.9855, 40.758], 1)).toBe(true)
+    // Between Helsingør and Helsingborg
+    expect(hits('oresund', [12.65, 56.04], 1)).toBe(true)
+    // The strait off Punta Arenas
+    expect(hits('strait-of-magellan', [-70.6, -53.3], 1)).toBe(true)
+    // Its outline follows the coast: Tierra del Fuego's interior doesn't count
+    expect(hits('strait-of-magellan', [-69, -54], 1)).toBe(false)
+  })
+
   it('counts overseas departments as part of their country', () => {
     // Saint-Denis, Réunion
     expect(hits('france', [55.45, -20.88], 1)).toBe(true)
