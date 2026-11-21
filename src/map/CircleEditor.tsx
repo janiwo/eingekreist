@@ -173,9 +173,17 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
       { signal },
     )
 
+    // Whether the current press started on a handle. The click that ends it can land
+    // outside the handle (a short drag the browser still counts as a tap), on the canvas.
+    let pressOnHandle = false
+    map.getContainer().addEventListener(
+      'pointerdown',
+      (e) => (pressOnHandle = (e.target as Element).closest('.maplibregl-marker') !== null),
+      { capture: true, signal },
+    )
     const onClick = (e: MapMouseEvent) => {
-      // Taps on a handle bubble up to the map; they must not move the circle.
-      if ((e.originalEvent.target as Element).closest('.maplibregl-marker')) return
+      // A press on a handle (tap or drag) must not move the circle.
+      if (pressOnHandle) return
       // Taps in space next to the globe unproject to the nearest point on its edge.
       if (!hitsGlobe(map, e)) return
       place(e.lngLat.toArray() as LngLat)

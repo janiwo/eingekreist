@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { openGlobe, radiusKm, readout, startGame, tapGlobeCenter } from './helpers'
+import { openGlobe, radiusKm, readout, startGame, stored, tapGlobeCenter } from './helpers'
 
 const mapCenter = (page: Page) =>
   page.evaluate(() => window.__eingekreist!.map.getCenter().toArray())
@@ -85,6 +85,27 @@ test('the radius never drops below 1 km', async ({ page }) => {
   await tapGlobeCenter(page, false)
   await dragRadiusOntoCenter(page, mouseDrag, 1)
   await expect.poll(() => radiusKm(page)).toBe(1)
+  expectNoErrors()
+})
+
+test('a tiny drag that ends just off a handle does not move the circle', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile', 'touch only: the browser turns the short drag into a tap')
+  const { expectNoErrors } = await openGlobe(page)
+  await startGame(page)
+  await page.evaluate(() => window.__eingekreist!.map.jumpTo({ center: [10, 50], zoom: 12 }))
+  await tapGlobeCenter(page, true)
+
+  for (const kind of ['center', 'radius'] as const) {
+    const circleBefore = await stored(page)
+    const centerBefore = await handleCenter(page, 'center')
+    // Grab near the edge of the 44px touch target and move a few px, within the tap slop:
+    // the lift point lies just outside the handle, so the browser's click lands on the canvas.
+    const h = await handleCenter(page, kind)
+    await touchDrag(page, { x: h.x + 15, y: h.y + 10 }, 6, 0)
+    await page.waitForTimeout(300)
+    expect(await handleCenter(page, 'center')).toEqual(centerBefore)
+    expect(await stored(page)).toEqual(circleBefore)
+  }
   expectNoErrors()
 })
 
