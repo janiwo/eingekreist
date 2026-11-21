@@ -44,7 +44,6 @@ export const landmarks: Entry[] = [
   at('kinderdijk', 'Windmühlen von Kinderdijk', [4.639, 51.884]),
   at('little-mermaid', 'Kleine Meerjungfrau', [12.5993, 55.6929]),
   at('preikestolen', 'Preikestolen', [6.1902, 58.9864]),
-  at('north-cape', 'Nordkap', [25.7836, 71.171], 2),
   // Southern Europe
   at('colosseum', 'Kolosseum', [12.4922, 41.8902]),
   at('st-peters-basilica', 'Petersdom', [12.4534, 41.9022]),
@@ -95,13 +94,12 @@ export const landmarks: Entry[] = [
   at('table-mountain', 'Tafelberg', [18.4039, -33.9628], 2),
   at('cape-of-good-hope', 'Kap der Guten Hoffnung', [18.4735, -34.3568], 2),
   // North America
-  at('statue-of-liberty', 'Freiheitsstatue', [-74.0445, 40.6892]),
   at('empire-state-building', 'Empire State Building', [-73.9857, 40.7484]),
+  at('times-square', 'Times Square', [-73.9855, 40.758]),
   at('white-house', 'Weißes Haus', [-77.0365, 38.8977]),
   at('niagara-falls', 'Niagarafälle', [-79.0742, 43.0799]),
   at('cn-tower', 'CN Tower', [-79.3871, 43.6426]),
   at('golden-gate-bridge', 'Golden Gate Bridge', [-122.4783, 37.8199]),
-  at('alcatraz', 'Alcatraz', [-122.423, 37.8267]),
   at('hollywood-sign', 'Hollywood Sign', [-118.3217, 34.1341]),
   at('space-needle', 'Space Needle', [-122.3493, 47.6205]),
   at('mount-rushmore', 'Mount Rushmore', [-103.4591, 43.8791]),
