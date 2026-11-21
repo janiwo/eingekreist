@@ -54,13 +54,19 @@ const ID_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
 /** What the globe shows, to check that every place is visible on it. */
 export interface Globe {
   land: { poly: Position[][]; bbox: BBox }[]
+  /** Every land vertex, as `vertexKey`; places built from the same data share many of them. */
+  landVertices: Set<number>
   /** IDs of places built from Natural Earth marine polygons. */
   marine: Set<string>
 }
 
+/** Exact key of a vertex rounded to COORD_DECIMALS (3), as a safe integer. */
+const vertexKey = ([lng, lat]: Position) => Math.round(lng * 1000 + 180_000) * 200_000 + Math.round(lat * 1000 + 90_000)
+
 export function makeGlobe(land: Polys, marine: Iterable<string>): Globe {
   return {
     land: land.map((poly) => ({ poly, bbox: bbox({ type: 'Polygon', coordinates: poly }) as BBox })),
+    landVertices: new Set(land.flatMap((poly) => poly[0].map(vertexKey))),
     marine: new Set(marine),
   }
 }
@@ -76,19 +82,31 @@ const overlaps = (a: BBox, b: BBox) => a[0] <= b[2] && a[2] >= b[0] && a[1] <= b
 const inBox = ([lng, lat]: Position, b: BBox) => lng >= b[0] && lng <= b[2] && lat >= b[1] && lat <= b[3]
 
 /**
- * Whether the area overlaps the globe's land: one of its vertices lies on land, or a land vertex
- * lies inside it. Misses only edges that cross without any vertex inside, which needs both
- * outlines to be far coarser than ours.
+ * Whether the area overlaps the globe's land: it shares a vertex with the land, a land vertex
+ * lies inside it, or one of its vertices lies on land. Misses only edges that cross without any
+ * vertex inside, which needs both outlines to be far coarser than ours.
+ *
+ * Ordered from cheap to costly: a point-in-polygon test against a continent walks all its
+ * vertices, so it runs last and only for polygons whose box overlaps the place.
  */
 function touchesLand(polys: Polys, globe: Globe): boolean {
-  for (const poly of polys) {
-    const box = bbox({ type: 'Polygon', coordinates: poly }) as BBox
-    const geometry = { type: 'Polygon' as const, coordinates: poly }
-    for (const { poly: land, bbox: landBox } of globe.land) {
-      if (!overlaps(box, landBox)) continue
+  if (polys.some((p) => p[0].some((v) => globe.landVertices.has(vertexKey(v))))) return true
+  const parts = polys.map((poly) => ({
+    poly,
+    box: bbox({ type: 'Polygon', coordinates: poly }) as BBox,
+    candidates: [] as Globe['land'],
+  }))
+  for (const part of parts) {
+    part.candidates = globe.land.filter((l) => overlaps(part.box, l.bbox))
+    const geometry = { type: 'Polygon' as const, coordinates: part.poly }
+    for (const { poly: land } of part.candidates) {
+      if (land[0].some((v) => inBox(v, part.box) && booleanPointInPolygon(v, geometry))) return true
+    }
+  }
+  for (const { poly, candidates } of parts) {
+    for (const { poly: land, bbox: landBox } of candidates) {
       const landGeometry = { type: 'Polygon' as const, coordinates: land }
       if (poly[0].some((v) => inBox(v, landBox) && booleanPointInPolygon(v, landGeometry))) return true
-      if (land[0].some((v) => inBox(v, box) && booleanPointInPolygon(v, geometry))) return true
     }
   }
   return false
