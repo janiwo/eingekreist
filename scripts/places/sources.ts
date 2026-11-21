@@ -14,6 +14,7 @@ const NOMINATIM_BATCH = 20
 
 export type NeLayer =
   | 'admin_0_countries'
+  | 'admin_0_boundary_lines_land'
   | 'land'
   | 'minor_islands'
   | 'geography_regions_polys'

@@ -15,7 +15,7 @@ npm run screenshot                      # → screenshots/desktop.png, mobile.pn
 npm run screenshot -- / arctic 0,80,2   # camera at lng,lat,zoom
 npm run screenshot -- --game / game     # game screen (seed 1), first turn started
 npm run screenshot -- --handover / ho   # game screen, handover before the first turn
-npm run fetch:basemap                   # re-download the base map from Natural Earth
+npm run fetch:basemap                   # rebuild the base map from Natural Earth
 ```
 
 One-time setup for browser tests and screenshots: `npx playwright install chromium`.
@@ -37,7 +37,7 @@ src/
   map/maplibre.ts   MapLibre import with explicitly bundled worker
   map/view.ts       start view for each turn
   i18n/de.ts        German UI text and category themes (icon, color)
-  data/basemap/     Natural Earth 1:50m as compact GeoJSON
+  data/basemap/     Natural Earth 1:10m as compact GeoJSON
 e2e/                Playwright tests (*.e2e.ts)
 scripts/            screenshot.ts, fetch-basemap.ts
 ```
