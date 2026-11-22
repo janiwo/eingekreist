@@ -18,7 +18,7 @@ export type Source =
   | { kind: 'marine'; names: string[] }
   /** Lakes and reservoirs. */
   | { kind: 'lake'; names: string[] }
-  /** River centerlines, buffered by `bufferKm`. `bbox` drops same-named rivers elsewhere. */
+  /** River (and canal) centerlines, buffered by `bufferKm`. `bbox` drops same-named rivers elsewhere. */
   | { kind: 'river'; names: string[]; bbox?: BBox; bufferKm: number }
   /** Land and minor-island polygons that contain one of the points. */
   | { kind: 'land'; at: LngLat[] }
@@ -26,6 +26,11 @@ export type Source =
   | { kind: 'landIn'; bbox: BBox }
   /** OpenStreetMap administrative boundaries, by relation ID. */
   | { kind: 'osm'; relations: number[] }
+  /**
+   * The line ways of an OpenStreetMap relation (e.g. the Great Wall's collection), buffered by
+   * `bufferKm`. Ways whose first vertex lies in one of the `drop` boxes are left out.
+   */
+  | { kind: 'osmLines'; relation: number; drop?: BBox[]; bufferKm: number }
   /** A single coordinate, buffered by `bufferKm`. */
   | { kind: 'point'; at: LngLat; bufferKm: number }
 

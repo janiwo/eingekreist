@@ -69,6 +69,15 @@ describe('bufferLines', () => {
     expect(Math.max(...lats)).toBeCloseTo(0.09, 2)
     expect(Math.min(...lats)).toBeCloseTo(-0.09, 2)
   })
+
+  it('merges many short overlapping lines', () => {
+    // 2000 offset segments of ~1 km along 2°, like the Great Wall's OSM ways
+    const lines: Position[][] = Array.from({ length: 2000 }, (_, i) => [
+      [i * 0.001, (i % 7) * 0.0001],
+      [i * 0.001 + 0.009, ((i + 3) % 7) * 0.0001],
+    ])
+    expect(bufferLines(lines, 2)).toHaveLength(1)
+  })
 })
 
 describe('simplifyPolys', () => {
