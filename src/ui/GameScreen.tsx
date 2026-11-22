@@ -76,7 +76,7 @@ export function GameScreen({ state, place, placesFailed, onRetry, map, dispatch,
         {(playing || !player) && <Prompt state={state} player={player} place={place} loadError={loadError} />}
         <div className="game-bar__actions">
           {/* Not during a turn: the timer runs, and the dialog would hide the globe. */}
-          {!playing && <HowToPlay settings={state.settings} compact />}
+          {!playing && <HowToPlay compact />}
           <NewGameButton onConfirm={() => dispatch({ type: 'newGame' })} />
         </div>
       </header>
@@ -243,13 +243,6 @@ function Turn({ state, player, map, dispatch }: TurnProps) {
           </button>
         </div>
         <div className="turn-actions">
-          <button
-            type="button"
-            className="button button--secondary button--panel"
-            onClick={() => dispatch({ type: 'passTurn' })}
-          >
-            {t.pass}
-          </button>
           {deadline !== null && (
             <TurnTimer deadline={deadline} onTimeUp={(now) => dispatch({ type: 'timeUp', now })} />
           )}

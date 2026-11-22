@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { CIRCLES_LAYER_ID, PLACE_LAYER_ID } from '../src/map/RevealLayers'
-import { HIT, nameInput, openGlobe, playTurn, setUpGame, stored } from './helpers'
+import { HIT, MISS, nameInput, openGlobe, playTurn, setUpGame, stored } from './helpers'
 
 const reveal = (page: Page) => page.getByTestId('reveal')
 const handover = (page: Page) => page.getByTestId('handover')
@@ -37,11 +37,11 @@ test('plays a game to target score 2, through a tie and sudden death', async ({ 
   expect(await revealLayers(page)).toEqual([false, false])
   expect((await stored(page)).round.placeId).not.toBe(place)
 
-  // Anna passes, Ben hits: 1 : 2.
-  await playTurn(page, 'Anna', null)
+  // Anna misses, Ben hits: 1 : 2.
+  await playTurn(page, 'Anna', MISS)
   await playTurn(page, 'Ben', HIT)
   await expect(reveal(page)).toContainText('Ben holt den Punkt')
-  await expect(rows(page)).toHaveText([/Ben20\.000 km✓ Treffer\+1 2/, /AnnaGepasst\s*1$/])
+  await expect(rows(page)).toHaveText([/Ben20\.000 km✓ Treffer\+1 2/, /Anna1 km✗ Daneben\s*1$/])
   // Ben leads alone at the target: on to the result.
   await page.getByRole('button', { name: 'Zum Ergebnis' }).click()
 
@@ -71,23 +71,22 @@ test('sudden death: only the tied leaders play on until one leads alone', async 
   const { expectNoErrors } = await openGlobe(page)
   await setUpGame(page, ['Anna', 'Ben', 'Cem'], { targetScore: 1, noTimer: true })
 
-  // Anna and Ben hit with the same radius at target score 1, Cem passes: Cem is out.
+  // Anna and Ben hit with the same radius at target score 1, Cem misses: Cem is out.
   await playTurn(page, 'Anna', HIT)
   await playTurn(page, 'Ben', HIT)
-  await playTurn(page, 'Cem', null)
+  await playTurn(page, 'Cem', MISS)
   await expect(page.getByTestId('sudden-death')).toContainText('Stechen! Nur Anna und Ben spielen weiter')
   await page.getByRole('button', { name: 'Nächste Runde' }).click()
 
-  // Nobody hits: still tied (a 1 km circle in the far South Pacific misses every place).
-  // After Anna and Ben the round is over: Cem gets no turn.
-  await playTurn(page, 'Anna', { center: [-150, -60], radiusKm: 1 })
-  await playTurn(page, 'Ben', null)
+  // Nobody hits: still tied. After Anna and Ben the round is over: Cem gets no turn.
+  await playTurn(page, 'Anna', MISS)
+  await playTurn(page, 'Ben', MISS)
   await expect(reveal(page)).toContainText('Niemand hat getroffen')
   await expect(reveal(page).getByRole('row', { name: /^Anna / })).toContainText('✗ Daneben')
   await expect(reveal(page).getByRole('row', { name: /^Cem / })).toContainText('Ausgeschieden')
   await page.getByRole('button', { name: 'Nächste Runde' }).click()
 
-  await playTurn(page, 'Anna', null)
+  await playTurn(page, 'Anna', MISS)
   await playTurn(page, 'Ben', HIT)
   await page.getByRole('button', { name: 'Zum Ergebnis' }).click()
   await expect(page.getByTestId('end')).toContainText('Ben gewinnt!')

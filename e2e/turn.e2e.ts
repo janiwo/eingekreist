@@ -4,7 +4,6 @@ import { openGlobe, readout, setUpGame, startTurn, stored, tapGlobeCenter } from
 
 const handover = (page: Page) => page.getByTestId('handover')
 const submit = (page: Page) => page.getByRole('button', { name: 'Abgeben' })
-const pass = (page: Page) => page.getByRole('button', { name: 'Passen' })
 
 /** Any trace of a circle: handles in the DOM, circle features on the map. */
 const circleTraces = (page: Page) =>
@@ -19,7 +18,7 @@ const circleTraces = (page: Page) =>
     }
   })
 
-test('plays a round with three players: submit, pass, timeout', async ({ page }, testInfo) => {
+test('plays a round with three players: submit, submit, timeout', async ({ page }, testInfo) => {
   const isMobile = testInfo.project.name === 'mobile'
   // Fake clock (runs normally until fast-forwarded), so the 60 s timeout needs no waiting.
   await page.clock.install()
@@ -40,7 +39,7 @@ test('plays a round with three players: submit, pass, timeout', async ({ page },
   await tapGlobeCenter(page, isMobile)
   await submit(page).click()
 
-  // Ben: no trace of Anna's circle, the globe is back at the start view; he passes.
+  // Ben: no trace of Anna's circle, the globe is back at the start view; he submits too.
   await expect(handover(page)).toContainText('Gib das Gerät an Ben')
   expect(await circleTraces(page)).toEqual({ handles: 0, features: 0 })
   await startTurn(page, 'Ben')
@@ -53,7 +52,9 @@ test('plays a round with three players: submit, pass, timeout', async ({ page },
   expect(view.center[0]).toBeCloseTo(START_VIEW.center[0], 5)
   expect(view.center[1]).toBeCloseTo(START_VIEW.center[1], 5)
   expect(view.zoom).toBeCloseTo(START_VIEW.zoom, 5)
-  await pass(page).click()
+  await expect(page.getByRole('button', { name: 'Passen' })).toHaveCount(0)
+  await tapGlobeCenter(page, isMobile)
+  await submit(page).click()
 
   // Cem: lets the time run out without a circle.
   await startTurn(page, 'Cem')
@@ -65,11 +66,11 @@ test('plays a round with three players: submit, pass, timeout', async ({ page },
   const reveal = page.getByTestId('reveal')
   await expect(reveal).toContainText('Auflösung Runde 1')
   await expect(reveal.getByRole('row', { name: /^Anna / })).toContainText(/\d km/)
-  await expect(reveal.getByRole('row', { name: /^Ben / })).toContainText('Gepasst')
+  await expect(reveal.getByRole('row', { name: /^Ben / })).toContainText(/\d km/)
   await expect(reveal.getByRole('row', { name: /^Cem / })).toContainText('Zeit abgelaufen')
 
   const { round } = await stored(page)
-  expect(round.turns.map((t: { outcome: string }) => t.outcome)).toEqual(['submitted', 'passed', 'timedOut'])
+  expect(round.turns.map((t: { outcome: string }) => t.outcome)).toEqual(['submitted', 'submitted', 'timedOut'])
   expect(round.turns[0].circle.radiusKm).toBeGreaterThan(0)
   expectNoErrors()
 })

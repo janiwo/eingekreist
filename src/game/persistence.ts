@@ -1,4 +1,4 @@
-import type { GameState } from './state'
+import type { GameState, PlayingState } from './state'
 import { CATEGORIES } from './types'
 
 export const STORAGE_KEY = 'eingekreist.game'
@@ -25,10 +25,20 @@ export function loadGame(storage: Pick<Storage, 'getItem'> | undefined = globalT
     if (stored.version !== VERSION || !state || !PHASES.includes(state.phase)) return null
     // Categories index the UI's texts; an unknown one would crash every render.
     const categories = state.phase === 'playing' ? [...state.settings.categories, state.round.category] : state.settings.categories
-    return categories.length > 0 && categories.every((c) => CATEGORIES.includes(c)) ? state : null
+    if (categories.length === 0 || !categories.every((c) => CATEGORIES.includes(c))) return null
+    return state.phase === 'playing' ? withoutPasses(state) : state
   } catch {
     return null
   }
+}
+
+/**
+ * Turns saved before "Pass" was removed: a pass ended the turn without a circle, which is what
+ * `timedOut` means now.
+ */
+function withoutPasses(state: PlayingState): PlayingState {
+  const turns = state.round.turns.map((t) => ((t.outcome as string) === 'passed' ? { ...t, outcome: 'timedOut' as const } : t))
+  return { ...state, round: { ...state.round, turns } }
 }
 
 /** Saves the game; failures (private mode, quota) are ignored, the game just won't survive a reload. */

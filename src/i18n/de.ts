@@ -6,7 +6,6 @@ const points = (n: number) => `${n} ${n === 1 ? 'Punkt' : 'Punkte'}`
 const formatKm = (km: number) => `${kmFormat.format(km)} km`
 // Shared by the turn buttons and the instructions that name them.
 const submit = 'Abgeben'
-const pass = 'Passen'
 
 export const de = {
   appName: 'Eingekreist',
@@ -56,12 +55,10 @@ export const de = {
     handOver: 'Gib das Gerät an',
     tapToStart: 'Tippen zum Starten',
     submit,
-    pass,
     timeLeft: 'Verbleibende Zeit',
     seconds: (n: number) => `${n} s`,
     outcomes: {
       submitted: 'Kreis abgegeben',
-      passed: 'Gepasst',
       timedOut: 'Zeit abgelaufen',
     },
   },
@@ -122,40 +119,31 @@ export const de = {
     goal: {
       title: 'Ziel',
       text: [
-        'Jede Runde wird ein Ort genannt. Zeichne auf dem Globus einen Kreis, der ihn berührt – je kleiner, desto besser. Der kleinste Kreis, der trifft, holt den Punkt.',
+        'Jede Runde wird ein Ort genannt. Zeichne auf dem Globus einen Kreis, der ihn überlappt – je kleiner, desto besser. Der kleinste Kreis, der trifft, holt den Punkt.',
       ],
     },
     round: {
       title: 'Eine Runde',
       text: [
-        'Ihr spielt reihum auf einem Gerät. Wer dran ist, tippt zum Starten.',
-        'Tippe auf den Globus, um den Mittelpunkt zu setzen. Mit den Griffen verschiebst du den Kreis oder änderst den Radius.',
-        `Bist du zufrieden, tippe auf „${submit}“. Keine Ahnung? Dann „${pass}“.`,
-        'Alle zeichnen geheim. Die Kreise der anderen siehst du erst bei der Auflösung.',
+        'Ihr spielt reihum auf einem Gerät.',
+        'Tippe auf den Globus, um den Mittelpunkt deines Kreises zu setzen.',
+        `Mit den Griffen verschiebst du den Kreis oder änderst den Radius. Drücke auf „${submit}“, wenn du mit deinem Kreis zufrieden bist. Ist ein Zeitlimit eingestellt, wird dein Kreis automatisch abgegeben, sobald die Zeit abläuft.`,
+        'Sobald alle Kreise abgegeben sind, wird ausgewertet.',
       ],
     },
-    /** Last line of the round section; follows the timer setting. */
-    turnTime: (seconds: number | null) =>
-      seconds === null
-        ? 'Es gibt kein Zeitlimit.'
-        : `Du hast ${seconds} Sekunden. Läuft die Zeit ab, wird dein Kreis automatisch abgegeben.`,
     scoring: {
       title: 'Wertung',
       text: [
-        'Jede Berührung zählt, auch ganz knapp am Rand. Besteht ein Ort aus mehreren Teilen, reicht einer davon.',
-        'Es gilt der Umriss, der bei der Auflösung gezeigt wird.',
-        'Sind die kleinsten Treffer gleich groß, bekommen alle einen Punkt. Trifft niemand, gibt es keinen Punkt.',
+        'Es gewinnt der kleinste Kreis, der den Ort überlappt. Sind die kleinsten Treffer gleich groß, bekommen alle einen Punkt.',
       ],
     },
-    tip: `Tipp: Kreise schrumpfen bis auf ${formatKm(MIN_RADIUS_KM)} – wenn du dir sicher bist, macht ihn das Zielscheiben-Symbol mit einem Tipp ganz klein.`,
+    tip: `Tipp: Der kleinste Radius ist ${formatKm(MIN_RADIUS_KM)}. Bist du dir sicher, schrumpft das Zielscheiben-Symbol deinen Kreis auf diese Größe.`,
     end: {
       title: 'Spielende',
       text: [
-        'Erreichen mehrere das Ziel in derselben Runde, geht es ins Stechen: Nur wer gemeinsam vorne liegt, spielt weiter, bis einer allein führt.',
+        'Wer zuerst die Zielpunktzahl erreicht, gewinnt. Bei Gleichstand geht es ins Stechen, bis nur noch eine Person übrig bleibt.',
       ],
     },
-    /** First line of the end section; follows the target score. */
-    winAt: (targetScore: number) => `Wer zuerst ${points(targetScore)} hat, gewinnt.`,
     /** The scoring illustration. */
     figure: {
       label: 'Beispiel: Drei Kreise um einen Ort',

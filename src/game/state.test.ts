@@ -189,7 +189,8 @@ describe('turns', () => {
     expect(playerOnTurn(s)?.id).toBe('p1')
   })
 
-  it('plays a round: submit, pass, timeout', () => {
+  it('plays a round: submit, submit, timeout', () => {
+    const small: Circle = { center: [0, 0], radiusKm: 5 }
     const s = playing(
       run(
         game(),
@@ -197,14 +198,15 @@ describe('turns', () => {
         place(),
         submit,
         startTurn(T0 + 5000),
-        { type: 'passTurn' },
+        place(small),
+        submit,
         startTurn(T0 + 9000),
         timeUp(T0 + 69_000),
       ),
     )
     expect(s.round.turns).toEqual([
       { playerId: 'p1', outcome: 'submitted', circle },
-      { playerId: 'p2', outcome: 'passed', circle: null },
+      { playerId: 'p2', outcome: 'submitted', circle: small },
       { playerId: 'p3', outcome: 'timedOut', circle: null },
     ])
     expect(s.round.turnStartedAt).toBeNull()
@@ -216,7 +218,7 @@ describe('turns', () => {
     const s = playing(run(game(), startTurn()))
     expect(s.round.turnStartedAt).toBe(T0)
     expect(run(s, startTurn(T0 + 1))).toBe(s) // already started
-    const next = playing(run(s, { type: 'passTurn' }))
+    const next = playing(run(s, place(), submit))
     expect(next.round.turnStartedAt).toBeNull()
     expect(playerOnTurn(next)?.id).toBe('p2')
   })
@@ -236,7 +238,7 @@ describe('turns', () => {
 
   it('ignores turn actions on the handover screen', () => {
     const s = game()
-    expect(run(s, place(), submit, { type: 'passTurn' }, timeUp(T0 + 1e9))).toBe(s)
+    expect(run(s, place(), submit, timeUp(T0 + 1e9))).toBe(s)
   })
 
   it('cannot submit without a circle', () => {
@@ -254,8 +256,8 @@ describe('turns', () => {
 
   it('ignores turn actions once every player has had a turn', () => {
     let s: GameState = game()
-    for (let i = 0; i < 3; i++) s = run(s, startTurn(), { type: 'passTurn' })
-    expect(run(s, startTurn(), { type: 'passTurn' })).toBe(s)
+    for (let i = 0; i < 3; i++) s = run(s, startTurn(), place(), submit)
+    expect(run(s, startTurn(), place(), submit)).toBe(s)
   })
 
   it('round-trips a game mid-turn through persistence', () => {
@@ -277,11 +279,13 @@ describe('reveal and end of game', () => {
   const next: GameAction = { type: 'nextRound', pool: places }
   const hit = (radiusKm: number): Circle => ({ center: [0, 0], radiusKm })
   const miss = (radiusKm: number): Circle => ({ center: [20, 0], radiusKm })
-  /** Plays one round: a circle submits, `null` passes. */
+  /** Plays one round: a circle submits, `null` lets the time run out without one. */
   const round = (...circles: (Circle | null)[]): GameAction[] =>
     circles.flatMap((c) => [
       { type: 'startTurn', now: 0 } as GameAction,
-      ...(c ? [{ type: 'setDraft', circle: c } as GameAction, { type: 'submitTurn' } as GameAction] : [{ type: 'passTurn' } as GameAction]),
+      ...(c
+        ? [{ type: 'setDraft', circle: c } as GameAction, { type: 'submitTurn' } as GameAction]
+        : [{ type: 'timeUp', now: 1e9 } as GameAction]),
     ])
   /** A started game with two players (three with `three`) and the given target score. */
   const game = (targetScore: number, three = false) =>
@@ -437,6 +441,14 @@ describe('persistence', () => {
       storage.setItem(STORAGE_KEY, raw)
       expect(loadGame(storage)).toBeNull()
     }
+  })
+
+  it('loads a turn passed before "Pass" was removed as timed out', () => {
+    const storage = memory()
+    const playing = run(setup(), { type: 'start', pool, seed: 5 }) as PlayingState
+    const turn = { playerId: 'p1', outcome: 'passed' as never, circle: null }
+    saveGame({ ...playing, round: { ...playing.round, turns: [turn] } }, storage)
+    expect((loadGame(storage) as PlayingState).round.turns).toEqual([{ ...turn, outcome: 'timedOut' }])
   })
 
   it('drops saved games with unknown categories', () => {

@@ -1,19 +1,17 @@
 import { useId, useRef, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { PLAYER_COLORS } from '../game/state'
-import type { Settings } from '../game/types'
 import { de } from '../i18n/de'
 
 const t = de.howToPlay
 
 interface HowToPlayProps {
-  settings: Pick<Settings, 'targetScore' | 'turnSeconds'>
   /** A round "?" button over the globe (game bar) instead of a text link (start screen). */
   compact?: boolean
 }
 
 /** A button that opens the instructions in a modal dialog. */
-export function HowToPlay({ settings, compact = false }: HowToPlayProps) {
+export function HowToPlay({ compact = false }: HowToPlayProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   // Whether the current click started on the backdrop (see onClick).
@@ -52,12 +50,12 @@ export function HowToPlay({ settings, compact = false }: HowToPlayProps) {
               </button>
             </div>
             <Section {...t.goal} />
-            <Section title={t.round.title} text={[...t.round.text, t.turnTime(settings.turnSeconds)]} />
+            <Section {...t.round} />
             <Section {...t.scoring}>
               <ScoringFigure />
               <p className="how-to-play__tip">{t.tip}</p>
             </Section>
-            <Section title={t.end.title} text={[t.winAt(settings.targetScore), ...t.end.text]} />
+            <Section {...t.end} />
             <div className="dialog__actions">
               <button className="button button--primary">{t.done}</button>
             </div>
@@ -81,12 +79,12 @@ function Section({ title, text, children }: { title: string; text: readonly stri
   )
 }
 
-// Example circles in player colors: a big hit, a small hit just touching the edge, a tiny miss.
+// Example circles in player colors: a big hit, a small hit overlapping the edge by about a third, a tiny miss.
 const BIGGER = PLAYER_COLORS[0]
 const WINNER = PLAYER_COLORS[3]
 const MISS = PLAYER_COLORS[5]
 
-/** The scoring rule at a glance: the smallest circle that touches the place wins. */
+/** The scoring rule at a glance: the smallest circle that overlaps the place wins. */
 function ScoringFigure() {
   const f = t.figure
   const legend = [
@@ -97,14 +95,14 @@ function ScoringFigure() {
   return (
     <figure className="how-to-play__figure">
       <svg viewBox="0 0 210 135" role="img" aria-label={f.label}>
-        <path
+        <polygon
           className="how-to-play__place"
-          d="M60,50 C70,25 120,22 145,38 C165,50 168,80 152,100 C135,120 90,122 70,108 C50,94 50,70 60,50 Z"
+          points="58,48 78,30 96,38 118,24 140,34 150,52 163,62 152,80 158,98 136,108 118,104 98,116 76,106 62,88 50,70"
         />
         <circle cx="105" cy="72" r="40" stroke={BIGGER} />
-        <circle cx="176" cy="70" r="14" stroke={WINNER} />
+        <circle cx="161" cy="72" r="14" stroke={WINNER} />
         <circle cx="38" cy="28" r="9" stroke={MISS} />
-        <text x="176" y="48" textAnchor="middle" fontSize="14">
+        <text x="161" y="50" textAnchor="middle" fontSize="14">
           {f.trophy}
         </text>
       </svg>
