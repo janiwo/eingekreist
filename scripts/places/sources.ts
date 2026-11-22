@@ -1,16 +1,17 @@
 /**
  * Downloads and caches the raw source data (gitignored in .cache/places/).
- * Natural Earth comes from GitHub; OSM boundaries from Nominatim, respecting its usage
- * policy: at most one request per second, a generic User-Agent, every response cached.
+ * Natural Earth comes from GitHub; OSM boundaries from Nominatim and OSM lines from Overpass,
+ * respecting their usage policies: few requests, a generic User-Agent, every response cached.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon } from 'geojson'
+import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon, Position } from 'geojson'
 
 export const CACHE_DIR = '.cache/places'
 const NE_BASE = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson'
 const NOMINATIM = 'https://nominatim.openstreetmap.org/lookup'
 const USER_AGENT = 'eingekreist-place-builder/1.0'
 const NOMINATIM_BATCH = 20
+const OVERPASS = 'https://overpass-api.de/api/interpreter'
 
 export type NeLayer =
   | 'admin_0_countries'
@@ -24,8 +25,8 @@ export type NeLayer =
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-async function download(url: string): Promise<string> {
-  const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } })
+async function download(url: string, init?: RequestInit): Promise<string> {
+  const res = await fetch(url, { ...init, headers: { 'User-Agent': USER_AGENT } })
   if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`)
   return res.text()
 }
@@ -80,4 +81,24 @@ export async function osmBoundaries(ids: number[]): Promise<Map<number, Polygon 
     out.set(id, f.geometry)
   }
   return out
+}
+
+interface OverpassWay {
+  type: 'way'
+  geometry?: { lat: number; lon: number }[]
+}
+
+/** The line geometry of every way in an OSM relation, from the cache or Overpass (one request). */
+export async function osmRelationWays(id: number): Promise<Position[][]> {
+  const file = `${CACHE_DIR}/osm/R${id}-ways.json`
+  if (!existsSync(file)) {
+    mkdirSync(`${CACHE_DIR}/osm`, { recursive: true })
+    console.log(`↓ Overpass: ways of relation ${id}`)
+    const query = `[out:json][timeout:300];rel(${id});way(r);out geom;`
+    writeFileSync(file, await download(OVERPASS, { method: 'POST', body: new URLSearchParams({ data: query }) }))
+  }
+  const { elements } = JSON.parse(readFileSync(file, 'utf8')) as { elements: OverpassWay[] }
+  const lines = elements.flatMap((w) => (w.geometry ? [w.geometry.map(({ lon, lat }) => [lon, lat])] : []))
+  if (lines.length === 0) throw new Error(`OSM relation ${id}: no ways with geometry`)
+  return lines
 }

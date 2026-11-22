@@ -3,7 +3,7 @@
  * and lines, simplify, round and repair. Everything works on plain coordinate arrays.
  */
 import { buffer } from '@turf/buffer'
-import { lineString } from '@turf/helpers'
+import { lineString, multiLineString } from '@turf/helpers'
 import { simplify } from '@turf/simplify'
 import type { Position } from 'geojson'
 import * as polyclip from 'polyclip-ts'
@@ -61,14 +61,29 @@ export function chunkLine(line: Position[], maxKm: number): Position[][] {
   return chunks
 }
 
-/** Buffers lines by `km` on each side and merges the result into one area. */
+/** Side of the grid cells whose line chunks are buffered together, in degrees. */
+const LINE_TILE_DEG = 1.5
+
+/**
+ * Buffers lines by `km` on each side and merges the result into one area. Chunks are grouped
+ * by grid cell and each group is buffered as one MultiLineString, so turf merges overlapping
+ * buffers itself; a union of thousands of small pieces (the Great Wall's OSM ways) trips
+ * polyclip's floating-point precision.
+ */
 export function bufferLines(lines: Position[][], km: number): Polys {
-  const pieces: Polys = []
+  const tiles = new Map<string, Position[][]>()
   for (const line of lines) {
     for (const chunk of chunkLine(line, LINE_CHUNK_KM)) {
-      const buffered = buffer(lineString(chunk), km, { units: 'kilometers', steps: 6 })
-      if (buffered) pieces.push(...polygonsOf(buffered.geometry))
+      const [lng, lat] = chunk[0]
+      const tile = `${Math.floor(lng / LINE_TILE_DEG)},${Math.floor(lat / LINE_TILE_DEG)}`
+      if (!tiles.has(tile)) tiles.set(tile, [])
+      tiles.get(tile)!.push(chunk)
     }
+  }
+  const pieces: Polys = []
+  for (const chunks of tiles.values()) {
+    const buffered = buffer(multiLineString(chunks), km, { units: 'kilometers', steps: 6 })
+    if (buffered) pieces.push(...polygonsOf(buffered.geometry))
   }
   return union(pieces)
 }

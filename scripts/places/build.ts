@@ -26,12 +26,12 @@ import {
 } from './geometry.ts'
 import { placeSources } from './list/index.ts'
 import { PLACES_FILE, serializePlaces } from './output.ts'
-import { CACHE_DIR, naturalEarth, osmBoundaries, type NeLayer } from './sources.ts'
+import { CACHE_DIR, naturalEarth, osmBoundaries, osmRelationWays, type NeLayer } from './sources.ts'
 import type { BBox, PlaceSource, Source } from './types.ts'
 import { formatReport, loadGlobe, validatePlaces } from './validate.ts'
 
 type OsmAreas = Map<number, Polygon | MultiPolygon>
-type AreaSource = Exclude<Source, { kind: 'point' | 'river' }>
+type AreaSource = Exclude<Source, { kind: 'point' | 'river' | 'osmLines' }>
 
 const layers = new Map<NeLayer, Feature<Geometry>[]>()
 async function layer(name: NeLayer) {
@@ -90,6 +90,10 @@ async function riverLines({ names, bbox }: Extract<Source, { kind: 'river' }>): 
   return features.flatMap((f) => linesOf(f.geometry)).filter((l) => l.length > 1)
 }
 
+async function osmLines({ relation, drop = [] }: Extract<Source, { kind: 'osmLines' }>): Promise<Position[][]> {
+  return (await osmRelationWays(relation)).filter((w) => !drop.some((b) => inBBox(w[0], b)))
+}
+
 async function areaPolys(source: AreaSource, osm: OsmAreas): Promise<Polys> {
   switch (source.kind) {
     case 'country':
@@ -140,6 +144,8 @@ async function placePolys(src: PlaceSource, osm: OsmAreas): Promise<Polys> {
       return bufferPoint(source.at, source.bufferKm)
     case 'river':
       return bufferLines(simplifyLines(await riverLines(source)), source.bufferKm)
+    case 'osmLines':
+      return bufferLines(simplifyLines(await osmLines(source)), source.bufferKm)
     default:
       // Merge before simplifying, so edges shared by neighbouring source features
       // (e.g. the seas that make up the Mediterranean) stay together.

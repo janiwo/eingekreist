@@ -78,6 +78,12 @@ export const landmarks: Entry[] = [
   at('potala-palace', 'Potala-Palast', [91.1172, 29.6578]),
   at('forbidden-city', 'Verbotene Stadt', [116.3972, 39.9169]),
   at('terracotta-army', 'Terrakotta-Armee', [109.2785, 34.3841]),
+  {
+    id: 'great-wall',
+    name: 'Chinesische Mauer',
+    // OSM's collection of all mapped wall sections, without the separate Southern Great Wall in Hunan
+    source: { kind: 'osmLines', relation: 318110, drop: [[105, 20, 115, 33]], bufferKm: 2 },
+  },
   at('mount-fuji', 'Fuji', [138.7274, 35.3606], 3),
   at('hiroshima-peace-memorial', 'Friedensdenkmal in Hiroshima', [132.4536, 34.3955]),
   at('angkor-wat', 'Angkor Wat', [103.867, 13.4125]),
@@ -111,6 +117,7 @@ export const landmarks: Entry[] = [
   at('tikal', 'Tikal', [-89.6236, 17.222], 2),
   // South America
   at('machu-picchu', 'Machu Picchu', [-72.545, -13.1631]),
+  at('nazca-lines', 'Nazca-Linien', [-75.12, -14.71], 5), // covers the main figures on the plateau
   at('christ-the-redeemer', 'Cristo Redentor', [-43.2105, -22.9519]),
   at('sugarloaf-mountain', 'Zuckerhut', [-43.1566, -22.9486]),
   at('iguazu-falls', 'Iguazú-Wasserfälle', [-54.4367, -25.6953], 2),

@@ -135,6 +135,20 @@ describe('hit test on real places', () => {
     // Cologne Cathedral, ~400 m from the Rhine
     expect(hits('rhine', [6.9583, 50.9413], 1)).toBe(true)
     expect(hits('nile', [31.2357, 30.0444], 1)).toBe(true) // Cairo
+    // Canals come from the same Natural Earth layer
+    expect(hits('panama-canal', [-79.9205, 9.2717], 1)).toBe(true) // Gatún Locks
+    expect(hits('panama-canal', [-79.5913, 9.0168], 1)).toBe(true) // Miraflores Locks
+  })
+
+  it('buffers OSM lines', () => {
+    // The Great Wall from its OSM ways: Badaling, Mutianyu, Jiayuguan and Shanhaiguan
+    expect(hits('great-wall', [116.017, 40.359], 1)).toBe(true)
+    expect(hits('great-wall', [116.565, 40.432], 1)).toBe(true)
+    expect(hits('great-wall', [98.215, 39.801], 1)).toBe(true)
+    expect(hits('great-wall', [119.797, 40.007], 1)).toBe(true)
+    // Central Beijing is ~50 km away; the separate Southern Great Wall in Hunan is left out
+    expect(hits('great-wall', [116.397, 39.917], 20)).toBe(false)
+    expect(hits('great-wall', [109.47, 28.07], 20)).toBe(false)
   })
 
   it('buffers landmarks', () => {
