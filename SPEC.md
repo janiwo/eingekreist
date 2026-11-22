@@ -30,7 +30,7 @@ Last updated: 2026-11-20
    - Center and radius can be adjusted via handles.
    - The current radius is shown live in km.
    - A button with a target icon next to the radius shrinks the circle to the minimum radius, keeping its center. The globe then zooms in on the center (never out) until the two handles are clearly apart. The button is disabled without a circle and at the minimum radius.
-   - "Submit" confirms the circle, "Pass" ends the turn without a circle.
+   - "Submit" confirms the circle. There is no "Pass": every player gives their best guess.
 4. **Timer**: default 60 seconds per player and turn, configurable and can be disabled.
    - If time runs out and a circle is placed, it is submitted automatically.
    - Without a circle, the turn counts as "not submitted".
@@ -42,8 +42,8 @@ Last updated: 2026-11-20
 
 ### 2.1 Instructions
 
-- A „So wird gespielt“ dialog explains the game: goal, a round, scoring (including the 1 km minimum radius and its button as a tip), end of the game and sudden death.
-- The text follows the current settings (target score, timer or no time limit).
+- A „So wird gespielt“ dialog explains the game, briefly: goal, a round, scoring (with an illustration, and the 1 km minimum radius and its button as a tip), end of the game and sudden death.
+- The text is fixed: it doesn't change with the settings (target score, timer).
 - It opens from the start screen and from the game bar on the handover and reveal screens. It is not available during a turn (the timer runs) or on the end screen.
 - It never opens by itself.
 

@@ -53,7 +53,7 @@ export function SetupScreen({ state, dispatch, onStart }: SetupScreenProps) {
       >
         <div className="setup-head">
           <h1 className="brand">{de.appName}</h1>
-          <HowToPlay settings={settings} />
+          <HowToPlay />
         </div>
 
         <section aria-labelledby="setup-players">

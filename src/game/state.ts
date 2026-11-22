@@ -45,7 +45,7 @@ export interface SetupState {
  * How a turn ended. A circle placed when time runs out is submitted automatically and counts
  * as `submitted`; `timedOut` means time ran out without a circle.
  */
-export type TurnOutcome = 'submitted' | 'passed' | 'timedOut'
+export type TurnOutcome = 'submitted' | 'timedOut'
 
 export interface Turn {
   playerId: string
@@ -128,7 +128,6 @@ export type GameAction =
   | { type: 'setDraft'; circle: Circle }
   /** Submits the placed circle. */
   | { type: 'submitTurn' }
-  | { type: 'passTurn' }
   /** The timer ran out: a placed circle gets submitted, otherwise the turn is not submitted. */
   | { type: 'timeUp'; now: number }
   /** Every player has had a turn: scores the round against the place's area. */
@@ -340,9 +339,6 @@ function reducePlaying(state: PlayingState, action: GameAction): GameState {
 
     case 'submitTurn':
       return draft ? endTurn(state, player, 'submitted', draft) : state
-
-    case 'passTurn':
-      return endTurn(state, player, 'passed', null)
 
     case 'timeUp': {
       // Only counts once the time is really up (and there is a timer at all).

@@ -57,6 +57,9 @@ export async function startTurn(page: Page, playerName?: string) {
 /** Hits every place in the dataset (checked by a unit test in hitTest.test.ts). */
 export const HIT: Circle = { center: [0, 0], radiusKm: MAX_RADIUS_KM }
 
+/** A 1 km circle in the far South Pacific: misses every place. */
+export const MISS: Circle = { center: [-150, -60], radiusKm: 1 }
+
 /**
  * Sets up the players by name (adding players as needed), optionally the target score and
  * no timer, and starts the game.
@@ -74,10 +77,9 @@ export async function setUpGame(page: Page, names: string[], options: { targetSc
   await page.getByRole('button', { name: 'Spiel starten' }).click()
 }
 
-/** Plays one turn: submits `circle` (through the dev hook), or passes without one. */
-export async function playTurn(page: Page, name: string, circle: Circle | null) {
+/** Plays one turn: submits `circle` (through the dev hook). */
+export async function playTurn(page: Page, name: string, circle: Circle) {
   await startTurn(page, name)
-  if (!circle) return page.getByRole('button', { name: 'Passen' }).click()
   await page.evaluate((c) => window.__eingekreist!.setCircle!(c), circle)
   await page.getByRole('button', { name: 'Abgeben' }).click()
 }
