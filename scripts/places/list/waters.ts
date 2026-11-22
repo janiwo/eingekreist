@@ -109,4 +109,5 @@ export const waters: Entry[] = [
   river('ganges', 'Ganges', ['Ganges'], [77, 21, 92, 32]),
   river('mekong', 'Mekong', ['Mekong', 'Lancang'], [93, 8, 110, 34]),
   river('yellow-river', 'Gelber Fluss', ['Huang'], [94, 32, 120, 42]),
+  river('panama-canal', 'Panamakanal', ['Panama Canal'], [-80.5, 8.5, -79, 9.6]),
 ]
