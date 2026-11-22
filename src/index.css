@@ -41,6 +41,20 @@ body,
   height: 100%;
 }
 
+.radius-row {
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.min-radius-button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  pointer-events: auto;
+}
+
 .radius-readout {
   max-width: 100%;
   padding: 8px 16px;
@@ -60,6 +74,11 @@ body,
   place-items: center;
   cursor: grab;
   touch-action: none;
+}
+
+/* Where the handles overlap (tiny circles), a grab moves the circle rather than growing it. */
+.handle--center {
+  z-index: 1;
 }
 
 .maplibregl-marker-covered.handle {

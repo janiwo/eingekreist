@@ -1,16 +1,21 @@
 import { useCallback, useEffect, useRef, type CSSProperties, type Dispatch, type ReactNode } from 'react'
 import { playerOnTurn, turnDeadline, type GameAction, type PlayingState } from '../game/state'
-import type { Circle, Place, Player } from '../game/types'
+import { MIN_RADIUS_KM, type Circle, type Place, type Player } from '../game/types'
 import { de } from '../i18n/de'
 import { CircleEditor } from '../map/CircleEditor'
 import type { Map as MapLibreMap } from '../map/maplibre'
-import { START_VIEW } from '../map/view'
+import { START_VIEW, zoomForRadius } from '../map/view'
 import { HowToPlay } from './HowToPlay'
 import { ignoreKeyRepeat } from './keys'
 import { Reveal } from './Reveal'
 import { TurnTimer } from './TurnTimer'
 
 const t = de.game
+
+/** After shrinking to the minimum, zoom in until the two handles are this far apart. */
+const MIN_RADIUS_HANDLE_GAP_PX = 32
+/** Long enough to see that the circle stays put, short enough not to eat the turn time. */
+const MIN_RADIUS_ZOOM_MS = 1000
 
 interface GameScreenProps {
   state: PlayingState
@@ -183,6 +188,17 @@ function Turn({ state, player, map, dispatch }: TurnProps) {
   const deadline = turnDeadline(state)
   const setCircle = useCallback((c: Circle) => dispatch({ type: 'setDraft', circle: c }), [dispatch])
 
+  // Shrinks the circle to the minimum radius and zooms in (never out) until its handles separate.
+  const shrinkToMin = () => {
+    if (!circle) return
+    setCircle({ ...circle, radiusKm: MIN_RADIUS_KM })
+    if (!map) return
+    const zoom = Math.min(map.getMaxZoom(), zoomForRadius(MIN_RADIUS_KM, MIN_RADIUS_HANDLE_GAP_PX, circle.center[1]))
+    // flyTo, not easeTo: easeTo blends center and zoom linearly, so most of the visible panning
+    // lands at the end (zoom first, then pan). flyTo keeps the on-screen motion even.
+    if (zoom > map.getZoom()) map.flyTo({ center: circle.center, zoom, duration: MIN_RADIUS_ZOOM_MS })
+  }
+
   // Every player starts from the same view (spec §2).
   useEffect(() => {
     if (!map) return
@@ -205,14 +221,26 @@ function Turn({ state, player, map, dispatch }: TurnProps) {
       {map && <CircleEditor map={map} circle={circle} onChange={setCircle} color={player.color} />}
 
       <footer className="turn-bar">
-        <div className="radius-readout" role="status" aria-live="polite">
-          {circle ? (
-            <>
-              {de.circle.radius}: <strong>{de.formatKm(circle.radiusKm)}</strong>
-            </>
-          ) : (
-            de.circle.placeHint
-          )}
+        <div className="radius-row">
+          <div className="radius-readout" role="status" aria-live="polite">
+            {circle ? (
+              <>
+                {de.circle.radius}: <strong>{de.formatKm(circle.radiusKm)}</strong>
+              </>
+            ) : (
+              de.circle.placeHint
+            )}
+          </div>
+          <button
+            type="button"
+            className="icon-button icon-button--panel min-radius-button"
+            aria-label={de.circle.minRadius}
+            title={de.circle.minRadius}
+            disabled={!circle || circle.radiusKm <= MIN_RADIUS_KM}
+            onClick={shrinkToMin}
+          >
+            <TargetIcon />
+          </button>
         </div>
         <div className="turn-actions">
           <button
@@ -236,6 +264,17 @@ function Turn({ state, player, map, dispatch }: TurnProps) {
         </div>
       </footer>
     </>
+  )
+}
+
+/** A small target: a dot inside two rings. */
+function TargetIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2" />
+      <circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" strokeWidth="2" />
+      <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+    </svg>
   )
 }
 
