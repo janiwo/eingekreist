@@ -103,6 +103,8 @@ export const de = {
     radius: 'Radius',
     moveCenter: 'Mittelpunkt verschieben',
     changeRadius: 'Radius ändern',
+    /** The button that shrinks the circle to the minimum radius. */
+    minRadius: `Kleinster Kreis (${formatKm(MIN_RADIUS_KM)})`,
     /** Accessible descriptions of the handles' keys. */
     moveCenterKeys: 'Pfeiltasten verschieben den Kreis, mit Umschalt in großen Schritten.',
     changeRadiusKeys: 'Pfeil hoch oder rechts vergrößert, runter oder links verkleinert, mit Umschalt in großen Schritten.',
@@ -145,7 +147,7 @@ export const de = {
         'Sind die kleinsten Treffer gleich groß, bekommen alle einen Punkt. Trifft niemand, gibt es keinen Punkt.',
       ],
     },
-    tip: `Tipp: Kreise schrumpfen bis auf ${formatKm(MIN_RADIUS_KM)} – wenn du dir sicher bist, mach ihn ganz klein.`,
+    tip: `Tipp: Kreise schrumpfen bis auf ${formatKm(MIN_RADIUS_KM)} – wenn du dir sicher bist, macht ihn das Zielscheiben-Symbol mit einem Tipp ganz klein.`,
     end: {
       title: 'Spielende',
       text: [

@@ -117,3 +117,45 @@ test('taps in space next to the globe are ignored', async ({ page }) => {
   await expect(page.getByTestId('handle-center')).toHaveCount(0)
   expectNoErrors()
 })
+
+const minButton = (page: Page) => page.getByRole('button', { name: 'Kleinster Kreis (1 km)' })
+const zoom = (page: Page) => page.evaluate(() => window.__eingekreist!.map.getZoom())
+
+test('the target button shrinks the circle to 1 km and zooms in until the handles separate', async ({ page }, testInfo) => {
+  const { expectNoErrors } = await openGlobe(page)
+  await startGame(page)
+  const isMobile = testInfo.project.name === 'mobile'
+  await expect(minButton(page)).toBeDisabled()
+
+  await page.evaluate(() => window.__eingekreist!.map.jumpTo({ center: [10, 50], zoom: 5 }))
+  await tapGlobeCenter(page, isMobile)
+  const placed = (await stored(page)).round.draft
+  expect(placed.radiusKm).toBeGreaterThan(1)
+
+  if (isMobile) await minButton(page).tap()
+  else await minButton(page).click()
+  await expect.poll(() => radiusKm(page)).toBe(1)
+  await expect(minButton(page)).toBeDisabled()
+  expect((await stored(page)).round.draft.center).toEqual(placed.center)
+
+  // The globe eases in on the center until the radius handle sits clear of the center handle.
+  await page.waitForFunction(() => !window.__eingekreist!.map.isMoving())
+  expect(await zoom(page)).toBeGreaterThan(10)
+  const c = await handleCenter(page, 'center')
+  const r = await handleCenter(page, 'radius')
+  expect(Math.hypot(r.x - c.x, r.y - c.y)).toBeGreaterThan(25)
+  expectNoErrors()
+})
+
+test('the target button never zooms out', async ({ page }) => {
+  const { expectNoErrors } = await openGlobe(page)
+  await startGame(page)
+  // Zoomed in further than the button would: a 5 km circle (a new one would start at 1 km here).
+  await page.evaluate(() => window.__eingekreist!.map.jumpTo({ center: [10, 50], zoom: 15 }))
+  await page.evaluate(() => window.__eingekreist!.setCircle!({ center: [10, 50], radiusKm: 5 }))
+  await minButton(page).click()
+  await expect.poll(() => radiusKm(page)).toBe(1)
+  await page.waitForTimeout(300)
+  expect(await zoom(page)).toBe(15)
+  expectNoErrors()
+})
