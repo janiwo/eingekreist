@@ -194,7 +194,9 @@ function Turn({ state, player, map, dispatch }: TurnProps) {
     setCircle({ ...circle, radiusKm: MIN_RADIUS_KM })
     if (!map) return
     const zoom = Math.min(map.getMaxZoom(), zoomForRadius(MIN_RADIUS_KM, MIN_RADIUS_HANDLE_GAP_PX, circle.center[1]))
-    if (zoom > map.getZoom()) map.easeTo({ center: circle.center, zoom, duration: MIN_RADIUS_ZOOM_MS })
+    // flyTo, not easeTo: easeTo blends center and zoom linearly, so most of the visible panning
+    // lands at the end (zoom first, then pan). flyTo keeps the on-screen motion even.
+    if (zoom > map.getZoom()) map.flyTo({ center: circle.center, zoom, duration: MIN_RADIUS_ZOOM_MS })
   }
 
   // Every player starts from the same view (spec §2).
