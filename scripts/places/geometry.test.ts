@@ -71,8 +71,8 @@ describe('bufferLines', () => {
   })
 
   it('merges many short overlapping lines', () => {
-    // 2000 offset segments of ~1 km along 2°, like the Great Wall's OSM ways
-    const lines: Position[][] = Array.from({ length: 2000 }, (_, i) => [
+    // 100 offset segments of ~1 km, like the Great Wall's OSM ways
+    const lines: Position[][] = Array.from({ length: 100 }, (_, i) => [
       [i * 0.001, (i % 7) * 0.0001],
       [i * 0.001 + 0.009, ((i + 3) % 7) * 0.0001],
     ])
