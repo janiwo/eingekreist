@@ -51,6 +51,7 @@ npm run build
 - **Generated data**: don't edit it by hand. Change the script that generates it and re-run that.
   - `src/data/basemap/`: `npm run fetch:basemap`
   - place data: its build script (see M2)
+  - app icons in `public/` (favicon, apple-touch-icon, manifest icons): `npm run build:icons`
 - **External data sources**: Natural Earth (public domain) and OpenStreetMap (ODbL, attribution required in the UI). Respect the usage policies (rate limits, generic User-Agent without personal data).
 - **Randomness**: game logic must accept an injectable RNG/seed, so tests are deterministic.
 - **Dependencies**: keep them few. Prefer individual `@turf/*` packages over the full `@turf/turf`.

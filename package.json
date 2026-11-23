@@ -11,6 +11,7 @@
     "test": "vitest run",
     "e2e": "playwright test",
     "screenshot": "node scripts/screenshot.ts",
+    "build:icons": "node scripts/build-icons.ts",
     "fetch:basemap": "node scripts/fetch-basemap.ts",
     "build:places": "node scripts/places/build.ts",
     "validate:places": "node scripts/places/validate.ts"
