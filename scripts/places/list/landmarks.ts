@@ -73,7 +73,7 @@ export const landmarks: Entry[] = [
   at('burj-khalifa', 'Burj Khalifa', [55.2744, 25.1972]),
   at('persepolis', 'Persepolis', [52.8916, 29.9353]),
   at('taj-mahal', 'Taj Mahal', [78.0421, 27.1751]),
-  at('golden-temple', 'Goldener Tempel', [74.8765, 31.62]),
+  at('harmandir-sahib', 'Harmandir Sahib', [74.8765, 31.62]),
   at('mount-everest', 'Mount Everest', [86.925, 27.9881], 3),
   at('potala-palace', 'Potala-Palast', [91.1172, 29.6578]),
   at('forbidden-city', 'Verbotene Stadt', [116.3972, 39.9169]),

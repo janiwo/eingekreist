@@ -146,7 +146,7 @@ export const cities: Entry[] = [
   city('los-angeles', 'Los Angeles', [207359]),
   city('chicago', 'Chicago', [122604]),
   city('san-francisco', 'San Francisco', [111968]),
-  city('washington', 'Washington', [5396194]),
+  city('washington', 'Washington, D.C.', [5396194]),
   city('boston', 'Boston', [2315704]),
   city('miami', 'Miami', [1216769]),
   city('las-vegas', 'Las Vegas', [170117]),

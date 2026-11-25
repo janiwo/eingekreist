@@ -39,7 +39,7 @@ export const islands: Entry[] = [
   island('corfu', 'Korfu', [19.9, 39.6]),
   island('elba', 'Elba', [10.25, 42.78]),
   island('capri', 'Capri', [14.24, 40.55]),
-  island('spitsbergen', 'Spitzbergen', [16, 78.5]),
+  group('svalbard', 'Svalbard', [10, 74, 34, 81]),
   group('lofoten', 'Lofoten', [12.8, 67.8, 16.2, 68.6]),
   group('faroe-islands', 'Färöer', [-8, 61.3, -6, 62.5]),
   group('azores', 'Azoren', [-32, 36.8, -24.5, 40]),
@@ -78,8 +78,6 @@ export const islands: Entry[] = [
   // Oceania
   island('new-guinea', 'Neuguinea', [140, -5]),
   island('tasmania', 'Tasmanien', [146.5, -42]),
-  island('north-island', 'Nordinsel', [175.5, -38.5]),
-  island('south-island', 'Südinsel', [171, -43.5]),
-  island('hawaii', 'Hawaii', [-155.5, 19.6]),
+  island('hawaii', 'Hawaii (Big Island)', [-155.5, 19.6]),
   island('tahiti', 'Tahiti', [-149.45, -17.65]),
 ]
