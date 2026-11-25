@@ -120,14 +120,12 @@ export const landmarks: Entry[] = [
   // North America
   at('empire-state-building', 'Empire State Building', [-73.9857, 40.7484]),
   at('times-square', 'Times Square', [-73.9855, 40.758]),
-  at('statue-of-liberty', 'Freiheitsstatue', [-74.0445, 40.6892], 2), // the island isn't on the basemap; reach the shore
   at('brooklyn-bridge', 'Brooklyn Bridge', [-73.9969, 40.7061]),
   at('central-park', 'Central Park', [-73.9654, 40.7829], 2),
   at('white-house', 'Weißes Haus', [-77.0365, 38.8977]),
   at('niagara-falls', 'Niagarafälle', [-79.0742, 43.0799]),
   at('cn-tower', 'CN Tower', [-79.3871, 43.6426]),
   at('golden-gate-bridge', 'Golden Gate Bridge', [-122.4783, 37.8199]),
-  at('alcatraz', 'Alcatraz', [-122.4229, 37.8267], 2.5), // the island isn't on the basemap; reach the shore
   at('hollywood-sign', 'Hollywood Sign', [-118.3217, 34.1341]),
   at('space-needle', 'Space Needle', [-122.3493, 47.6205]),
   at('mount-rushmore', 'Mount Rushmore', [-103.4591, 43.8791]),
