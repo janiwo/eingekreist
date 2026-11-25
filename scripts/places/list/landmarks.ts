@@ -13,6 +13,8 @@ const at = (id: string, name: string, point: LngLat, bufferKm = 1): Entry => ({
 export const landmarks: Entry[] = [
   // Germany, Austria, Switzerland
   at('brandenburg-gate', 'Brandenburger Tor', [13.3777, 52.5163]),
+  at('reichstag', 'Reichstagsgebäude', [13.3762, 52.5186]),
+  at('checkpoint-charlie', 'Checkpoint Charlie', [13.3904, 52.5075]),
   at('berlin-tv-tower', 'Berliner Fernsehturm', [13.4094, 52.5208]),
   at('cologne-cathedral', 'Kölner Dom', [6.9583, 50.9413]),
   at('neuschwanstein', 'Schloss Neuschwanstein', [10.7498, 47.5576]),
@@ -29,6 +31,8 @@ export const landmarks: Entry[] = [
   // Western Europe
   at('eiffel-tower', 'Eiffelturm', [2.2945, 48.8584]),
   at('louvre', 'Louvre', [2.3376, 48.8606]),
+  at('arc-de-triomphe', 'Arc de Triomphe', [2.295, 48.8738]),
+  at('sacre-coeur', 'Sacré-Cœur', [2.3431, 48.8867]),
   at('notre-dame', 'Notre-Dame de Paris', [2.3499, 48.853]),
   at('versailles', 'Schloss Versailles', [2.1204, 48.8049]),
   at('mont-saint-michel', 'Mont-Saint-Michel', [-1.5115, 48.6361]),
@@ -36,6 +40,8 @@ export const landmarks: Entry[] = [
   at('pont-du-gard', 'Pont du Gard', [4.5354, 43.9475]),
   at('big-ben', 'Big Ben', [-0.1246, 51.5007]),
   at('tower-bridge', 'Tower Bridge', [-0.0754, 51.5055]),
+  at('buckingham-palace', 'Buckingham Palace', [-0.1419, 51.5014]),
+  at('london-eye', 'London Eye', [-0.1196, 51.5033]),
   at('stonehenge', 'Stonehenge', [-1.8262, 51.1789]),
   at('edinburgh-castle', 'Edinburgh Castle', [-3.2008, 55.9486]),
   at('giants-causeway', 'Giant’s Causeway', [-6.5116, 55.2408]),
@@ -44,11 +50,15 @@ export const landmarks: Entry[] = [
   at('kinderdijk', 'Windmühlen von Kinderdijk', [4.639, 51.884]),
   at('little-mermaid', 'Kleine Meerjungfrau', [12.5993, 55.6929]),
   at('preikestolen', 'Preikestolen', [6.1902, 58.9864]),
+  at('hallgrimskirkja', 'Hallgrímskirkja', [-21.9266, 64.1417]),
   // Southern Europe
   at('colosseum', 'Kolosseum', [12.4922, 41.8902]),
   at('st-peters-basilica', 'Petersdom', [12.4534, 41.9022]),
+  at('sistine-chapel', 'Sixtinische Kapelle', [12.4545, 41.9029]),
+  at('trevi-fountain', 'Trevi-Brunnen', [12.4833, 41.9009]),
   at('leaning-tower-of-pisa', 'Schiefer Turm von Pisa', [10.3966, 43.723]),
   at('st-marks-square', 'Markusplatz', [12.3397, 45.4341]),
+  at('rialto-bridge', 'Rialtobrücke', [12.3358, 45.438]),
   at('pompeii', 'Pompeji', [14.485, 40.749]),
   at('vesuvius', 'Vesuv', [14.426, 40.821], 2),
   at('etna', 'Ätna', [14.9934, 37.751], 3),
@@ -62,7 +72,10 @@ export const landmarks: Entry[] = [
   // Eastern Europe, Turkey
   at('prague-castle', 'Prager Burg', [14.4005, 50.0911]),
   at('kremlin', 'Kreml', [37.6175, 55.752]),
+  at('red-square', 'Roter Platz', [37.6208, 55.7539]),
+  at('elbrus', 'Elbrus', [42.4396, 43.3499], 3),
   at('hagia-sophia', 'Hagia Sophia', [28.9802, 41.0086]),
+  at('blue-mosque', 'Blaue Moschee', [28.9768, 41.0054]),
   at('ephesus', 'Ephesos', [27.3417, 37.9411]),
   at('cappadocia', 'Kappadokien', [34.8289, 38.6431], 10),
   at('mount-ararat', 'Ararat', [44.2983, 39.7016], 5),
@@ -73,10 +86,12 @@ export const landmarks: Entry[] = [
   at('burj-khalifa', 'Burj Khalifa', [55.2744, 25.1972]),
   at('persepolis', 'Persepolis', [52.8916, 29.9353]),
   at('taj-mahal', 'Taj Mahal', [78.0421, 27.1751]),
+  at('gateway-of-india', 'Gateway of India', [72.8347, 18.922]),
   at('harmandir-sahib', 'Harmandir Sahib', [74.8765, 31.62]),
   at('mount-everest', 'Mount Everest', [86.925, 27.9881], 3),
   at('potala-palace', 'Potala-Palast', [91.1172, 29.6578]),
   at('forbidden-city', 'Verbotene Stadt', [116.3972, 39.9169]),
+  at('tiananmen-square', 'Tiananmen-Platz', [116.3912, 39.9055]),
   at('terracotta-army', 'Terrakotta-Armee', [109.2785, 34.3841]),
   {
     id: 'great-wall',
@@ -85,13 +100,16 @@ export const landmarks: Entry[] = [
     source: { kind: 'osmLines', relation: 318110, drop: [[105, 20, 115, 33]], bufferKm: 2 },
   },
   at('mount-fuji', 'Fuji', [138.7274, 35.3606], 3),
+  at('tokyo-skytree', 'Tokyo Skytree', [139.8107, 35.7101]),
   at('hiroshima-peace-memorial', 'Friedensdenkmal in Hiroshima', [132.4536, 34.3955]),
   at('angkor-wat', 'Angkor Wat', [103.867, 13.4125]),
   at('ha-long-bay', 'Halong-Bucht', [107.08, 20.91], 15),
   at('petronas-towers', 'Petronas Towers', [101.7117, 3.1579]),
   at('borobudur', 'Borobudur', [110.2038, -7.6079]),
+  at('puncak-jaya', 'Puncak Jaya', [137.1583, -4.0789], 3),
   // Africa
   at('pyramids-of-giza', 'Pyramiden von Gizeh', [31.1342, 29.9792]),
+  at('sphinx', 'Sphinx von Gizeh', [31.1376, 29.9753]),
   at('abu-simbel', 'Abu Simbel', [31.6258, 22.3372]),
   at('karnak', 'Karnak-Tempel', [32.6573, 25.7188]),
   at('kilimanjaro', 'Kilimandscharo', [37.3556, -3.0674], 8),
@@ -102,14 +120,19 @@ export const landmarks: Entry[] = [
   // North America
   at('empire-state-building', 'Empire State Building', [-73.9857, 40.7484]),
   at('times-square', 'Times Square', [-73.9855, 40.758]),
+  at('statue-of-liberty', 'Freiheitsstatue', [-74.0445, 40.6892], 2), // the island isn't on the basemap; reach the shore
+  at('brooklyn-bridge', 'Brooklyn Bridge', [-73.9969, 40.7061]),
+  at('central-park', 'Central Park', [-73.9654, 40.7829], 2),
   at('white-house', 'Weißes Haus', [-77.0365, 38.8977]),
   at('niagara-falls', 'Niagarafälle', [-79.0742, 43.0799]),
   at('cn-tower', 'CN Tower', [-79.3871, 43.6426]),
   at('golden-gate-bridge', 'Golden Gate Bridge', [-122.4783, 37.8199]),
+  at('alcatraz', 'Alcatraz', [-122.4229, 37.8267], 2.5), // the island isn't on the basemap; reach the shore
   at('hollywood-sign', 'Hollywood Sign', [-118.3217, 34.1341]),
   at('space-needle', 'Space Needle', [-122.3493, 47.6205]),
   at('mount-rushmore', 'Mount Rushmore', [-103.4591, 43.8791]),
   at('hoover-dam', 'Hoover Dam', [-114.7377, 36.016]),
+  at('las-vegas-strip', 'Las Vegas Strip', [-115.172, 36.1147], 4),
   at('monument-valley', 'Monument Valley', [-110.1098, 36.998], 10),
   at('denali', 'Denali', [-151.0074, 63.0692], 5),
   at('chichen-itza', 'Chichén Itzá', [-88.5686, 20.6843]),
@@ -126,10 +149,14 @@ export const landmarks: Entry[] = [
   at('perito-moreno', 'Perito-Moreno-Gletscher', [-73.0486, -50.4967], 3),
   // Oceania
   at('sydney-opera-house', 'Sydney Opera House', [151.2153, -33.8568]),
+  at('sydney-harbour-bridge', 'Sydney Harbour Bridge', [151.2108, -33.8523]),
   at('uluru', 'Uluru', [131.0369, -25.3444], 3),
+  at('kosciuszko', 'Mount Kosciuszko', [148.2636, -36.4559], 3),
   {
     id: 'great-barrier-reef',
     name: 'Great Barrier Reef',
     source: { kind: 'marine', names: ['Great Barrier Reef'] },
   },
+  // Antarctica
+  at('mount-vinson', 'Mount Vinson', [-85.6172, -78.5254], 3),
 ]

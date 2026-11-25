@@ -71,7 +71,7 @@ Last updated: 2026-11-20
 | Islands | ~50 | Natural Earth |
 | Landscapes (deserts, mountain ranges, plains …) | ~50 | Natural Earth (geography regions) |
 | Waters (seas, lakes, rivers) | ~60 | Natural Earth |
-| Landmarks | ~80 | point + buffer; long structures (Great Wall) as buffered OSM lines |
+| Landmarks | ~125 | point + buffer; long structures (Great Wall) as buffered OSM lines |
 
 - Provinces and states are **not** part of version 1.
 - Selection principle: a generally educated person should have heard of every place.

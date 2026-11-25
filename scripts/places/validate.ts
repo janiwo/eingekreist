@@ -27,7 +27,7 @@ export const COUNT_RANGES: Record<Category, [number, number]> = {
   island: [40, 70],
   landscape: [40, 75],
   water: [50, 75],
-  landmark: [65, 110],
+  landmark: [100, 140],
 }
 
 export const MAX_FILE_BYTES = 3_000_000
