@@ -740,6 +740,69 @@ button:not(:disabled) {
   opacity: 0.55;
 }
 
+/* A row with a circle: clicking it flies the globe to the circle. */
+.results__focusable {
+  cursor: pointer;
+}
+
+.results__focusable:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.results__focusable.results__winner:hover {
+  background: rgba(242, 181, 68, 0.2);
+}
+
+/* The name's button (for keys): looks like the plain name, the row shows its focus. */
+.results__focus {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.results__focus:focus-visible {
+  outline: none;
+}
+
+.results__focusable:has(.results__focus:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* Back to the place. Its space stays reserved, so the card (and the camera's padding) never shifts. */
+.reveal__target {
+  align-self: flex-start;
+  flex: none;
+  padding: 4px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    opacity 0.2s,
+    visibility 0s 0.2s;
+}
+
+.reveal__target:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.reveal__target--shown {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.2s;
+}
+
 .results__score {
   text-align: right !important;
   white-space: nowrap;

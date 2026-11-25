@@ -1,16 +1,15 @@
 import { useEffect } from 'react'
 import type { Place } from '../game/types'
-import { placeBounds } from '../geo/placeView'
 import { addCircleLayer, type ColoredCircle } from './circleLayer'
-import type { Map as MapLibreMap, PaddingOptions } from './maplibre'
+import type { Map as MapLibreMap } from './maplibre'
+import { flyToPlace } from './revealCamera'
 import { addShapeLayer, placeFeatures } from './shapeLayer'
+import type { Padding } from './view'
 
 export const PLACE_LAYER_ID = 'reveal-place'
 export const CIRCLES_LAYER_ID = 'reveal-circles'
 /** The place's outline: white stands out on land and sea and is no player color. */
 const PLACE_COLOR = '#ffffff'
-/** How far the camera zooms in on small places (cities, landmarks). */
-const MAX_ZOOM = 7
 const FLIGHT_MS = 2000
 
 interface RevealLayersProps {
@@ -18,7 +17,7 @@ interface RevealLayersProps {
   place: Place
   circles: ColoredCircle[]
   /** Screen space the camera should keep free (header, result card); read when the flight starts. */
-  padding: () => PaddingOptions
+  padding: () => Padding
   /** Called once the camera has arrived and the map has rendered. */
   onArrived: () => void
 }
@@ -35,7 +34,7 @@ export function RevealLayers({ map, place, circles, padding, onArrived }: Reveal
     circleLayer.setCircles(circles)
 
     map.stop()
-    map.fitBounds(placeBounds(place.geometry), { padding: padding(), maxZoom: MAX_ZOOM, duration: FLIGHT_MS })
+    flyToPlace(map, place, padding(), FLIGHT_MS)
     // `idle` waits for the end of the flight.
     map.once('idle', onArrived)
     return () => {

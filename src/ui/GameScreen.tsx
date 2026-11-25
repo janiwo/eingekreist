@@ -4,7 +4,7 @@ import { MIN_RADIUS_KM, type Circle, type Place, type Player } from '../game/typ
 import { de } from '../i18n/de'
 import { CircleEditor } from '../map/CircleEditor'
 import type { Map as MapLibreMap } from '../map/maplibre'
-import { START_VIEW, zoomForRadius } from '../map/view'
+import { FOCUS_FLIGHT_MS, START_VIEW, zoomForRadius } from '../map/view'
 import { HowToPlay } from './HowToPlay'
 import { ignoreKeyRepeat } from './keys'
 import { Reveal } from './Reveal'
@@ -14,8 +14,6 @@ const t = de.game
 
 /** After shrinking to the minimum, zoom in until the two handles are this far apart. */
 const MIN_RADIUS_HANDLE_GAP_PX = 32
-/** Long enough to see that the circle stays put, short enough not to eat the turn time. */
-const MIN_RADIUS_ZOOM_MS = 1000
 
 interface GameScreenProps {
   state: PlayingState
@@ -196,7 +194,7 @@ function Turn({ state, player, map, dispatch }: TurnProps) {
     const zoom = Math.min(map.getMaxZoom(), zoomForRadius(MIN_RADIUS_KM, MIN_RADIUS_HANDLE_GAP_PX, circle.center[1]))
     // flyTo, not easeTo: easeTo blends center and zoom linearly, so most of the visible panning
     // lands at the end (zoom first, then pan). flyTo keeps the on-screen motion even.
-    if (zoom > map.getZoom()) map.flyTo({ center: circle.center, zoom, duration: MIN_RADIUS_ZOOM_MS })
+    if (zoom > map.getZoom()) map.flyTo({ center: circle.center, zoom, duration: FOCUS_FLIGHT_MS })
   }
 
   // Every player starts from the same view (spec §2).

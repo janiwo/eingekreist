@@ -76,6 +76,11 @@ export const de = {
     miss: '✗ Daneben',
     /** In place of the radius for a player knocked out in sudden death. */
     out: 'Ausgeschieden',
+    /** Tooltip of a player's name: the globe flies to their circle. */
+    toCircle: (name: string) => `Zum Kreis von ${name}`,
+    /** The button back to the place, after looking at circles or moving the globe. */
+    toPlace: (name: string) => `Zum Ziel: ${name}`,
+    toPlaceSymbol: '📍',
     /** Badge next to the score of a round winner. */
     pointGained: '+1',
     suddenDeath: (names: string[], n: number) =>

@@ -10,6 +10,7 @@
  *   npm run screenshot -- --reveal / reveal 2,47,300 → play a round (each player draws a circle at lng,lat,
  *                                                     the radius growing per player) and show the reveal
  *   npm run screenshot -- --reveal --seed=135 / russia 170,65,500 → another seed: another first place
+ *   npm run screenshot -- --reveal --focus=2 / focus 2,47,300 → then click the 2nd result row (fly to its circle)
  *   npm run screenshot -- --end / end         → play a game to target score 1 and show the end screen
  *   npm run screenshot -- --help / help      → open the instructions (start screen; with --handover/--reveal: game bar)
  *   npm run screenshot -- "/?debug=places&place=france" france → show a place (view fits to it)
@@ -27,6 +28,8 @@ const allDevices = args.includes('--all')
 const end = args.includes('--end')
 const reveal = end || args.includes('--reveal')
 const game = handover || reveal || args.includes('--game')
+const focus = Number(args.find((a) => a.startsWith('--focus='))?.slice('--focus='.length) ?? 0)
+if (focus && !reveal) throw new Error('--focus needs --reveal (it clicks a result row)')
 const seed = Number(args.find((a) => a.startsWith('--seed='))?.slice('--seed='.length) ?? 1)
 const positional = args.filter((a) => !a.startsWith('--'))
 const [path = '/', prefix = ''] = positional
@@ -102,6 +105,12 @@ try {
     await page
       .waitForFunction(() => !document.querySelector('[data-ready="false"]'), null, { timeout: 30_000 })
       .catch(() => logs.push('timeout: [data-ready="false"] still present'))
+    if (focus) {
+      await page.getByTestId('reveal').locator('tbody tr').nth(focus - 1).click()
+      // The flight starts on the click; wait for its end.
+      await page.waitForFunction(() => !window.__eingekreist!.map.isMoving())
+      await page.evaluate(() => new Promise((resolve) => window.__eingekreist!.map.once('idle', resolve)))
+    }
     if (view) {
       const [lng, lat, zoom] = view.split(',').map(Number)
       await page.evaluate(

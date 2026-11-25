@@ -39,6 +39,9 @@ Last updated: 2026-11-20
    - The place's outline is shown, and the globe flies to the place.
    - Each player's radius in km is shown, plus the round winner.
    - Then the standings and "Next round".
+   - Clicking a player's row in the results flies the globe to their circle, as large as fits above the card (zoom 14 at most, so even 1 km circles show clearly). Rows without a circle are not clickable. Nothing on the globe is highlighted or dimmed.
+   - Once the globe has left the place's view (a row was clicked, or the globe was moved by hand), a „📍 <place>“ button appears above the results. It flies back to the place's view and disappears. Its space is always reserved, so the card never shifts.
+   - These flights take as long as the zoom of the minimum-radius button (1 s) and interrupt any running flight.
 
 ### 2.1 Instructions
 
