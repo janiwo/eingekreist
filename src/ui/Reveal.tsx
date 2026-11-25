@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type RefObject } from 'react'
 import { isSuddenDeath, leaders } from '../game/scoring'
 import type { PlayingState, RoundResult, Turn } from '../game/state'
-import type { Place } from '../game/types'
+import type { Circle, Place } from '../game/types'
 import { de } from '../i18n/de'
 import type { ColoredCircle } from '../map/circleLayer'
-import type { Map as MapLibreMap, PaddingOptions } from '../map/maplibre'
+import type { Map as MapLibreMap, MapMovementEvent } from '../map/maplibre'
+import { flyToCircle, flyToPlace } from '../map/revealCamera'
 import { RevealLayers } from '../map/RevealLayers'
+import { FOCUS_FLIGHT_MS, type Padding } from '../map/view'
 import { ignoreKeyRepeat } from './keys'
 
 const t = de.reveal
@@ -36,6 +38,8 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
   const nextRef = useRef<HTMLButtonElement>(null)
   const [arrived, setArrived] = useState(false)
   const onArrived = useCallback(() => setArrived(true), [])
+  // Whether the globe has left the place's view: then the button back to it shows.
+  const [away, setAway] = useState(false)
 
   const circles = useMemo(
     () =>
@@ -48,7 +52,7 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
 
   // Keeps the place clear of the header (top) and of this card: in the larger free area,
   // above the card or left of it (the card sits at the bottom, or at the right in landscape).
-  const padding = useCallback((): PaddingOptions => {
+  const padding = useCallback((): Padding => {
     const { innerWidth: width, innerHeight: height } = window
     const top = (headerRef.current?.getBoundingClientRect().bottom ?? 0) + GAP
     const card = cardRef.current?.getBoundingClientRect()
@@ -72,6 +76,29 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
     observer.observe(header)
     return () => observer.disconnect()
   }, [headerRef])
+
+  // Moving the globe by hand (drag, zoom, rotate, keys) leaves the place's view. Camera moves
+  // by the app and resizes carry no `originalEvent`.
+  useEffect(() => {
+    if (!map) return
+    const onMoveStart = (e: MapMovementEvent) => e.originalEvent && setAway(true)
+    map.on('movestart', onMoveStart)
+    return () => {
+      map.off('movestart', onMoveStart)
+    }
+  }, [map])
+
+  // Both interrupt a running flight, the initial one included.
+  const focusCircle = (circle: Circle) => {
+    setAway(true)
+    if (map) flyToCircle(map, circle, padding(), FOCUS_FLIGHT_MS)
+  }
+  const focusPlace = (e: MouseEvent<HTMLButtonElement>) => {
+    setAway(false)
+    // The button hides; keyboard players continue on „Next round“.
+    if (document.activeElement === e.currentTarget) nextRef.current?.focus({ preventScroll: true })
+    if (map) flyToPlace(map, place, padding(), FOCUS_FLIGHT_MS)
+  }
 
   // For keyboard players; not `autoFocus`, which would scroll the card past its title.
   useEffect(() => nextRef.current?.focus({ preventScroll: true }), [])
@@ -103,6 +130,14 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
           <p className="reveal__winner" role="status">
             {winners.length > 0 ? t.winners(winners.map((p) => p.name)) : t.noWinner}
           </p>
+          <button
+            type="button"
+            className={`reveal__target${away ? ' reveal__target--shown' : ''}`}
+            aria-label={t.toPlace(place.name)}
+            onClick={focusPlace}
+          >
+            <span aria-hidden="true">{t.toPlaceSymbol}</span> {place.name}
+          </button>
           <table className="results">
             <thead>
               <tr>
@@ -120,14 +155,24 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
                 const turn = round.turns.find((tu) => tu.playerId === player.id)
                 const won = result.winnerIds.includes(player.id)
                 const hit = result.hitIds.includes(player.id)
+                const circle = turn?.circle
+                const classes = [won ? 'results__winner' : turn ? '' : 'results__out', circle ? 'results__focusable' : '']
                 return (
                   <tr
                     key={player.id}
-                    className={won ? 'results__winner' : turn ? undefined : 'results__out'}
+                    className={classes.filter(Boolean).join(' ') || undefined}
                     style={{ '--player-color': player.color } as CSSProperties}
+                    // The whole row for pointers; the name's button (whose click bubbles here) for keys.
+                    onClick={circle ? () => focusCircle(circle) : undefined}
                   >
                     <th scope="row">
-                      <span className="player-tag">{player.name}</span>
+                      {circle ? (
+                        <button type="button" className="results__focus" title={t.toCircle(player.name)}>
+                          <span className="player-tag">{player.name}</span>
+                        </button>
+                      ) : (
+                        <span className="player-tag">{player.name}</span>
+                      )}
                     </th>
                     <td>{circleText(turn)}</td>
                     <td className={hit ? 'results__hit' : 'results__miss'}>
