@@ -110,10 +110,15 @@ async function settledCamera(page: Page) {
 test('flies to a player\'s circle and back to the place', async ({ page }) => {
   test.setTimeout(60_000)
   const { expectNoErrors } = await openGlobe(page)
-  await setUpGame(page, ['Anna', 'Ben'], { noTimer: true })
+  await nameInput(page, 1).fill('Anna')
+  await nameInput(page, 2).fill('Ben')
+  // A fixed seed, so a fixed place (Australia): zoomed in on Ben's circle, the globe renders
+  // as Mercator, and from there MapLibre's own fit missed this place by about 90° of longitude.
+  await page.evaluate(() => window.__eingekreist!.startGame!(7, { turnSeconds: null }))
   await playTurn(page, 'Anna', HIT)
   await playTurn(page, 'Ben', MISS)
   await expect(reveal(page)).toHaveAttribute('data-ready', 'true', { timeout: 15_000 })
+  await expect(page.locator('header')).toContainText('Australien')
   const placeView = await settledCamera(page)
 
   // At the place, there is no way back to show.
@@ -140,8 +145,9 @@ test('flies to a player\'s circle and back to the place', async ({ page }) => {
   await target.click()
   await expect(target).toBeHidden()
   const back = await settledCamera(page)
-  expect(back.zoom).toBeCloseTo(placeView.zoom, 1)
-  expect(back.lat).toBeCloseTo(placeView.lat, 0)
+  expect(back.zoom).toBeCloseTo(placeView.zoom, 2)
+  expect(back.lat).toBeCloseTo(placeView.lat, 2)
+  expect(back.lng).toBeCloseTo(placeView.lng, 2)
 
   // Moving the globe by hand leaves the place's view, too.
   await page.locator('canvas').focus()
@@ -155,8 +161,7 @@ test('collapses the result card to a bar and expands it again, without moving th
   const { expectNoErrors } = await openGlobe(page)
   await nameInput(page, 1).fill('Anna')
   await nameInput(page, 2).fill('Ben')
-  // A fixed seed, so a fixed place (the Sahara): the flight back to some places does not
-  // land exactly where the reveal began (e.g. across the antimeridian), and this test compares them.
+  // A fixed seed, so a fixed place (the Sahara).
   await page.evaluate(() => window.__eingekreist!.startGame!(1, { turnSeconds: null }))
   await playTurn(page, 'Anna', HIT)
   await playTurn(page, 'Ben', MISS)
