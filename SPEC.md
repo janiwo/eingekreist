@@ -123,6 +123,7 @@ Last updated: 2026-11-20
 
 - Static web app **without a backend**: TypeScript, React (Vite), MapLibre GL JS in globe mode, Turf.js.
 - Hosting as a static site on GitHub Pages (https://janiwo.github.io/eingekreist/), deployed automatically from `main`.
+- **Analytics**: cookieless visitor statistics with GoatCounter (https://eingekreist.goatcounter.com/), on the live site only. Besides page views it counts two events: `game-started/<n>-players` and `game-finished/<n>-rounds`. No consent banner and no privacy note yet; both may come later.
 - **Circle size**: true radius on the Earth's surface in km. The circle is rendered as a geodesic circle.
 - **Hit test**: a circle hits if and only if
   - the center lies inside the place **or**

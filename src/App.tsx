@@ -1,4 +1,5 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react'
+import { gameEvent, trackEvent } from './analytics/goatcounter'
 import { usePlaces } from './data/usePlaces'
 import { poolOf } from './game/draw'
 import { loadGame, saveGame } from './game/persistence'
@@ -38,6 +39,14 @@ export default function App() {
   }, [places, placesById, placeId])
 
   useEffect(() => saveGame(state), [state])
+
+  // Counts game starts and ends. Starts from the restored phase, so a reload sends nothing.
+  const prevPhase = useRef(state.phase)
+  useEffect(() => {
+    const event = gameEvent(prevPhase.current, state)
+    prevPhase.current = state.phase
+    if (event) trackEvent(event)
+  }, [state])
 
   // Scores the round as soon as the place is there.
   const revealPlace = toReveal && placeId ? placesById.get(placeId) : undefined
