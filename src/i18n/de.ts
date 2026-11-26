@@ -81,6 +81,11 @@ export const de = {
     /** The button back to the place, after looking at circles or moving the globe. */
     toPlace: (name: string) => `Zum Ziel: ${name}`,
     toPlaceSymbol: '📍',
+    /** The toggle that folds the result card into a slim bar, so the map shows in full. */
+    collapse: 'Ergebnisse einklappen',
+    collapseSymbol: '▾',
+    expand: 'Ergebnisse anzeigen',
+    expandSymbol: '▴',
     /** Badge next to the score of a round winner. */
     pointGained: '+1',
     suddenDeath: (names: string[], n: number) =>

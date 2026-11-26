@@ -149,3 +149,55 @@ test('flies to a player\'s circle and back to the place', async ({ page }) => {
   await expect(target).toBeVisible()
   expectNoErrors()
 })
+
+test('collapses the result card to a bar and expands it again, without moving the globe', async ({ page }) => {
+  test.setTimeout(60_000)
+  const { expectNoErrors } = await openGlobe(page)
+  await nameInput(page, 1).fill('Anna')
+  await nameInput(page, 2).fill('Ben')
+  // A fixed seed, so a fixed place (the Sahara): the flight back to some places does not
+  // land exactly where the reveal began (e.g. across the antimeridian), and this test compares them.
+  await page.evaluate(() => window.__eingekreist!.startGame!(1, { turnSeconds: null }))
+  await playTurn(page, 'Anna', HIT)
+  await playTurn(page, 'Ben', MISS)
+  await expect(reveal(page)).toHaveAttribute('data-ready', 'true', { timeout: 15_000 })
+  await expect(page.locator('header')).toContainText('Sahara')
+  const placeView = await settledCamera(page)
+  const bar = page.getByTestId('reveal-bar')
+  await expect(bar).toBeHidden()
+
+  // Collapsed: the table is gone, the bar shows the winner and the way on; the globe stays put.
+  await page.getByRole('button', { name: 'Ergebnisse einklappen' }).click()
+  await expect(bar).toBeVisible()
+  await expect(bar).toContainText('Anna holt den Punkt')
+  await expect(reveal(page).getByRole('table')).toBeHidden()
+  await expect(page.getByRole('button', { name: 'Ergebnisse anzeigen' })).toBeFocused()
+  const collapsedView = await settledCamera(page)
+  expect(collapsedView).toEqual(placeView)
+
+  // Away from the place, the way back shows in the bar and returns to the same view as before.
+  await page.locator('canvas').focus()
+  await page.keyboard.press('ArrowRight')
+  const target = bar.getByRole('button', { name: /^Zum Ziel: / })
+  await expect(target).toBeVisible()
+  await target.click()
+  await expect(target).toBeHidden()
+  const back = await settledCamera(page)
+  expect(back.zoom).toBeCloseTo(placeView.zoom, 1)
+  expect(back.lat).toBeCloseTo(placeView.lat, 0)
+  expect(back.lng).toBeCloseTo(placeView.lng, 0)
+
+  // A tap on the bar expands the card again.
+  await bar.getByText('Anna holt den Punkt').click()
+  await expect(bar).toBeHidden()
+  await expect(reveal(page).getByRole('table')).toBeVisible()
+
+  // Collapsed, the bar's button moves on; the next reveal starts expanded.
+  await page.getByRole('button', { name: 'Ergebnisse einklappen' }).click()
+  await bar.getByRole('button', { name: 'Nächste Runde' }).click()
+  await playTurn(page, 'Anna', MISS)
+  await playTurn(page, 'Ben', MISS)
+  await expect(reveal(page).getByRole('table')).toBeVisible()
+  await expect(bar).toBeHidden()
+  expectNoErrors()
+})

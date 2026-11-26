@@ -11,6 +11,7 @@
  *                                                     the radius growing per player) and show the reveal
  *   npm run screenshot -- --reveal --seed=135 / russia 170,65,500 → another seed: another first place
  *   npm run screenshot -- --reveal --focus=2 / focus 2,47,300 → then click the 2nd result row (fly to its circle)
+ *   npm run screenshot -- --reveal --collapsed / bar 2,47,300 → then collapse the result card into its bar
  *   npm run screenshot -- --end / end         → play a game to target score 1 and show the end screen
  *   npm run screenshot -- --help / help      → open the instructions (start screen; with --handover/--reveal: game bar)
  *   npm run screenshot -- "/?debug=places&place=france" france → show a place (view fits to it)
@@ -28,6 +29,8 @@ const allDevices = args.includes('--all')
 const end = args.includes('--end')
 const reveal = end || args.includes('--reveal')
 const game = handover || reveal || args.includes('--game')
+const collapsed = args.includes('--collapsed')
+if (collapsed && !reveal) throw new Error('--collapsed needs --reveal (it folds the result card)')
 const focus = Number(args.find((a) => a.startsWith('--focus='))?.slice('--focus='.length) ?? 0)
 if (focus && !reveal) throw new Error('--focus needs --reveal (it clicks a result row)')
 const seed = Number(args.find((a) => a.startsWith('--seed='))?.slice('--seed='.length) ?? 1)
@@ -92,7 +95,7 @@ try {
         await page.getByTestId('handover').or(page.getByTestId('reveal')).waitFor()
       }
       if (end) {
-        await page.getByTestId('reveal').getByRole('button').click()
+        await page.getByTestId('reveal').getByRole('button', { name: 'Zum Ergebnis' }).click()
         await page.getByTestId('end').waitFor()
       }
     } else if (game && !handover) await page.getByTestId('handover').click()
@@ -110,6 +113,11 @@ try {
       // The flight starts on the click; wait for its end.
       await page.waitForFunction(() => !window.__eingekreist!.map.isMoving())
       await page.evaluate(() => new Promise((resolve) => window.__eingekreist!.map.once('idle', resolve)))
+    }
+    if (collapsed) {
+      await page.getByRole('button', { name: 'Ergebnisse einklappen' }).click()
+      // Past the fold's transition.
+      await page.waitForTimeout(400)
     }
     if (view) {
       const [lng, lat, zoom] = view.split(',').map(Number)

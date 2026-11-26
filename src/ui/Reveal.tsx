@@ -36,6 +36,11 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
   const { players, round, settings } = state
   const cardRef = useRef<HTMLElement>(null)
   const nextRef = useRef<HTMLButtonElement>(null)
+  const collapseRef = useRef<HTMLButtonElement>(null)
+  const expandRef = useRef<HTMLButtonElement>(null)
+  const barNextRef = useRef<HTMLButtonElement>(null)
+  // Collapsed, a slim bar shows instead of the card; every round starts expanded.
+  const [collapsed, setCollapsed] = useState(false)
   const [arrived, setArrived] = useState(false)
   const onArrived = useCallback(() => setArrived(true), [])
   // Whether the globe has left the place's view: then the button back to it shows.
@@ -50,7 +55,8 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
     [round.turns, players],
   )
 
-  // Keeps the place clear of the header (top) and of this card: in the larger free area,
+  // Keeps the place clear of the header (top) and of this card (collapsed or not: the card
+  // stays laid out, invisibly, so every flight goes to the same view): in the larger free area,
   // above the card or left of it (the card sits at the bottom, or at the right in landscape).
   const padding = useCallback((): Padding => {
     const { innerWidth: width, innerHeight: height } = window
@@ -95,9 +101,26 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
   }
   const focusPlace = (e: MouseEvent<HTMLButtonElement>) => {
     setAway(false)
-    // The button hides; keyboard players continue on „Next round“.
-    if (document.activeElement === e.currentTarget) nextRef.current?.focus({ preventScroll: true })
+    // The button hides; keyboard players continue on „Next round“ (the bar's, when collapsed).
+    if (document.activeElement === e.currentTarget) {
+      ;(collapsed ? barNextRef : nextRef).current?.focus({ preventScroll: true })
+    }
     if (map) flyToPlace(map, place, padding(), FOCUS_FLIGHT_MS)
+  }
+
+  // Collapsing or expanding never moves the globe. Focus follows to the other toggle.
+  const collapse = () => {
+    setCollapsed(true)
+    requestAnimationFrame(() => expandRef.current?.focus({ preventScroll: true }))
+  }
+  const expand = () => {
+    setCollapsed(false)
+    requestAnimationFrame(() => collapseRef.current?.focus({ preventScroll: true }))
+  }
+  // A tap anywhere on the bar expands it, except on its other buttons.
+  const onBarClick = (e: MouseEvent<HTMLElement>) => {
+    const button = (e.target as Element).closest('button')
+    if (!button || button === expandRef.current) expand()
   }
 
   // For keyboard players; not `autoFocus`, which would scroll the card past its title.
@@ -106,6 +129,18 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
   const winners = players.filter((p) => result.winnerIds.includes(p.id))
   const suddenDeath = !result.gameOver && isSuddenDeath(players, settings.targetScore)
   const top = leaders(players)
+  const winnerText = winners.length > 0 ? t.winners(winners.map((p) => p.name)) : t.noWinner
+  const nextText = result.gameOver ? t.toResults : t.nextRound
+  const targetButton = (extraClass: string) => (
+    <button
+      type="button"
+      className={`reveal__target${extraClass}${away ? ' reveal__target--shown' : ''}`}
+      aria-label={t.toPlace(place.name)}
+      onClick={focusPlace}
+    >
+      <span aria-hidden="true">{t.toPlaceSymbol}</span> {place.name}
+    </button>
+  )
 
   return (
     <>
@@ -118,7 +153,8 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
       >
         <section
           ref={cardRef}
-          className="card reveal"
+          id="reveal-card"
+          className={`card reveal${collapsed ? ' reveal--collapsed' : ''}`}
           data-testid="reveal"
           // Ready for screenshots once the globe has arrived at the place.
           data-ready={!map || arrived}
@@ -128,16 +164,24 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
             {t.title(round.number)}
           </h2>
           <p className="reveal__winner" role="status">
-            {winners.length > 0 ? t.winners(winners.map((p) => p.name)) : t.noWinner}
+            {winnerText}
           </p>
-          <button
-            type="button"
-            className={`reveal__target${away ? ' reveal__target--shown' : ''}`}
-            aria-label={t.toPlace(place.name)}
-            onClick={focusPlace}
-          >
-            <span aria-hidden="true">{t.toPlaceSymbol}</span> {place.name}
-          </button>
+          {/* The toggle sits in the card's corner; on short landscape screens (no title) beside the pill. */}
+          <div className="reveal__nav">
+            {targetButton('')}
+            <button
+              ref={collapseRef}
+              type="button"
+              className="reveal__toggle"
+              aria-label={t.collapse}
+              title={t.collapse}
+              aria-expanded="true"
+              aria-controls="reveal-card"
+              onClick={collapse}
+            >
+              <span aria-hidden="true">{t.collapseSymbol}</span>
+            </button>
+          </div>
           <table className="results">
             <thead>
               <tr>
@@ -198,8 +242,42 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
             onKeyDown={ignoreKeyRepeat}
             onClick={onNext}
           >
-            {result.gameOver ? t.toResults : t.nextRound}
+            {nextText}
           </button>
+        </section>
+        {/* Collapsed: the winner, the way back to the place and on; the map stays free. */}
+        <section
+          className={`card reveal-bar${collapsed ? ' reveal-bar--shown' : ''}`}
+          data-testid="reveal-bar"
+          aria-label={t.title(round.number)}
+          onClick={onBarClick}
+        >
+          <div className="reveal-bar__head">
+            <p className="reveal-bar__winner">{winnerText}</p>
+            <button
+              ref={expandRef}
+              type="button"
+              className="reveal__toggle reveal-bar__toggle"
+              aria-label={t.expand}
+              title={t.expand}
+              aria-expanded="false"
+              aria-controls="reveal-card"
+            >
+              <span aria-hidden="true">{t.expandSymbol}</span>
+            </button>
+          </div>
+          <div className="reveal-bar__actions">
+            {away && targetButton(' reveal-bar__target')}
+            <button
+              ref={barNextRef}
+              type="button"
+              className="button button--primary reveal-bar__next"
+              onKeyDown={ignoreKeyRepeat}
+              onClick={onNext}
+            >
+              {nextText}
+            </button>
+          </div>
         </section>
       </div>
     </>

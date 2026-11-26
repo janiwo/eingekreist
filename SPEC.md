@@ -42,6 +42,8 @@ Last updated: 2026-11-20
    - Clicking a player's row in the results flies the globe to their circle, as large as fits above the card (zoom 14 at most, so even 1 km circles show clearly). Rows without a circle are not clickable. Nothing on the globe is highlighted or dimmed.
    - Once the globe has left the place's view (a row was clicked, or the globe was moved by hand), a „📍 <place>“ button appears above the results. It flies back to the place's view and disappears. Its space is always reserved, so the card never shifts.
    - These flights take as long as the zoom of the minimum-radius button (1 s) and interrupt any running flight.
+   - A chevron button (▾) collapses the card into a slim bar, so the whole map shows. It is in the card's top right corner, or next to the „📍“ button on short landscape screens. The bar shows the winner line, the „📍 <place>“ button (when the globe has left the place's view), "Next round" and a ▴ button. Tapping anywhere on the bar except its buttons expands the card again. This works on every screen size, and every reveal starts expanded.
+   - Collapsing and expanding never move the globe. Flights always keep clear of the expanded card, whether it is open or not, so they land on the same view either way.
 
 ### 2.1 Instructions
 
