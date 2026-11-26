@@ -13,7 +13,7 @@ Last updated: 2026-11-20
   - Minimum radius: **1 km**.
   - Tie: all tied players get a point.
   - If no circle overlaps the place, nobody gets a point.
-- The game runs to a configurable target score (default: **10**).
+- The game runs to a configurable target score (default: **5**).
   - If several players reach the target score in the same round, play continues in **sudden death** until one player leads alone.
     - Only the players tied on top play in sudden death; everyone else is out.
     - After each sudden-death round, whoever is no longer tied on top is out as well (e.g. three tied, two hit with the same radius, one misses → only those two play on).
@@ -55,7 +55,7 @@ Last updated: 2026-11-20
 | Setting | Default |
 |---|---|
 | Players (name, color) | 2–8 players |
-| Target score | 10 |
+| Target score | 5 |
 | Timer per turn | 60 s, can be disabled |
 | Show country borders | on |
 | Active categories | all |
