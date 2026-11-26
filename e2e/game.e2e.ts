@@ -14,9 +14,9 @@ test('creates a game that survives a reload', async ({ page }) => {
   await page.getByRole('button', { name: 'Farbe von Cem ändern' }).click()
   await page.getByRole('radio', { name: 'Rot' }).click()
 
-  // Settings: target score 9, no timer, only waters and landmarks.
+  // Settings: target score 4, no timer, only waters and landmarks.
   await page.getByRole('button', { name: 'Weniger' }).click()
-  await expect(page.getByTestId('target-score')).toHaveText('9')
+  await expect(page.getByTestId('target-score')).toHaveText('4')
   await page.getByLabel('Zeit pro Zug').selectOption({ label: 'Ohne Zeitlimit' })
   for (const c of ['Länder', 'Städte', 'Inseln', 'Landschaften']) {
     await page.getByRole('button', { name: c }).click()
@@ -30,7 +30,7 @@ test('creates a game that survives a reload', async ({ page }) => {
   await nameInput(page, 2).fill('Ben')
 
   await startGame(page)
-  await expect(prompt(page)).toContainText('Runde 1 · Ziel: 9 Punkte')
+  await expect(prompt(page)).toContainText('Runde 1 · Ziel: 4 Punkte')
   await expect(prompt(page)).toContainText(/Gewässer|Sehenswürdigkeit/)
   // Timer disabled: none is shown.
   await expect(page.getByRole('timer')).toHaveCount(0)
@@ -39,7 +39,7 @@ test('creates a game that survives a reload', async ({ page }) => {
   expect(before.phase).toBe('playing')
   expect(before.players.map((p: { name: string }) => p.name)).toEqual(['Anna', 'Ben', 'Cem'])
   expect(before.players[2].color).toBe('#e53935')
-  expect(before.settings).toMatchObject({ targetScore: 9, turnSeconds: null, categories: ['water', 'landmark'] })
+  expect(before.settings).toMatchObject({ targetScore: 4, turnSeconds: null, categories: ['water', 'landmark'] })
 
   // Reload: the same game continues.
   await openGlobe(page)

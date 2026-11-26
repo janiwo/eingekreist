@@ -52,7 +52,7 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  targetScore: 10,
+  targetScore: 5,
   turnSeconds: 60,
   showBorders: true,
   categories: [...CATEGORIES],

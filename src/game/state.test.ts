@@ -44,7 +44,7 @@ describe('setup', () => {
       { id: 'p1', name: 'Spieler 1', color: PLAYER_COLORS[0] },
       { id: 'p2', name: 'Spieler 2', color: PLAYER_COLORS[1] },
     ])
-    expect(s.settings).toEqual({ targetScore: 10, turnSeconds: 60, showBorders: true, categories: [...CATEGORIES] })
+    expect(s.settings).toEqual({ targetScore: 5, turnSeconds: 60, showBorders: true, categories: [...CATEGORIES] })
   })
 
   it('allows 2 to 8 players', () => {
