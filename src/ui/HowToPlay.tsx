@@ -4,7 +4,6 @@ import { PLAYER_COLORS } from '../game/state'
 import { useI18n } from '../i18n/context'
 import { LanguageSwitch } from './LanguageSwitch'
 
-
 interface HowToPlayProps {
   /** A round "?" button over the globe (game bar) instead of a text link (start screen). */
   compact?: boolean

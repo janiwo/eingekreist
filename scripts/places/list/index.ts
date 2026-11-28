@@ -17,8 +17,6 @@ const lists: Record<Category, Entry[]> = {
   landmark: landmarks,
 }
 
-const nameOf = (t: Translation | undefined) => (typeof t === 'string' ? t : (t?.name ?? ''))
-
 /**
  * The curated place list (spec §4). Edit the per-category files and the English names in
  * `en.ts`, then `npm run build:places`. A missing English name is left empty, which the
@@ -26,11 +24,12 @@ const nameOf = (t: Translation | undefined) => (typeof t === 'string' ? t : (t?.
  */
 export const placeSources: PlaceSource[] = Object.entries(lists).flatMap(([category, entries]) =>
   entries.map(({ name, qualifier, ...e }) => {
-    const en = english[e.id]
+    const t: Translation | undefined = english[e.id]
+    const en: { name?: string; qualifier?: string } = typeof t === 'string' ? { name: t } : (t ?? {})
     return {
       ...e,
-      name: { de: name, en: nameOf(en) },
-      ...(qualifier && { qualifier: { de: qualifier, en: typeof en === 'object' ? en.qualifier : '' } }),
+      name: { de: name, en: en.name ?? '' },
+      ...(qualifier && { qualifier: { de: qualifier, en: en.qualifier ?? '' } }),
       category: category as Category,
     }
   }),

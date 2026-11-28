@@ -22,6 +22,7 @@ import { chromium, devices } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
 import { createServer } from 'vite'
 import { webglArgs } from '../playwright.config.ts'
+import { LOCALES, type Locale } from '../src/i18n/locale.ts'
 
 const args = process.argv.slice(2)
 const handover = args.includes('--handover')
@@ -34,8 +35,8 @@ const collapsed = args.includes('--collapsed')
 if (collapsed && !reveal) throw new Error('--collapsed needs --reveal (it folds the result card)')
 const focus = Number(args.find((a) => a.startsWith('--focus='))?.slice('--focus='.length) ?? 0)
 if (focus && !reveal) throw new Error('--focus needs --reveal (it clicks a result row)')
-const lang = args.find((a) => a.startsWith('--lang='))?.slice('--lang='.length) ?? 'de'
-if (lang !== 'de' && lang !== 'en') throw new Error(`unknown --lang=${lang} (de or en)`)
+const lang = (args.find((a) => a.startsWith('--lang='))?.slice('--lang='.length) ?? 'de') as Locale
+if (!LOCALES.includes(lang)) throw new Error(`unknown --lang=${lang} (${LOCALES.join(', ')})`)
 const seed = Number(args.find((a) => a.startsWith('--seed='))?.slice('--seed='.length) ?? 1)
 const positional = args.filter((a) => !a.startsWith('--'))
 const [path = '/', prefix = ''] = positional
@@ -68,7 +69,7 @@ try {
     })
   }
   for (const [name, device] of Object.entries(targets)) {
-    const context = await browser.newContext({ ...device, locale: lang === 'de' ? 'de-DE' : 'en-US' })
+    const context = await browser.newContext({ ...device, locale: lang })
     const page = await context.newPage()
     const logs: string[] = []
     page.on('pageerror', (e) => logs.push(`pageerror: ${e.message}`))

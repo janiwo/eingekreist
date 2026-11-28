@@ -67,6 +67,9 @@ function initialRadiusFor(map: MapLibreMap): number {
  */
 export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: CircleEditorProps) {
   const { t } = useI18n()
+  // Read when the editor is set up. The language can't change during a turn (the switch is on
+  // the start screen and in the instructions, which can't be opened then).
+  const tRef = useRef(t)
   const circleRef = useRef(circle)
   const onChangeRef = useRef(onChange)
   const bearingRef = useRef(DEFAULT_HANDLE_BEARING)
@@ -80,20 +83,22 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
   useEffect(() => {
     circleRef.current = circle
     onChangeRef.current = onChange
+    tRef.current = t
   })
 
   // Layers, handles and the tap handler live as long as the editor.
   useEffect(() => {
+    const strings = tRef.current.circle
     const layer = addCircleLayer(map, LAYER_ID)
 
     const center = new Marker({
-      element: handleElement('center', t.circle.moveCenter, t.circle.moveCenterKeys),
+      element: handleElement('center', strings.moveCenter, strings.moveCenterKeys),
       draggable: true,
       // Hide handles on the far side of the globe (CSS also makes them unclickable).
       opacityWhenCovered: '0',
     })
     const radius = new Marker({
-      element: handleElement('radius', t.circle.changeRadius, t.circle.changeRadiusKeys),
+      element: handleElement('radius', strings.changeRadius, strings.changeRadiusKeys),
       draggable: true,
       // Hide handles on the far side of the globe (CSS also makes them unclickable).
       opacityWhenCovered: '0',
@@ -162,7 +167,7 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
     const canvas = map.getCanvas()
     // Only now does Enter place a circle; say so in the globe's accessible name.
     const canvasLabel = canvas.getAttribute('aria-label')
-    canvas.setAttribute('aria-label', t.circle.globeLabel)
+    canvas.setAttribute('aria-label', strings.globeLabel)
     canvas.addEventListener(
       'keydown',
       (e) => {
@@ -201,9 +206,9 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
       editorRef.current = null
       layer.remove()
     }
-  }, [map, t])
+  }, [map])
 
-  // Sync geometry and handles with the circle (and with new handles, after a change of language).
+  // Sync geometry and handles with the circle.
   useEffect(() => {
     const editor = editorRef.current
     if (!editor) return
@@ -226,7 +231,7 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
     if (!draggingRadius.current) {
       show(editor.radius, destination(circle.center, circle.radiusKm, bearingRef.current))
     }
-  }, [map, circle, color, t])
+  }, [map, circle, color])
 
   return null
 }

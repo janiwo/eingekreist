@@ -14,8 +14,6 @@ export const de = {
   showBorders: 'Ländergrenzen anzeigen',
   setup: {
     players: 'Spieler',
-    /** The same in every language: „Player“ is common in German too. */
-    defaultName: (n: number) => `Player ${n}`,
     playerName: (n: number) => `Name von Spieler ${n}`,
     addPlayer: '+ Spieler hinzufügen',
     removePlayer: (name: string) => `${name || 'Spieler'} entfernen`,

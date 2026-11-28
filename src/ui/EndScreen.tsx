@@ -3,7 +3,6 @@ import { leaders, ranking } from '../game/scoring'
 import type { FinishedState } from '../game/state'
 import { useI18n } from '../i18n/context'
 
-
 interface EndScreenProps {
   state: FinishedState
   /** Loading the places failed; „Play again“ tries again. */

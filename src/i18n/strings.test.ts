@@ -15,10 +15,6 @@ describe('string tables', () => {
   it('have the same keys, functions and list lengths in every language', () => {
     for (const strings of Object.values(STRINGS)) expect(shape(strings)).toEqual(shape(de))
   })
-
-  it('use the same default player names in every language', () => {
-    for (const strings of Object.values(STRINGS)) expect(strings.setup.defaultName(3)).toBe('Player 3')
-  })
 })
 
 describe('how-to-play text', () => {

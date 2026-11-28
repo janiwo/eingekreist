@@ -33,6 +33,9 @@ export const MAX_TARGET_SCORE = 99
 /** Default name for player number `n` (1-based); supplied by the UI, which owns the texts. */
 export type DefaultName = (n: number) => string
 
+/** Names of new players. The same in every language: "Player" is common in German too. */
+export const defaultPlayerName: DefaultName = (n) => `Player ${n}`
+
 export type PlayerDraft = Omit<Player, 'score'>
 
 export interface SetupState {

@@ -4,10 +4,9 @@ import { usePlaces } from './data/usePlaces'
 import { poolOf } from './game/draw'
 import { loadGame, saveGame } from './game/persistence'
 import { randomSeed } from './game/rng'
-import { createGameReducer, createSetup, playerOnTurn, type GameState } from './game/state'
+import { createGameReducer, createSetup, defaultPlayerName, playerOnTurn, type GameState } from './game/state'
 import type { Settings } from './game/types'
 import { useI18n } from './i18n/context'
-import { de } from './i18n/de'
 import { Globe } from './map/Globe'
 import type { Map as MapLibreMap } from './map/maplibre'
 import { EndScreen } from './ui/EndScreen'
@@ -20,9 +19,8 @@ const PlaceDebug =
     ? lazy(() => import('./debug/PlaceDebug'))
     : null
 
-// Default names are the same in every language („Player 1“), so the reducer needn't follow it.
-const gameReducer = createGameReducer(de.setup.defaultName)
-const initialState = (): GameState => loadGame() ?? createSetup(de.setup.defaultName)
+const gameReducer = createGameReducer(defaultPlayerName)
+const initialState = (): GameState => loadGame() ?? createSetup(defaultPlayerName)
 
 export default function App() {
   const { locale } = useI18n()

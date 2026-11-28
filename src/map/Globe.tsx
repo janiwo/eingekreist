@@ -1,4 +1,4 @@
-import { AttributionControl, Map as MapLibreMap, type StyleSpecification } from './maplibre'
+import { AttributionControl, Map as MapLibreMap, setMapLocale, type StyleSpecification } from './maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useEffect, useRef } from 'react'
 import { bordersGeoJson, landGeoJson } from './baseData'
@@ -62,8 +62,6 @@ export function Globe({ showBorders, onMapReady }: GlobeProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
   const onReadyRef = useRef(onMapReady)
-  // The map is created once, in the language of that moment; the effect below follows changes.
-  const initialLocale = useRef(t.mapLocale)
 
   useEffect(() => {
     onReadyRef.current = onMapReady
@@ -76,9 +74,8 @@ export function Globe({ showBorders, onMapReady }: GlobeProps) {
       style,
       center: START_VIEW.center,
       zoom: START_VIEW.zoom,
-      // Added below, in the current language.
+      // The strings and the credits are set below, in the current language.
       attributionControl: false,
-      locale: initialLocale.current,
       renderWorldCopies: false,
       dragRotate: false,
       // A tap places the circle, so a double tap must not also zoom.
@@ -103,13 +100,11 @@ export function Globe({ showBorders, onMapReady }: GlobeProps) {
     }
   }, [])
 
-  // MapLibre reads its UI strings when the map or a control is created: on a change of language,
-  // update them and add the credits anew.
+  // MapLibre's UI strings and the credits, in the current language.
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
-    Object.assign(map._locale, t.mapLocale)
-    map.getCanvas().setAttribute('aria-label', t.mapLocale['Map.Title'])
+    setMapLocale(map, t.mapLocale)
     // Compact (behind an ⓘ button) on narrow maps only; MapLibre decides by width.
     const control = new AttributionControl({ customAttribution: attributionHtml(t) })
     map.addControl(control)

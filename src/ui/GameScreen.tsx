@@ -11,7 +11,6 @@ import { ignoreKeyRepeat } from './keys'
 import { Reveal } from './Reveal'
 import { TurnTimer } from './TurnTimer'
 
-
 /** After shrinking to the minimum, zoom in until the two handles are this far apart. */
 const MIN_RADIUS_HANDLE_GAP_PX = 32
 

@@ -16,7 +16,6 @@ export const en: Strings = {
   showBorders: 'Show country borders',
   setup: {
     players: 'Players',
-    defaultName: (n: number) => `Player ${n}`,
     playerName: (n: number) => `Name of player ${n}`,
     addPlayer: '+ Add player',
     removePlayer: (name: string) => `Remove ${name || 'player'}`,

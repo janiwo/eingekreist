@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import type { PlaceFile } from '../src/data/placeCodec'
 import { LOCALE_STORAGE_KEY } from '../src/i18n/locale'
-import { HIT, openGlobe, stored } from './helpers'
+import { HIT, openGlobe, startTurn, stored } from './helpers'
 
 const placeFile = JSON.parse(readFileSync('src/data/places.json', 'utf8')) as PlaceFile
 const englishName = (id: string) => placeFile.places.find((p) => p.id === id)?.name.en
@@ -20,10 +20,9 @@ test.describe('in an English browser', () => {
     await page.getByRole('button', { name: 'Start game' }).click()
     const handover = page.getByTestId('handover')
     await expect(handover).toContainText('Hand the device to Player 1')
-    await handover.click()
+    await startTurn(page)
 
-    const prompt = page.locator('[data-testid="prompt"][data-ready="true"]')
-    await expect(prompt).toBeVisible()
+    const prompt = page.getByTestId('prompt')
     const { round } = await stored(page)
     const name = englishName(round.placeId)
     expect(name).toBeTruthy()
