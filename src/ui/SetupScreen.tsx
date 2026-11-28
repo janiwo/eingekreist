@@ -8,11 +8,12 @@ import {
   type SetupState,
 } from '../game/state'
 import { CATEGORIES, MAX_PLAYERS, MIN_PLAYERS } from '../game/types'
-import { de } from '../i18n/de'
-import { DATA_SOURCES } from '../map/dataSources'
+import { useI18n } from '../i18n/context'
+import { CATEGORY_THEME } from './categoryTheme'
+import { dataSources } from '../map/dataSources'
 import { HowToPlay } from './HowToPlay'
+import { LanguageSwitch } from './LanguageSwitch'
 
-const t = de.setup
 const TIMER_OPTIONS = [30, 45, 60, 90, 120] as const
 
 interface SetupScreenProps {
@@ -23,6 +24,7 @@ interface SetupScreenProps {
 }
 
 export function SetupScreen({ state, dispatch, onStart }: SetupScreenProps) {
+  const { t } = useI18n()
   const { players, settings } = state
   const [colorPickerFor, setColorPickerFor] = useState<string | null>(null)
   const [starting, setStarting] = useState(false)
@@ -52,12 +54,15 @@ export function SetupScreen({ state, dispatch, onStart }: SetupScreenProps) {
         }}
       >
         <div className="setup-head">
-          <h1 className="brand">{de.appName}</h1>
-          <HowToPlay />
+          <h1 className="brand">{t.appName}</h1>
+          <div className="setup-head__links">
+            <HowToPlay />
+            <LanguageSwitch />
+          </div>
         </div>
 
         <section aria-labelledby="setup-players">
-          <h2 id="setup-players">{t.players}</h2>
+          <h2 id="setup-players">{t.setup.players}</h2>
           <ol className="player-list">
             {players.map((p, i) => (
               <li key={p.id} className="player-row">
@@ -65,13 +70,13 @@ export function SetupScreen({ state, dispatch, onStart }: SetupScreenProps) {
                   type="button"
                   className="color-dot"
                   style={{ background: p.color }}
-                  aria-label={t.chooseColor(p.name)}
+                  aria-label={t.setup.chooseColor(p.name)}
                   aria-expanded={colorPickerFor === p.id}
                   onClick={() => setColorPickerFor(colorPickerFor === p.id ? null : p.id)}
                 />
                 <input
                   className="text-input"
-                  aria-label={t.playerName(i + 1)}
+                  aria-label={t.setup.playerName(i + 1)}
                   value={p.name}
                   maxLength={20}
                   autoComplete="off"
@@ -80,21 +85,21 @@ export function SetupScreen({ state, dispatch, onStart }: SetupScreenProps) {
                 <button
                   type="button"
                   className="icon-button"
-                  aria-label={t.removePlayer(p.name)}
+                  aria-label={t.setup.removePlayer(p.name)}
                   disabled={players.length <= MIN_PLAYERS}
                   onClick={() => dispatch({ type: 'removePlayer', id: p.id })}
                 >
-                  {t.removeSymbol}
+                  {t.setup.removeSymbol}
                 </button>
                 {colorPickerFor === p.id && (
-                  <div className="swatches" role="radiogroup" aria-label={t.chooseColor(p.name)}>
+                  <div className="swatches" role="radiogroup" aria-label={t.setup.chooseColor(p.name)}>
                     {PLAYER_COLORS.map((color, ci) => (
                       <button
                         key={color}
                         type="button"
                         role="radio"
                         aria-checked={p.color === color}
-                        aria-label={t.colorNames[ci]}
+                        aria-label={t.setup.colorNames[ci]}
                         className="swatch"
                         style={{ background: color }}
                         onClick={() => {
@@ -114,24 +119,24 @@ export function SetupScreen({ state, dispatch, onStart }: SetupScreenProps) {
               className="button button--secondary"
               onClick={() => dispatch({ type: 'addPlayer' })}
             >
-              {t.addPlayer}
+              {t.setup.addPlayer}
             </button>
           )}
         </section>
 
         <section aria-labelledby="setup-settings">
-          <h2 id="setup-settings">{t.settings}</h2>
+          <h2 id="setup-settings">{t.setup.settings}</h2>
           <div className="setting">
-            <span id="setup-target">{t.targetScore}</span>
+            <span id="setup-target">{t.setup.targetScore}</span>
             <div className="stepper" role="group" aria-labelledby="setup-target">
               <button
                 type="button"
                 className="icon-button"
-                aria-label={t.decrease}
+                aria-label={t.setup.decrease}
                 disabled={settings.targetScore <= MIN_TARGET_SCORE}
                 onClick={() => stepTarget(-1)}
               >
-                {t.decreaseSymbol}
+                {t.setup.decreaseSymbol}
               </button>
               <output aria-live="polite" data-testid="target-score">
                 {settings.targetScore}
@@ -139,16 +144,16 @@ export function SetupScreen({ state, dispatch, onStart }: SetupScreenProps) {
               <button
                 type="button"
                 className="icon-button"
-                aria-label={t.increase}
+                aria-label={t.setup.increase}
                 disabled={settings.targetScore >= MAX_TARGET_SCORE}
                 onClick={() => stepTarget(1)}
               >
-                {t.increaseSymbol}
+                {t.setup.increaseSymbol}
               </button>
             </div>
           </div>
           <label className="setting">
-            <span>{t.timer}</span>
+            <span>{t.setup.timer}</span>
             <select
               className="select"
               value={settings.turnSeconds ?? 'off'}
@@ -161,14 +166,14 @@ export function SetupScreen({ state, dispatch, onStart }: SetupScreenProps) {
             >
               {TIMER_OPTIONS.map((s) => (
                 <option key={s} value={s}>
-                  {t.seconds(s)}
+                  {t.setup.seconds(s)}
                 </option>
               ))}
-              <option value="off">{t.timerOff}</option>
+              <option value="off">{t.setup.timerOff}</option>
             </select>
           </label>
           <label className="setting">
-            <span>{de.showBorders}</span>
+            <span>{t.showBorders}</span>
             <input
               type="checkbox"
               className="switch"
@@ -179,47 +184,47 @@ export function SetupScreen({ state, dispatch, onStart }: SetupScreenProps) {
         </section>
 
         <section aria-labelledby="setup-categories">
-          <h2 id="setup-categories">{t.categories}</h2>
+          <h2 id="setup-categories">{t.setup.categories}</h2>
           <div className="chips">
             {CATEGORIES.map((c) => {
               const on = settings.categories.includes(c)
-              const cat = de.categories[c]
+              const cat = t.categories[c]
               return (
                 <button
                   key={c}
                   type="button"
                   className="chip"
                   aria-pressed={on}
-                  style={{ '--chip-color': cat.color } as CSSProperties}
+                  style={{ '--chip-color': CATEGORY_THEME[c].color } as CSSProperties}
                   onClick={() => dispatch({ type: 'toggleCategory', category: c })}
                 >
-                  <span aria-hidden="true">{cat.icon}</span> {cat.plural}
+                  <span aria-hidden="true">{CATEGORY_THEME[c].icon}</span> {cat.plural}
                 </button>
               )
             })}
           </div>
-          {settings.categories.length === 1 && <p className="hint">{t.atLeastOneCategory}</p>}
+          {settings.categories.length === 1 && <p className="hint">{t.setup.atLeastOneCategory}</p>}
         </section>
 
         <div className="setup-footer">
           {problems.map((p) => (
             <p key={p} className="hint hint--error" role="alert">
-              {t.problems[p]}
+              {t.setup.problems[p]}
             </p>
           ))}
           {loadFailed && (
             <p className="hint hint--error" role="alert">
-              {t.loadError}
+              {t.setup.loadError}
             </p>
           )}
           <button type="submit" className="button button--primary" disabled={problems.length > 0 || starting}>
-            {starting ? t.loading : t.start}
+            {starting ? t.setup.loading : t.setup.start}
           </button>
         </div>
 
         <p className="credits">
-          {de.credits.label}{' '}
-          {DATA_SOURCES.map((c, i) => (
+          {t.credits.label}{' '}
+          {dataSources(t).map((c, i) => (
             <Fragment key={c.href}>
               {i > 0 && ' · '}
               <a href={c.href} target="_blank" rel="noopener">

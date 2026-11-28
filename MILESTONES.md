@@ -156,10 +156,38 @@ An instructions dialog explains the game, so new players understand it without a
 - Screenshots of all screens on desktop and mobile have been checked.
 - The bundle size is documented in the PR.
 
+## [x] M8 – English
+
+An English language option next to German. Place pool unchanged; rebalancing it is tracked in #24.
+
+- Language:
+  - German if the browser language starts with `de`, otherwise English
+  - a "DE | EN" text toggle on the start screen and in the "How to play" dialog
+  - the choice is stored in `localStorage` and sets `<html lang>` (the title stays „Eingekreist“)
+- UI text:
+  - `src/i18n/en.ts`, typed as `Strings`
+  - components read the strings through a language context/hook instead of importing `de`
+  - `Intl` formatters follow the active locale; comparing names lowercases without a locale (the same for German and English)
+  - MapLibre labels and the OSM credit („© OpenStreetMap contributors“) are translated
+- Default player names are "Player N" in both languages.
+- App name stays "Eingekreist". Distances stay in km.
+- Place names:
+  - every place in `scripts/places/list/` gets an English name (and qualifier where needed) in `scripts/places/list/en.ts`
+  - use the most common English name, with the English Wikipedia title as the fallback
+  - the validator fails when an English name is missing
+  - `places.json` is regenerated
+- Analytics events carry the language (e.g. `game-started/3-players/en`).
+- SPEC.md: the language section and "Other languages" in out of scope are updated.
+
+**Done when:**
+- Unit tests cover the language detection and check that both string tables have the same keys.
+- The existing e2e tests run pinned to German; a new e2e test switches to English and plays a turn.
+- Screenshots of all screens in English on desktop and mobile have been checked.
+
 ## Later (only after approval)
 
 - [x] Hosting and deployment: GitHub Pages, deployed from `main` by GitHub Actions
 - Provinces
 - Online multiplayer
 - Satellite map
-- Other languages
+- More languages

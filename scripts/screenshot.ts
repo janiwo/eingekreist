@@ -16,11 +16,13 @@
  *   npm run screenshot -- --help / help      → open the instructions (start screen; with --handover/--reveal: game bar)
  *   npm run screenshot -- "/?debug=places&place=france" france → show a place (view fits to it)
  *   npm run screenshot -- --all …           → also landscape phone, tablet and a small phone
+ *   npm run screenshot -- --lang=en …       → in English (browser language; default German)
  */
 import { chromium, devices } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
 import { createServer } from 'vite'
 import { webglArgs } from '../playwright.config.ts'
+import { LOCALES, type Locale } from '../src/i18n/locale.ts'
 
 const args = process.argv.slice(2)
 const handover = args.includes('--handover')
@@ -33,6 +35,8 @@ const collapsed = args.includes('--collapsed')
 if (collapsed && !reveal) throw new Error('--collapsed needs --reveal (it folds the result card)')
 const focus = Number(args.find((a) => a.startsWith('--focus='))?.slice('--focus='.length) ?? 0)
 if (focus && !reveal) throw new Error('--focus needs --reveal (it clicks a result row)')
+const lang = (args.find((a) => a.startsWith('--lang='))?.slice('--lang='.length) ?? 'de') as Locale
+if (!LOCALES.includes(lang)) throw new Error(`unknown --lang=${lang} (${LOCALES.join(', ')})`)
 const seed = Number(args.find((a) => a.startsWith('--seed='))?.slice('--seed='.length) ?? 1)
 const positional = args.filter((a) => !a.startsWith('--'))
 const [path = '/', prefix = ''] = positional
@@ -49,6 +53,8 @@ const server = await createServer({ server: { port: 0 }, logLevel: 'error' })
 await server.listen()
 // Through Vite: the app's modules use extensionless imports, which Node can't resolve.
 const { MAX_RADIUS_KM } = (await server.ssrLoadModule('/src/geo/circle.ts')) as typeof import('../src/geo/circle.ts')
+const { STRINGS } = (await server.ssrLoadModule('/src/i18n/context.ts')) as typeof import('../src/i18n/context.ts')
+const t = STRINGS[lang]
 const url = new URL(path, server.resolvedUrls!.local[0]).toString()
 
 const browser = await chromium.launch({ args: webglArgs })
@@ -63,7 +69,7 @@ try {
     })
   }
   for (const [name, device] of Object.entries(targets)) {
-    const context = await browser.newContext(device)
+    const context = await browser.newContext({ ...device, locale: lang })
     const page = await context.newPage()
     const logs: string[] = []
     page.on('pageerror', (e) => logs.push(`pageerror: ${e.message}`))
@@ -91,16 +97,16 @@ try {
         await page.locator('[data-testid="prompt"][data-ready="true"]').waitFor()
         const r = end && i === 0 ? MAX_RADIUS_KM : radiusKm * (1 + i / 2)
         await page.evaluate((c) => window.__eingekreist!.setCircle!(c), { center: [lng, lat], radiusKm: r })
-        await page.getByRole('button', { name: 'Abgeben' }).click()
+        await page.getByRole('button', { name: t.game.submit }).click()
         await page.getByTestId('handover').or(page.getByTestId('reveal')).waitFor()
       }
       if (end) {
-        await page.getByTestId('reveal').getByRole('button', { name: 'Zum Ergebnis' }).click()
+        await page.getByTestId('reveal').getByRole('button', { name: t.reveal.toResults }).click()
         await page.getByTestId('end').waitFor()
       }
     } else if (game && !handover) await page.getByTestId('handover').click()
     if (help) {
-      await page.getByRole('button', { name: 'So wird gespielt' }).click()
+      await page.getByRole('button', { name: t.howToPlay.title }).click()
       await page.getByRole('dialog').waitFor()
     }
     // Components that settle asynchronously mark themselves data-ready="false" until done.
@@ -115,7 +121,7 @@ try {
       await page.evaluate(() => new Promise((resolve) => window.__eingekreist!.map.once('idle', resolve)))
     }
     if (collapsed) {
-      await page.getByRole('button', { name: 'Ergebnisse einklappen' }).click()
+      await page.getByRole('button', { name: t.reveal.collapse }).click()
       // Past the fold's transition.
       await page.waitForTimeout(400)
     }

@@ -33,6 +33,9 @@ export const MAX_TARGET_SCORE = 99
 /** Default name for player number `n` (1-based); supplied by the UI, which owns the texts. */
 export type DefaultName = (n: number) => string
 
+/** Names of new players. The same in every language: "Player" is common in German too. */
+export const defaultPlayerName: DefaultName = (n) => `Player ${n}`
+
 export type PlayerDraft = Omit<Player, 'score'>
 
 export interface SetupState {
@@ -148,9 +151,9 @@ export function createSetup(defaultName: DefaultName): SetupState {
 /** Adds a player with the lowest free number (ID `p<n>` and default name both unused) and the first free color. */
 function withNewPlayer(players: PlayerDraft[], defaultName: DefaultName): PlayerDraft[] {
   const ids = new Set(players.map((p) => p.id))
-  const names = new Set(players.map((p) => p.name.trim().toLocaleLowerCase('de')))
+  const names = new Set(players.map((p) => p.name.trim().toLowerCase()))
   let n = 1
-  while (ids.has(`p${n}`) || names.has(defaultName(n).toLocaleLowerCase('de'))) n++
+  while (ids.has(`p${n}`) || names.has(defaultName(n).toLowerCase())) n++
   const taken = new Set(players.map((p) => p.color))
   const color = PLAYER_COLORS.find((c) => !taken.has(c)) ?? PLAYER_COLORS[0]
   return [...players, { id: `p${n}`, name: defaultName(n), color }]
@@ -160,7 +163,7 @@ export type SetupProblem = 'emptyName' | 'duplicateName'
 
 /** What keeps the setup from being started; empty when it can start. */
 export function setupProblems(setup: SetupState): SetupProblem[] {
-  const names = setup.players.map((p) => p.name.trim().toLocaleLowerCase('de'))
+  const names = setup.players.map((p) => p.name.trim().toLowerCase())
   const filled = names.filter(Boolean)
   const problems: SetupProblem[] = []
   if (filled.length < names.length) problems.push('emptyName')

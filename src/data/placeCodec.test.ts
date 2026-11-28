@@ -19,14 +19,14 @@ describe('place file', () => {
   const places: Place[] = [
     {
       id: 'square',
-      name: 'Quadrat',
+      name: { de: 'Quadrat', en: 'Square' },
       category: 'landscape',
       geometry: { type: 'Polygon', coordinates: [[[0, 0], [1, 0], [1, 1], [0, 0]]] },
     },
     {
       id: 'two-parts',
-      name: 'Zwei Teile',
-      qualifier: 'Test',
+      name: { de: 'Zwei Teile', en: 'Two parts' },
+      qualifier: { de: 'Test', en: 'Test' },
       category: 'island',
       geometry: {
         type: 'MultiPolygon',
@@ -40,6 +40,6 @@ describe('place file', () => {
   })
 
   it('rejects unknown formats', () => {
-    expect(() => decodePlaces({ ...encodePlaces(places, 3), version: 2 as 1 })).toThrow(/format/)
+    expect(() => decodePlaces({ ...encodePlaces(places, 3), version: 1 as 2 })).toThrow(/format/)
   })
 })

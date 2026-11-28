@@ -1,4 +1,6 @@
 import type { MultiPolygon, Polygon } from 'geojson'
+// Explicit .ts extension: the place build scripts load this module in plain Node.
+import type { Localized } from '../i18n/locale.ts'
 
 /** [longitude, latitude] in degrees, as in GeoJSON. */
 export type LngLat = [number, number]
@@ -22,10 +24,10 @@ export const CATEGORIES: readonly Category[] = [
 
 export interface Place {
   id: string
-  /** Display name (German). */
-  name: string
-  /** Optional disambiguation suffix, e.g. „Stadt in Kanada“. */
-  qualifier?: string
+  /** Display name in every UI language. */
+  name: Localized
+  /** Optional disambiguation suffix, e.g. „Stadt in Kanada“ / "city in Canada". */
+  qualifier?: Localized
   category: Category
   /** Already buffered, simplified area of the place. */
   geometry: Polygon | MultiPolygon

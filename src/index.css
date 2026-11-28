@@ -1075,6 +1075,50 @@ button:not(:disabled) {
   gap: 4px;
 }
 
+/* ---------- Language switch ---------- */
+
+.language-switch {
+  display: inline-flex;
+  flex: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.language-switch__option {
+  min-width: 44px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.language-switch__option + .language-switch__option {
+  border-left: 1px solid var(--line);
+}
+
+.language-switch__option[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+  color: var(--text);
+}
+
+/* Under the title, beside "How to play". */
+.setup-head__links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 8px;
+}
+
+.how-to-play__head .language-switch {
+  margin-left: auto;
+}
+
 .how-to-play-link {
   min-height: 44px;
   padding: 0 12px;

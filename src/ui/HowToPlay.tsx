@@ -1,9 +1,8 @@
 import { useId, useRef, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { PLAYER_COLORS } from '../game/state'
-import { de } from '../i18n/de'
-
-const t = de.howToPlay
+import { useI18n } from '../i18n/context'
+import { LanguageSwitch } from './LanguageSwitch'
 
 interface HowToPlayProps {
   /** A round "?" button over the globe (game bar) instead of a text link (start screen). */
@@ -12,7 +11,9 @@ interface HowToPlayProps {
 
 /** A button that opens the instructions in a modal dialog. */
 export function HowToPlay({ compact = false }: HowToPlayProps) {
+  const { t } = useI18n()
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const closeRef = useRef<HTMLButtonElement>(null)
   const titleId = useId()
   // Whether the current click started on the backdrop (see onClick).
   const pressedBackdrop = useRef(false)
@@ -22,11 +23,15 @@ export function HowToPlay({ compact = false }: HowToPlayProps) {
       <button
         type="button"
         className={compact ? 'icon-button icon-button--small icon-button--panel' : 'link-button how-to-play-link'}
-        aria-label={compact ? t.title : undefined}
-        title={compact ? t.title : undefined}
-        onClick={() => dialogRef.current?.showModal()}
+        aria-label={compact ? t.howToPlay.title : undefined}
+        title={compact ? t.howToPlay.title : undefined}
+        onClick={() => {
+          dialogRef.current?.showModal()
+          // The modal would focus the language switch first; Enter or Space must close, not switch.
+          closeRef.current?.focus()
+        }}
       >
-        {compact ? t.openSymbol : t.title}
+        {compact ? t.howToPlay.openSymbol : t.howToPlay.title}
       </button>
       {/* Native modal: focus trap and Escape come for free. Portaled out of the setup form's DOM
           (and its styles), so it can close through its own form. */}
@@ -44,20 +49,21 @@ export function HowToPlay({ compact = false }: HowToPlayProps) {
           {/* React still bubbles the submit to the setup form, which would start the game. */}
           <form method="dialog" onSubmit={(e) => e.stopPropagation()}>
             <div className="how-to-play__head">
-              <h2 id={titleId}>{t.title}</h2>
-              <button className="icon-button" aria-label={t.close}>
-                {t.closeSymbol}
+              <h2 id={titleId}>{t.howToPlay.title}</h2>
+              <LanguageSwitch />
+              <button ref={closeRef} className="icon-button" aria-label={t.howToPlay.close}>
+                {t.howToPlay.closeSymbol}
               </button>
             </div>
-            <Section {...t.goal} />
-            <Section {...t.round} />
-            <Section {...t.scoring}>
+            <Section {...t.howToPlay.goal} />
+            <Section {...t.howToPlay.round} />
+            <Section {...t.howToPlay.scoring}>
               <ScoringFigure />
-              <p className="how-to-play__tip">{t.tip}</p>
+              <p className="how-to-play__tip">{t.howToPlay.tip}</p>
             </Section>
-            <Section {...t.end} />
+            <Section {...t.howToPlay.end} />
             <div className="dialog__actions">
-              <button className="button button--primary">{t.done}</button>
+              <button className="button button--primary">{t.howToPlay.done}</button>
             </div>
           </form>
         </dialog>,
@@ -86,7 +92,8 @@ const MISS = PLAYER_COLORS[5]
 
 /** The scoring rule at a glance: the smallest circle that overlaps the place wins. */
 function ScoringFigure() {
-  const f = t.figure
+  const { t } = useI18n()
+  const f = t.howToPlay.figure
   const legend = [
     [WINNER, f.winner],
     [BIGGER, f.bigger],

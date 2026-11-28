@@ -9,10 +9,11 @@ const submit = 'Abgeben'
 
 export const de = {
   appName: 'Eingekreist',
+  /** Accessible name of the language switch. */
+  language: 'Sprache',
   showBorders: 'Ländergrenzen anzeigen',
   setup: {
     players: 'Spieler',
-    defaultName: (n: number) => `Spieler ${n}`,
     playerName: (n: number) => `Name von Spieler ${n}`,
     addPlayer: '+ Spieler hinzufügen',
     removePlayer: (name: string) => `${name || 'Spieler'} entfernen`,
@@ -186,13 +187,13 @@ export const de = {
     vertices: (n: number) => `${n} Punkte`,
   },
   categories: {
-    country: { label: 'Land', plural: 'Länder', icon: '🏳️', color: '#c0392b' },
-    city: { label: 'Stadt', plural: 'Städte', icon: '🏙️', color: '#7f8c8d' },
-    island: { label: 'Insel', plural: 'Inseln', icon: '🏝️', color: '#16a085' },
-    landscape: { label: 'Landschaft', plural: 'Landschaften', icon: '🏜️', color: '#d4a656' },
-    water: { label: 'Gewässer', plural: 'Gewässer', icon: '🌊', color: '#2e86de' },
-    landmark: { label: 'Sehenswürdigkeit', plural: 'Sehenswürdigkeiten', icon: '🏛️', color: '#8e44ad' },
-  } satisfies Record<Category, { label: string; plural: string; icon: string; color: string }>,
+    country: { label: 'Land', plural: 'Länder' },
+    city: { label: 'Stadt', plural: 'Städte' },
+    island: { label: 'Insel', plural: 'Inseln' },
+    landscape: { label: 'Landschaft', plural: 'Landschaften' },
+    water: { label: 'Gewässer', plural: 'Gewässer' },
+    landmark: { label: 'Sehenswürdigkeit', plural: 'Sehenswürdigkeiten' },
+  } satisfies Record<Category, { label: string; plural: string }>,
 }
 
 export type Strings = typeof de

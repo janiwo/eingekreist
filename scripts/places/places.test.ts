@@ -4,6 +4,8 @@ import { decodePlaces, type PlaceFile } from '../../src/data/placeCodec'
 import { loadPlaces } from '../../src/data/places'
 import type { Circle, LngLat, Place } from '../../src/game/types'
 import { circleHits } from '../../src/geo/hitTest'
+import { english } from './list/en'
+import { placeSources } from './list/index'
 import { PLACES_FILE } from './output'
 import { formatReport, loadGlobe, makeGlobe, validatePlaces } from './validate'
 
@@ -29,11 +31,42 @@ describe('place dataset', () => {
   it('rejects a ring that wraps around the antimeridian instead of being cut', () => {
     const wrapped: Place = {
       id: 'wrapped',
-      name: 'Kaputt',
+      name: { de: 'Kaputt', en: 'Broken' },
       category: 'landmark',
       geometry: { type: 'Polygon', coordinates: [[[179.9, 0], [-179.9, 0], [-179.9, 1], [179.9, 0]]] },
     }
     expect(validatePlaces([wrapped], '').errors).toContain('wrapped: edge across the antimeridian at -179.9,0')
+  })
+
+  it('has English names only for places in the list, with qualifiers only where German has one', () => {
+    const sources = new Map(placeSources.map((p) => [p.id, p]))
+    for (const [id, translation] of Object.entries(english)) {
+      const src = sources.get(id)
+      expect(src, `english["${id}"] has no place`).toBeDefined()
+      expect(typeof translation === 'object', `english["${id}"] qualifier`).toBe(src?.qualifier !== undefined)
+    }
+  })
+
+  it('requires a name in every language, unambiguous within the category', () => {
+    const geometry: Place['geometry'] = { type: 'Polygon', coordinates: [[[0, 0], [1, 0], [1, 1], [0, 0]]] }
+    const errors = validatePlaces(
+      [
+        { id: 'a', name: { de: 'Georgia', en: '' }, category: 'country', geometry },
+        { id: 'b', name: { de: 'Georgien', en: 'Georgia' }, category: 'country', geometry },
+        { id: 'c', name: { de: 'Georgia', en: 'Georgia' }, category: 'country', geometry },
+        { id: 'd', name: { de: 'Paris', en: 'Paris' }, qualifier: { de: 'Texas', en: ' ' }, category: 'city', geometry },
+      ],
+      '',
+    ).errors
+    expect(errors).toEqual(
+      expect.arrayContaining([
+        'a: no en name',
+        'c: de name "Georgia" is ambiguous in its category; add a qualifier',
+        'c: en name "Georgia" is ambiguous in its category; add a qualifier',
+        'd: no en qualifier',
+      ]),
+    )
+    expect(errors.filter((e) => e.startsWith('b:') && /name|qualifier/.test(e))).toEqual([])
   })
 
   describe('visibility on the globe', () => {
@@ -44,7 +77,7 @@ describe('place dataset', () => {
     const globe = makeGlobe([square(0, 0, 10)], ['sea', 'slivers'])
     const place = (id: string, category: Place['category'], polygons: number[][][][]): Place => ({
       id,
-      name: id,
+      name: { de: id, en: id },
       category,
       geometry: { type: 'MultiPolygon', coordinates: polygons },
     })

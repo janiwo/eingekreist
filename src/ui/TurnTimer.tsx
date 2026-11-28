@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { de } from '../i18n/de'
+import { useI18n } from '../i18n/context'
 
 /** Seconds left at which the timer turns into a warning. */
 const LOW_SECONDS = 10
@@ -16,6 +16,7 @@ const secondsLeft = (deadline: number, now: number) => Math.max(0, Math.ceil((de
 
 /** Counts down to `deadline`. Works off the wall clock, so it keeps running across a reload. */
 export function TurnTimer({ deadline, onTimeUp }: TurnTimerProps) {
+  const { t } = useI18n()
   // Seconds rather than the time: ticks within the same second don't re-render.
   const [seconds, setSeconds] = useState(() => secondsLeft(deadline, Date.now()))
   const onTimeUpRef = useRef(onTimeUp)
@@ -40,9 +41,9 @@ export function TurnTimer({ deadline, onTimeUp }: TurnTimerProps) {
     <div
       className={`timer${seconds <= LOW_SECONDS ? ' timer--low' : ''}`}
       role="timer"
-      aria-label={de.game.timeLeft}
+      aria-label={t.game.timeLeft}
     >
-      {de.game.seconds(seconds)}
+      {t.game.seconds(seconds)}
     </div>
   )
 }

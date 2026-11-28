@@ -1,6 +1,6 @@
 # Eingekreist
 
-Geography party game for 2–8 players on one device: whoever hits the named place with the smallest circle scores. Details in [SPEC.md](SPEC.md), work plan in [MILESTONES.md](MILESTONES.md). The app's UI is German; everything else is English.
+Geography party game for 2–8 players on one device: whoever hits the named place with the smallest circle scores. Details in [SPEC.md](SPEC.md), work plan in [MILESTONES.md](MILESTONES.md). The app's UI is German and English; everything else is English.
 
 ## Development
 
@@ -36,7 +36,9 @@ src/
   map/baseData.ts   base map (land, borders) from src/data/basemap/
   map/maplibre.ts   MapLibre import with explicitly bundled worker
   map/view.ts       start view for each turn
-  i18n/de.ts        German UI text and category themes (icon, color)
+  i18n/de.ts, en.ts German and English UI text
+  i18n/context.ts   useI18n(): current language and its strings
+  ui/categoryTheme.ts category icons and colors
   data/basemap/     Natural Earth 1:10m as compact GeoJSON
 e2e/                Playwright tests (*.e2e.ts)
 scripts/            screenshot.ts, fetch-basemap.ts

@@ -16,25 +16,30 @@ afterEach(() => vi.unstubAllGlobals())
 describe('gameEvent', () => {
   it('reports a game start with the number of players', () => {
     expect(playing.phase).toBe('playing')
-    expect(gameEvent('setup', playing)).toBe('game-started/3-players')
+    expect(gameEvent('setup', playing, 'de')).toBe('game-started/3-players/de')
+  })
+
+  it('ends in the UI language', () => {
+    expect(gameEvent('setup', playing, 'en')).toBe('game-started/3-players/en')
+    expect(gameEvent('playing', finished, 'en')).toBe('game-finished/12-rounds/en')
   })
 
   it('reports "play again" from the end screen as a start', () => {
-    expect(gameEvent('finished', playing)).toBe('game-started/3-players')
+    expect(gameEvent('finished', playing, 'de')).toBe('game-started/3-players/de')
   })
 
   it('reports a game end with the number of rounds', () => {
-    expect(gameEvent('playing', finished)).toBe('game-finished/12-rounds')
+    expect(gameEvent('playing', finished, 'de')).toBe('game-finished/12-rounds/de')
   })
 
   it('ignores everything that is not a start or an end', () => {
     // Same phase, e.g. a restored game after a reload or a new round.
-    expect(gameEvent('playing', playing)).toBeNull()
-    expect(gameEvent('finished', finished)).toBeNull()
-    expect(gameEvent('setup', setup)).toBeNull()
+    expect(gameEvent('playing', playing, 'de')).toBeNull()
+    expect(gameEvent('finished', finished, 'de')).toBeNull()
+    expect(gameEvent('setup', setup, 'de')).toBeNull()
     // Leaving a game for a new one.
-    expect(gameEvent('playing', setup)).toBeNull()
-    expect(gameEvent('finished', setup)).toBeNull()
+    expect(gameEvent('playing', setup, 'de')).toBeNull()
+    expect(gameEvent('finished', setup, 'de')).toBeNull()
   })
 })
 

@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest'
 import type { Place } from '../game/types'
 import { findPlace } from './findPlace'
 
-const place = (id: string, name: string): Place => ({
+const place = (id: string, de: string, en = de): Place => ({
   id,
-  name,
+  name: { de, en },
   category: 'city',
   geometry: { type: 'Polygon', coordinates: [] },
 })
 
-const places = [place('munich', 'München'), place('muenster', 'Münster'), place('malmo', 'Malmö')]
+const places = [place('munich', 'München', 'Munich'), place('muenster', 'Münster'), place('malmo', 'Malmö')]
 
 describe('findPlace', () => {
   it('finds by ID', () => {
@@ -19,6 +19,11 @@ describe('findPlace', () => {
   it('finds by name, ignoring case and diacritics', () => {
     expect(findPlace(places, 'MÜNSTER')?.id).toBe('muenster')
     expect(findPlace(places, 'Munster')?.id).toBe('muenster')
+  })
+
+  it('finds by the name in any language', () => {
+    expect(findPlace(places, 'munich ')?.id).toBe('munich')
+    expect(findPlace(places, 'Muni')?.id).toBe('munich')
   })
 
   it('falls back to a name prefix', () => {

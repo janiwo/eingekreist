@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, 
 import { isSuddenDeath, leaders } from '../game/scoring'
 import type { PlayingState, RoundResult, Turn } from '../game/state'
 import type { Circle, Place } from '../game/types'
-import { de } from '../i18n/de'
+import { useI18n } from '../i18n/context'
+import type { Strings } from '../i18n/de'
 import type { ColoredCircle } from '../map/circleLayer'
 import type { Map as MapLibreMap, MapMovementEvent } from '../map/maplibre'
 import { flyToCircle, flyToPlace } from '../map/revealCamera'
@@ -10,7 +11,6 @@ import { RevealLayers } from '../map/RevealLayers'
 import { FOCUS_FLIGHT_MS, type Padding } from '../map/view'
 import { ignoreKeyRepeat } from './keys'
 
-const t = de.reveal
 const GAP = 16
 /** Never let the padding squeeze the place below this many pixels. */
 const MIN_VIEW = 80
@@ -26,14 +26,16 @@ interface RevealProps {
 }
 
 /** Turn result in words: the radius, or why there is no circle. */
-function circleText(turn: Turn | undefined): string {
-  if (!turn) return t.out
-  return turn.circle ? de.formatKm(turn.circle.radiusKm) : de.game.outcomes[turn.outcome]
+function circleText(turn: Turn | undefined, t: Strings): string {
+  if (!turn) return t.reveal.out
+  return turn.circle ? t.formatKm(turn.circle.radiusKm) : t.game.outcomes[turn.outcome]
 }
 
 /** After every turn: all circles and the place on the globe, plus the round's result and the standings. */
 export function Reveal({ state, result, place, map, headerRef, onNext }: RevealProps) {
+  const { t, locale } = useI18n()
   const { players, round, settings } = state
+  const placeName = place.name[locale]
   const cardRef = useRef<HTMLElement>(null)
   const nextRef = useRef<HTMLButtonElement>(null)
   const collapseRef = useRef<HTMLButtonElement>(null)
@@ -129,16 +131,16 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
   const winners = players.filter((p) => result.winnerIds.includes(p.id))
   const suddenDeath = !result.gameOver && isSuddenDeath(players, settings.targetScore)
   const top = leaders(players)
-  const winnerText = winners.length > 0 ? t.winners(winners.map((p) => p.name)) : t.noWinner
-  const nextText = result.gameOver ? t.toResults : t.nextRound
+  const winnerText = winners.length > 0 ? t.reveal.winners(winners.map((p) => p.name)) : t.reveal.noWinner
+  const nextText = result.gameOver ? t.reveal.toResults : t.reveal.nextRound
   const targetButton = (extraClass: string) => (
     <button
       type="button"
       className={`reveal__target${extraClass}${away ? ' reveal__target--shown' : ''}`}
-      aria-label={t.toPlace(place.name)}
+      aria-label={t.reveal.toPlace(placeName)}
       onClick={focusPlace}
     >
-      <span aria-hidden="true">{t.toPlaceSymbol}</span> {place.name}
+      <span aria-hidden="true">{t.reveal.toPlaceSymbol}</span> {placeName}
     </button>
   )
 
@@ -161,7 +163,7 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
           aria-labelledby="reveal-title"
         >
           <h2 id="reveal-title" className="reveal__title">
-            {t.title(round.number)}
+            {t.reveal.title(round.number)}
           </h2>
           <p className="reveal__winner" role="status">
             {winnerText}
@@ -173,23 +175,23 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
               ref={collapseRef}
               type="button"
               className="reveal__toggle"
-              aria-label={t.collapse}
-              title={t.collapse}
+              aria-label={t.reveal.collapse}
+              title={t.reveal.collapse}
               aria-expanded="true"
               aria-controls="reveal-card"
               onClick={collapse}
             >
-              <span aria-hidden="true">{t.collapseSymbol}</span>
+              <span aria-hidden="true">{t.reveal.collapseSymbol}</span>
             </button>
           </div>
           <table className="results">
             <thead>
               <tr>
-                <th scope="col">{t.player}</th>
-                <th scope="col">{t.circle}</th>
-                <th scope="col">{t.result}</th>
+                <th scope="col">{t.reveal.player}</th>
+                <th scope="col">{t.reveal.circle}</th>
+                <th scope="col">{t.reveal.result}</th>
                 <th scope="col" className="results__score">
-                  {t.score}
+                  {t.reveal.score}
                 </th>
               </tr>
             </thead>
@@ -211,19 +213,19 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
                   >
                     <th scope="row">
                       {circle ? (
-                        <button type="button" className="results__focus" title={t.toCircle(player.name)}>
+                        <button type="button" className="results__focus" title={t.reveal.toCircle(player.name)}>
                           <span className="player-tag">{player.name}</span>
                         </button>
                       ) : (
                         <span className="player-tag">{player.name}</span>
                       )}
                     </th>
-                    <td>{circleText(turn)}</td>
+                    <td>{circleText(turn, t)}</td>
                     <td className={hit ? 'results__hit' : 'results__miss'}>
-                      {turn?.circle ? (hit ? t.hit : t.miss) : ''}
+                      {turn?.circle ? (hit ? t.reveal.hit : t.reveal.miss) : ''}
                     </td>
                     <td className="results__score">
-                      {won && <span className="results__gain">{t.pointGained}</span>} <strong>{player.score}</strong>
+                      {won && <span className="results__gain">{t.reveal.pointGained}</span>} <strong>{player.score}</strong>
                     </td>
                   </tr>
                 )
@@ -232,7 +234,7 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
           </table>
           {suddenDeath && (
             <p className="hint reveal__note" data-testid="sudden-death">
-              {t.suddenDeath(top.map((p) => p.name), top[0].score)}
+              {t.reveal.suddenDeath(top.map((p) => p.name), top[0].score)}
             </p>
           )}
           <button
@@ -249,7 +251,7 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
         <section
           className={`card reveal-bar${collapsed ? ' reveal-bar--shown' : ''}`}
           data-testid="reveal-bar"
-          aria-label={t.title(round.number)}
+          aria-label={t.reveal.title(round.number)}
           onClick={onBarClick}
         >
           <div className="reveal-bar__head">
@@ -258,12 +260,12 @@ export function Reveal({ state, result, place, map, headerRef, onNext }: RevealP
               ref={expandRef}
               type="button"
               className="reveal__toggle reveal-bar__toggle"
-              aria-label={t.expand}
-              title={t.expand}
+              aria-label={t.reveal.expand}
+              title={t.reveal.expand}
               aria-expanded="false"
               aria-controls="reveal-card"
             >
-              <span aria-hidden="true">{t.expandSymbol}</span>
+              <span aria-hidden="true">{t.reveal.expandSymbol}</span>
             </button>
           </div>
           <div className="reveal-bar__actions">

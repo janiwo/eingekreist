@@ -4,9 +4,9 @@ import { usePlaces } from './data/usePlaces'
 import { poolOf } from './game/draw'
 import { loadGame, saveGame } from './game/persistence'
 import { randomSeed } from './game/rng'
-import { createGameReducer, createSetup, playerOnTurn, type GameState } from './game/state'
+import { createGameReducer, createSetup, defaultPlayerName, playerOnTurn, type GameState } from './game/state'
 import type { Settings } from './game/types'
-import { de } from './i18n/de'
+import { useI18n } from './i18n/context'
 import { Globe } from './map/Globe'
 import type { Map as MapLibreMap } from './map/maplibre'
 import { EndScreen } from './ui/EndScreen'
@@ -19,10 +19,11 @@ const PlaceDebug =
     ? lazy(() => import('./debug/PlaceDebug'))
     : null
 
-const gameReducer = createGameReducer(de.setup.defaultName)
-const initialState = (): GameState => loadGame() ?? createSetup(de.setup.defaultName)
+const gameReducer = createGameReducer(defaultPlayerName)
+const initialState = (): GameState => loadGame() ?? createSetup(defaultPlayerName)
 
 export default function App() {
+  const { locale } = useI18n()
   const [state, dispatch] = useReducer(gameReducer, undefined, initialState)
   const [map, setMap] = useState<MapLibreMap | null>(null)
   // Loaded right away, so it is usually ready before the setup is done.
@@ -43,10 +44,10 @@ export default function App() {
   // Counts game starts and ends. Starts from the restored phase, so a reload sends nothing.
   const prevPhase = useRef(state.phase)
   useEffect(() => {
-    const event = gameEvent(prevPhase.current, state)
+    const event = gameEvent(prevPhase.current, state, locale)
     prevPhase.current = state.phase
     if (event) trackEvent(event)
-  }, [state])
+  }, [state, locale])
 
   // Scores the round as soon as the place is there.
   const revealPlace = toReveal && placeId ? placesById.get(placeId) : undefined

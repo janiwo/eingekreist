@@ -1,9 +1,9 @@
-import { Map as MapLibreMap, type StyleSpecification } from './maplibre'
+import { AttributionControl, Map as MapLibreMap, setMapLocale, type StyleSpecification } from './maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useEffect, useRef } from 'react'
 import { bordersGeoJson, landGeoJson } from './baseData'
 import type { Circle, Settings } from '../game/types'
-import { de } from '../i18n/de'
+import { useI18n } from '../i18n/context'
 import { attributionHtml } from './dataSources'
 import { START_VIEW } from './view'
 
@@ -53,7 +53,12 @@ interface GlobeProps {
   onMapReady?: (map: MapLibreMap | null) => void
 }
 
+/** A compact attribution starts expanded and would cover the UI on phones; collapse it. */
+const collapseAttribution = (container: HTMLElement | null) =>
+  container?.querySelector('.maplibregl-compact-show')?.classList.remove('maplibregl-compact-show')
+
 export function Globe({ showBorders, onMapReady }: GlobeProps) {
+  const { t } = useI18n()
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
   const onReadyRef = useRef(onMapReady)
@@ -69,9 +74,8 @@ export function Globe({ showBorders, onMapReady }: GlobeProps) {
       style,
       center: START_VIEW.center,
       zoom: START_VIEW.zoom,
-      // Compact (behind an ⓘ button) on narrow maps only; MapLibre decides by width.
-      attributionControl: { customAttribution: attributionHtml },
-      locale: de.mapLocale,
+      // The strings and the credits are set below, in the current language.
+      attributionControl: false,
       renderWorldCopies: false,
       dragRotate: false,
       // A tap places the circle, so a double tap must not also zoom.
@@ -83,10 +87,7 @@ export function Globe({ showBorders, onMapReady }: GlobeProps) {
     map.keyboard.disableRotation()
     mapRef.current = map
     map.once('load', () => {
-      // A compact attribution starts expanded and would cover the UI on phones; collapse it.
-      containerRef.current
-        ?.querySelector('.maplibregl-compact-show')
-        ?.classList.remove('maplibregl-compact-show')
+      collapseAttribution(containerRef.current)
       onReadyRef.current?.(map)
     })
     // Access for browser tests (dev server only).
@@ -98,6 +99,21 @@ export function Globe({ showBorders, onMapReady }: GlobeProps) {
       if (import.meta.env.DEV) delete window.__eingekreist
     }
   }, [])
+
+  // MapLibre's UI strings and the credits, in the current language.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+    setMapLocale(map, t.mapLocale)
+    // Compact (behind an ⓘ button) on narrow maps only; MapLibre decides by width.
+    const control = new AttributionControl({ customAttribution: attributionHtml(t) })
+    map.addControl(control)
+    collapseAttribution(containerRef.current)
+    return () => {
+      // Already gone if the map was removed first.
+      if (map.hasControl(control)) map.removeControl(control)
+    }
+  }, [t])
 
   useEffect(() => {
     const map = mapRef.current
