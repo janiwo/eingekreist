@@ -1,4 +1,5 @@
 import type { Category, LngLat } from '../../src/game/types.ts'
+import type { Localized } from '../../src/i18n/locale.ts'
 
 export type { LngLat }
 
@@ -37,15 +38,21 @@ export type Source =
 export interface PlaceSource {
   /** Stable, unique, kebab-case. */
   id: string
-  /** German display name. */
-  name: string
+  /** Display name in every UI language. */
+  name: Localized
   /** Disambiguation shown after the name, if the name alone is ambiguous in its category. */
-  qualifier?: string
+  qualifier?: Localized
   category: Category
   source: Source
   /** Polygon parts lying completely inside one of these boxes are dropped. */
   exclude?: BBox[]
 }
 
-/** A list entry without its category; each list file sets the category for all its entries. */
-export type Entry = Omit<PlaceSource, 'category'>
+/**
+ * A list entry without its category (each list file sets the category for all its entries), with
+ * the German name and qualifier. The other languages' names live in their own files (`list/en.ts`).
+ */
+export type Entry = Omit<PlaceSource, 'category' | 'name' | 'qualifier'> & { name: string; qualifier?: string }
+
+/** A translated name; with a qualifier only where the German entry has one. */
+export type Translation = string | { name: string; qualifier: string }

@@ -53,7 +53,7 @@ test('creates a game that survives a reload', async ({ page }) => {
   await expect(prompt(page)).toBeVisible()
   await page.getByRole('button', { name: 'Neues Spiel' }).click()
   await page.getByRole('button', { name: 'Neues Spiel starten' }).click()
-  await expect(nameInput(page, 1)).toHaveValue('Spieler 1')
+  await expect(nameInput(page, 1)).toHaveValue('Player 1')
   await expect(nameInput(page, 3)).toHaveCount(0)
   expect((await stored(page)).phase).toBe('setup')
 

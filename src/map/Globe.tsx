@@ -1,9 +1,9 @@
-import { Map as MapLibreMap, type StyleSpecification } from './maplibre'
+import { AttributionControl, Map as MapLibreMap, type StyleSpecification } from './maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useEffect, useRef } from 'react'
 import { bordersGeoJson, landGeoJson } from './baseData'
 import type { Circle, Settings } from '../game/types'
-import { de } from '../i18n/de'
+import { useI18n } from '../i18n/context'
 import { attributionHtml } from './dataSources'
 import { START_VIEW } from './view'
 
@@ -53,10 +53,17 @@ interface GlobeProps {
   onMapReady?: (map: MapLibreMap | null) => void
 }
 
+/** A compact attribution starts expanded and would cover the UI on phones; collapse it. */
+const collapseAttribution = (container: HTMLElement | null) =>
+  container?.querySelector('.maplibregl-compact-show')?.classList.remove('maplibregl-compact-show')
+
 export function Globe({ showBorders, onMapReady }: GlobeProps) {
+  const { t } = useI18n()
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
   const onReadyRef = useRef(onMapReady)
+  // The map is created once, in the language of that moment; the effect below follows changes.
+  const initialLocale = useRef(t.mapLocale)
 
   useEffect(() => {
     onReadyRef.current = onMapReady
@@ -69,9 +76,9 @@ export function Globe({ showBorders, onMapReady }: GlobeProps) {
       style,
       center: START_VIEW.center,
       zoom: START_VIEW.zoom,
-      // Compact (behind an ⓘ button) on narrow maps only; MapLibre decides by width.
-      attributionControl: { customAttribution: attributionHtml },
-      locale: de.mapLocale,
+      // Added below, in the current language.
+      attributionControl: false,
+      locale: initialLocale.current,
       renderWorldCopies: false,
       dragRotate: false,
       // A tap places the circle, so a double tap must not also zoom.
@@ -83,10 +90,7 @@ export function Globe({ showBorders, onMapReady }: GlobeProps) {
     map.keyboard.disableRotation()
     mapRef.current = map
     map.once('load', () => {
-      // A compact attribution starts expanded and would cover the UI on phones; collapse it.
-      containerRef.current
-        ?.querySelector('.maplibregl-compact-show')
-        ?.classList.remove('maplibregl-compact-show')
+      collapseAttribution(containerRef.current)
       onReadyRef.current?.(map)
     })
     // Access for browser tests (dev server only).
@@ -98,6 +102,23 @@ export function Globe({ showBorders, onMapReady }: GlobeProps) {
       if (import.meta.env.DEV) delete window.__eingekreist
     }
   }, [])
+
+  // MapLibre reads its UI strings when the map or a control is created: on a change of language,
+  // update them and add the credits anew.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+    Object.assign(map._locale, t.mapLocale)
+    map.getCanvas().setAttribute('aria-label', t.mapLocale['Map.Title'])
+    // Compact (behind an ⓘ button) on narrow maps only; MapLibre decides by width.
+    const control = new AttributionControl({ customAttribution: attributionHtml(t) })
+    map.addControl(control)
+    collapseAttribution(containerRef.current)
+    return () => {
+      // Already gone if the map was removed first.
+      if (map.hasControl(control)) map.removeControl(control)
+    }
+  }, [t])
 
   useEffect(() => {
     const map = mapRef.current

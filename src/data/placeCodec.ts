@@ -9,19 +9,19 @@ import { polygonsOf, toGeometry } from '../geo/polygons.ts'
  * Coordinates are integers in units of 10^-decimals degrees. Each ring is one flat array
  * [lng0, lat0, Δlng1, Δlat1, …]: the first point absolute, every further point as the
  * difference to the previous one. Rings stay closed (last point = first point).
- * About half the gzip size of plain GeoJSON.
+ * About half the gzip size of plain GeoJSON. Version 2: names in every UI language.
  */
 export interface PlaceFile {
   format: 'eingekreist-places'
-  version: 1
+  version: 2
   decimals: number
   places: EncodedPlace[]
 }
 
 export interface EncodedPlace {
   id: string
-  name: string
-  qualifier?: string
+  name: Place['name']
+  qualifier?: Place['qualifier']
   category: Place['category']
   /** Polygons → rings → delta-encoded coordinates. */
   polygons: number[][][]
@@ -59,7 +59,7 @@ export function decodeRing(deltas: number[], decimals: number): Position[] {
 export function encodePlaces(places: Place[], decimals: number): PlaceFile {
   return {
     format: 'eingekreist-places',
-    version: 1,
+    version: 2,
     decimals,
     places: places.map(({ geometry, ...rest }) => ({
       ...rest,
@@ -69,7 +69,7 @@ export function encodePlaces(places: Place[], decimals: number): PlaceFile {
 }
 
 export function decodePlaces(file: PlaceFile): Place[] {
-  if (file.format !== 'eingekreist-places' || file.version !== 1) {
+  if (file.format !== 'eingekreist-places' || file.version !== 2) {
     throw new Error(`Unknown place file format ${file.format} v${file.version}`)
   }
   return file.places.map(({ polygons, ...rest }) => ({

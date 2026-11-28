@@ -93,7 +93,7 @@ test('sudden death: only the tied leaders play on until one leads alone', async 
   await page.getByRole('button', { name: 'Zum Ergebnis' }).click()
   await expect(page.getByTestId('end')).toContainText('Ben gewinnt!')
   await page.getByRole('button', { name: 'Neues Spiel' }).click()
-  await expect(nameInput(page, 1)).toHaveValue('Spieler 1')
+  await expect(nameInput(page, 1)).toHaveValue('Player 1')
   expectNoErrors()
 })
 

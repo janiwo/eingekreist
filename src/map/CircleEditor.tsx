@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import type { Circle, LngLat } from '../game/types'
 import { initialRadiusKm, roundRadiusKm, stepRadiusKm } from '../geo/circle'
 import { bearingDeg, destination, distanceKm } from '../geo/sphere'
-import { de } from '../i18n/de'
+import { useI18n } from '../i18n/context'
 import { addCircleLayer } from './circleLayer'
 import { Marker, type Map as MapLibreMap, type MapMouseEvent } from './maplibre'
 
@@ -66,6 +66,7 @@ function initialRadiusFor(map: MapLibreMap): number {
  * one moves the center, the other changes the radius.
  */
 export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: CircleEditorProps) {
+  const { t } = useI18n()
   const circleRef = useRef(circle)
   const onChangeRef = useRef(onChange)
   const bearingRef = useRef(DEFAULT_HANDLE_BEARING)
@@ -86,13 +87,13 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
     const layer = addCircleLayer(map, LAYER_ID)
 
     const center = new Marker({
-      element: handleElement('center', de.circle.moveCenter, de.circle.moveCenterKeys),
+      element: handleElement('center', t.circle.moveCenter, t.circle.moveCenterKeys),
       draggable: true,
       // Hide handles on the far side of the globe (CSS also makes them unclickable).
       opacityWhenCovered: '0',
     })
     const radius = new Marker({
-      element: handleElement('radius', de.circle.changeRadius, de.circle.changeRadiusKeys),
+      element: handleElement('radius', t.circle.changeRadius, t.circle.changeRadiusKeys),
       draggable: true,
       // Hide handles on the far side of the globe (CSS also makes them unclickable).
       opacityWhenCovered: '0',
@@ -161,7 +162,7 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
     const canvas = map.getCanvas()
     // Only now does Enter place a circle; say so in the globe's accessible name.
     const canvasLabel = canvas.getAttribute('aria-label')
-    canvas.setAttribute('aria-label', de.circle.globeLabel)
+    canvas.setAttribute('aria-label', t.circle.globeLabel)
     canvas.addEventListener(
       'keydown',
       (e) => {
@@ -200,9 +201,9 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
       editorRef.current = null
       layer.remove()
     }
-  }, [map])
+  }, [map, t])
 
-  // Sync geometry and handles with the circle.
+  // Sync geometry and handles with the circle (and with new handles, after a change of language).
   useEffect(() => {
     const editor = editorRef.current
     if (!editor) return
@@ -225,7 +226,7 @@ export function CircleEditor({ map, circle, onChange, color = '#ff5a36' }: Circl
     if (!draggingRadius.current) {
       show(editor.radius, destination(circle.center, circle.radiusKm, bearingRef.current))
     }
-  }, [map, circle, color])
+  }, [map, circle, color, t])
 
   return null
 }

@@ -17,7 +17,7 @@ import {
 } from './state'
 import { CATEGORIES, MAX_PLAYERS, MIN_PLAYERS, type Circle } from './types'
 
-const defaultName = (n: number) => `Spieler ${n}`
+const defaultName = (n: number) => `Player ${n}`
 const gameReducer = createGameReducer(defaultName)
 const pool: PlacePool = { country: ['france', 'japan'], city: ['paris'], water: ['nile'] }
 
@@ -41,8 +41,8 @@ describe('setup', () => {
   it('starts with two players, distinct colors and the default settings', () => {
     const s = setup()
     expect(s.players).toEqual([
-      { id: 'p1', name: 'Spieler 1', color: PLAYER_COLORS[0] },
-      { id: 'p2', name: 'Spieler 2', color: PLAYER_COLORS[1] },
+      { id: 'p1', name: 'Player 1', color: PLAYER_COLORS[0] },
+      { id: 'p2', name: 'Player 2', color: PLAYER_COLORS[1] },
     ])
     expect(s.settings).toEqual({ targetScore: 5, turnSeconds: 60, showBorders: true, categories: [...CATEGORIES] })
   })
@@ -59,15 +59,15 @@ describe('setup', () => {
   it('reuses the lowest free number and color for a new player', () => {
     const s = asSetup(run(setup(), add, { type: 'removePlayer', id: 'p1' }, add))
     expect(s.players.map((p) => [p.id, p.name, p.color])).toEqual([
-      ['p2', 'Spieler 2', PLAYER_COLORS[1]],
-      ['p3', 'Spieler 3', PLAYER_COLORS[2]],
-      ['p1', 'Spieler 1', PLAYER_COLORS[0]],
+      ['p2', 'Player 2', PLAYER_COLORS[1]],
+      ['p3', 'Player 3', PLAYER_COLORS[2]],
+      ['p1', 'Player 1', PLAYER_COLORS[0]],
     ])
   })
 
   it('never gives a new player a name that is taken', () => {
-    const s = asSetup(run(setup(), { type: 'renamePlayer', id: 'p2', name: 'spieler 3' }, add))
-    expect(s.players[2]).toMatchObject({ id: 'p4', name: 'Spieler 4' })
+    const s = asSetup(run(setup(), { type: 'renamePlayer', id: 'p2', name: 'player 3' }, add))
+    expect(s.players[2]).toMatchObject({ id: 'p4', name: 'Player 4' })
   })
 
   it('renames a player', () => {
@@ -90,7 +90,7 @@ describe('setup', () => {
     expect(setupProblems(asSetup(run(setup(), { type: 'renamePlayer', id: 'p1', name: '  ' })))).toEqual([
       'emptyName',
     ])
-    expect(setupProblems(asSetup(run(setup(), { type: 'renamePlayer', id: 'p1', name: 'spieler 2 ' })))).toEqual([
+    expect(setupProblems(asSetup(run(setup(), { type: 'renamePlayer', id: 'p1', name: 'player 2 ' })))).toEqual([
       'duplicateName',
     ])
   })
@@ -125,7 +125,7 @@ describe('start', () => {
     expect(s.phase).toBe('playing')
     expect(s.players.map((p) => [p.name, p.score])).toEqual([
       ['Anna', 0],
-      ['Spieler 2', 0],
+      ['Player 2', 0],
     ])
     expect(s.round.number).toBe(1)
     expect(pool[s.round.category]).toContain(s.round.placeId)

@@ -1,6 +1,6 @@
 /**
  * Checks the generated place dataset: valid geometries, no empty places, counts per category,
- * unique IDs and names, plausible city sizes, file size, and that every place is visible on the
+ * unique IDs and names (in every UI language), plausible city sizes, file size, and that every place is visible on the
  * globe (spec §4.5).
  *
  *   npm run validate:places
@@ -15,6 +15,7 @@ import { decodePolygons, type PolygonFile } from '../../src/data/basemapCodec.ts
 import { decodePlaces, type PlaceFile } from '../../src/data/placeCodec.ts'
 import { CATEGORIES, type Category, type Place } from '../../src/game/types.ts'
 import { distanceKm } from '../../src/geo/sphere.ts'
+import { LOCALES } from '../../src/i18n/locale.ts'
 import { crossings, polygonsOf, type Polys } from './geometry.ts'
 import { placeSources } from './list/index.ts'
 import { PLACES_FILE } from './output.ts'
@@ -147,10 +148,15 @@ export function validatePlaces(places: Place[], json: string, globe?: Globe): Re
     ids.add(p.id)
     if (!CATEGORIES.includes(p.category)) err(`unknown category ${p.category}`)
     else counts[p.category]++
-    if (!p.name.trim()) err('empty name')
-    const key = `${p.category}|${p.name}|${p.qualifier ?? ''}`
-    if (names.has(key)) err(`name "${p.name}" is ambiguous in its category; add a qualifier`)
-    names.add(key)
+    for (const locale of LOCALES) {
+      const name = p.name[locale]
+      if (!name?.trim()) err(`no ${locale} name`)
+      // A qualifier exists in every language or in none.
+      if (p.qualifier && !p.qualifier[locale]?.trim()) err(`no ${locale} qualifier`)
+      const key = `${locale}|${p.category}|${name}|${p.qualifier?.[locale] ?? ''}`
+      if (names.has(key)) err(`${locale} name "${name}" is ambiguous in its category; add a qualifier`)
+      names.add(key)
+    }
 
     const polys = polygonsOf(p.geometry)
     if (polys.length === 0) err('empty geometry')

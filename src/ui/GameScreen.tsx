@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, type CSSProperties, type Dispatch, type ReactNode } from 'react'
 import { playerOnTurn, turnDeadline, type GameAction, type PlayingState } from '../game/state'
 import { MIN_RADIUS_KM, type Circle, type Place, type Player } from '../game/types'
-import { de } from '../i18n/de'
+import { useI18n } from '../i18n/context'
+import { CATEGORY_THEME } from './categoryTheme'
 import { CircleEditor } from '../map/CircleEditor'
 import type { Map as MapLibreMap } from '../map/maplibre'
 import { FOCUS_FLIGHT_MS, START_VIEW, zoomForRadius } from '../map/view'
@@ -10,7 +11,6 @@ import { ignoreKeyRepeat } from './keys'
 import { Reveal } from './Reveal'
 import { TurnTimer } from './TurnTimer'
 
-const t = de.game
 
 /** After shrinking to the minimum, zoom in until the two handles are this far apart. */
 const MIN_RADIUS_HANDLE_GAP_PX = 32
@@ -29,15 +29,16 @@ interface GameScreenProps {
 }
 
 export function GameScreen({ state, place, placesFailed, onRetry, map, dispatch, onNextRound }: GameScreenProps) {
+  const { t } = useI18n()
   const { round } = state
   const player = playerOnTurn(state)
   const headerRef = useRef<HTMLElement>(null)
   const playing = player !== null && round.turnStartedAt !== null
   const loadError = !place && placesFailed && (
     <span className="load-error" role="alert">
-      {t.loadError}{' '}
+      {t.game.loadError}{' '}
       <button type="button" className="link-button" onClick={onRetry}>
-        {t.retry}
+        {t.game.retry}
       </button>
     </span>
   )
@@ -92,6 +93,7 @@ interface HandoverProps {
 
 /** Covers the globe until the next player takes the device. */
 function Handover({ round, player, ready, loadError, onStart }: HandoverProps) {
+  const { t } = useI18n()
   const buttonRef = useRef<HTMLButtonElement>(null)
   // The previous turn's controls are gone; give keyboard players a place to start. Only once
   // the button is enabled (a disabled button can't take the focus).
@@ -112,11 +114,11 @@ function Handover({ round, player, ready, loadError, onStart }: HandoverProps) {
           onKeyDown={ignoreKeyRepeat}
           onClick={onStart}
         >
-          <span className="handover__meta">{t.round(round)}</span>
+          <span className="handover__meta">{t.game.round(round)}</span>
           <span className="handover__title">
-            {t.handOver} <strong className="handover__name">{player.name}</strong>
+            {t.game.handOver} <strong className="handover__name">{player.name}</strong>
           </span>
-          <span className="handover__hint">{ready ? t.tapToStart : de.setup.loading}</span>
+          <span className="handover__hint">{ready ? t.game.tapToStart : t.setup.loading}</span>
         </button>
         {loadError}
       </div>
@@ -133,17 +135,19 @@ interface PromptProps {
 }
 
 function Prompt({ state, player, place, loadError }: PromptProps) {
+  const { t, locale } = useI18n()
   const { round, settings } = state
-  const category = de.categories[round.category]
+  const category = t.categories[round.category]
+  const theme = CATEGORY_THEME[round.category]
   return (
     <div
       className="prompt"
       data-testid="prompt"
       data-ready={place !== undefined}
-      style={{ '--category-color': category.color } as CSSProperties}
+      style={{ '--category-color': theme.color } as CSSProperties}
     >
       <span className="prompt__icon" aria-hidden="true">
-        {category.icon}
+        {theme.icon}
       </span>
       <div className="prompt__body">
         <span className="prompt__text">
@@ -152,21 +156,21 @@ function Prompt({ state, player, place, loadError }: PromptProps) {
             <span className="sr-only">: </span>
           </span>
           <span className="prompt__place">
-            <strong>{place ? place.name : t.placeLoading}</strong>
-            {place?.qualifier && <span className="prompt__qualifier"> ({place.qualifier})</span>}
+            <strong>{place ? place.name[locale] : t.game.placeLoading}</strong>
+            {place?.qualifier && <span className="prompt__qualifier"> ({place.qualifier[locale]})</span>}
           </span>
         </span>
         <span className="prompt__meta">
           {player && (
             <>
               <span className="player-tag nowrap" style={{ '--player-color': player.color } as CSSProperties}>
-                {t.onTurn(player.name)}
+                {t.game.onTurn(player.name)}
               </span>{' '}
               ·{' '}
             </>
           )}
-          <span className="nowrap">{t.round(round.number)}</span> ·{' '}
-          <span className="nowrap">{t.targetScore(settings.targetScore)}</span>
+          <span className="nowrap">{t.game.round(round.number)}</span> ·{' '}
+          <span className="nowrap">{t.game.targetScore(settings.targetScore)}</span>
         </span>
         {loadError}
       </div>
@@ -182,6 +186,7 @@ interface TurnProps {
 }
 
 function Turn({ state, player, map, dispatch }: TurnProps) {
+  const { t } = useI18n()
   const circle = state.round.draft
   const deadline = turnDeadline(state)
   const setCircle = useCallback((c: Circle) => dispatch({ type: 'setDraft', circle: c }), [dispatch])
@@ -223,17 +228,17 @@ function Turn({ state, player, map, dispatch }: TurnProps) {
           <div className="radius-readout" role="status" aria-live="polite">
             {circle ? (
               <>
-                {de.circle.radius}: <strong>{de.formatKm(circle.radiusKm)}</strong>
+                {t.circle.radius}: <strong>{t.formatKm(circle.radiusKm)}</strong>
               </>
             ) : (
-              de.circle.placeHint
+              t.circle.placeHint
             )}
           </div>
           <button
             type="button"
             className="icon-button icon-button--panel min-radius-button"
-            aria-label={de.circle.minRadius}
-            title={de.circle.minRadius}
+            aria-label={t.circle.minRadius}
+            title={t.circle.minRadius}
             disabled={!circle || circle.radiusKm <= MIN_RADIUS_KM}
             onClick={shrinkToMin}
           >
@@ -250,7 +255,7 @@ function Turn({ state, player, map, dispatch }: TurnProps) {
             disabled={!circle}
             onClick={() => dispatch({ type: 'submitTurn' })}
           >
-            {t.submit}
+            {t.game.submit}
           </button>
         </div>
       </footer>
@@ -271,16 +276,18 @@ function TargetIcon() {
 
 /** Every player has had a turn; the round is being scored (the prompt shows a load error, if any). */
 function Evaluating() {
+  const { t } = useI18n()
   return (
     <div className="screen screen--opaque">
       <p className="hint" data-ready="false">
-        {de.reveal.evaluating}
+        {t.reveal.evaluating}
       </p>
     </div>
   )
 }
 
 function NewGameButton({ onConfirm }: { onConfirm: () => void }) {
+  const { t } = useI18n()
   const dialogRef = useRef<HTMLDialogElement>(null)
   return (
     <>
@@ -288,23 +295,23 @@ function NewGameButton({ onConfirm }: { onConfirm: () => void }) {
         type="button"
         className="button button--secondary button--panel button--small new-game-button"
         // The label shrinks to a symbol on narrow screens; the name stays.
-        aria-label={t.newGame}
+        aria-label={t.game.newGame}
         onClick={() => dialogRef.current?.showModal()}
       >
-        <span className="new-game-button__label">{t.newGame}</span>
+        <span className="new-game-button__label">{t.game.newGame}</span>
         <span className="new-game-button__symbol" aria-hidden="true">
-          {t.newGameSymbol}
+          {t.game.newGameSymbol}
         </span>
       </button>
       {/* Native modal: focus trap, Escape and backdrop come for free. */}
       <dialog ref={dialogRef} className="card dialog" aria-labelledby="confirm-new-game">
-        <p id="confirm-new-game">{t.confirmNewGame}</p>
+        <p id="confirm-new-game">{t.game.confirmNewGame}</p>
         <form method="dialog" className="dialog__actions">
           <button className="button button--secondary" autoFocus>
-            {t.cancel}
+            {t.game.cancel}
           </button>
           <button type="button" className="button button--primary" onClick={onConfirm}>
-            {t.confirm}
+            {t.game.confirm}
           </button>
         </form>
       </dialog>

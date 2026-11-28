@@ -1,4 +1,5 @@
 import type { GameState } from '../game/state'
+import type { Locale } from '../i18n/locale'
 
 /**
  * Privacy-friendly visitor statistics via GoatCounter (no cookies, no device storage).
@@ -36,11 +37,11 @@ export function trackEvent(path: string) {
 }
 
 /**
- * The event for a change of game phase, or `null`. Only transitions count, so restoring a saved
- * game on reload sends nothing.
+ * The event for a change of game phase, or `null`, ending in the UI language. Only transitions
+ * count, so restoring a saved game on reload sends nothing.
  */
-export function gameEvent(prev: GameState['phase'], next: GameState): string | null {
-  if (prev !== 'playing' && next.phase === 'playing') return `game-started/${next.players.length}-players`
-  if (prev === 'playing' && next.phase === 'finished') return `game-finished/${next.rounds}-rounds`
+export function gameEvent(prev: GameState['phase'], next: GameState, locale: Locale): string | null {
+  if (prev !== 'playing' && next.phase === 'playing') return `game-started/${next.players.length}-players/${locale}`
+  if (prev === 'playing' && next.phase === 'finished') return `game-finished/${next.rounds}-rounds/${locale}`
   return null
 }
