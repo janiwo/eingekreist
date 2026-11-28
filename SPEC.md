@@ -95,7 +95,11 @@ Last updated: 2026-11-20
 
 ### 4.4 Naming
 
-- Language: the UI and place names are German only (e.g. „Elfenbeinküste“, „Mailand“). Texts are kept so that more languages can be added later.
+- Languages: German and English, for the UI and the place names (e.g. „Elfenbeinküste“ / "Ivory Coast", „Mailand“ / "Milan"). English names are the most common English name, with the English Wikipedia title as the fallback.
+  - The app starts in German if the browser's preferred language is German (`de`, `de-AT` …), otherwise in English.
+  - A "DE | EN" switch on the start screen and in the instructions changes it. The choice is remembered on the device.
+  - The app name stays „Eingekreist“, distances stay in km, and default player names are "Player 1", "Player 2" … in both languages.
+  - The place pool is the same in both languages.
 - The prompt always shows the category. If a name is ambiguous within a category, a suffix is added.
 
 ### 4.5 Dataset
@@ -103,7 +107,7 @@ Last updated: 2026-11-20
 - Curated, **static** dataset shipped with the app. No external services are queried at runtime.
 - Stored per place:
   - ID
-  - German name
+  - name in every language (German, English)
   - optional name suffix
   - category
   - geometry (simplified, buffer already applied)
@@ -119,13 +123,13 @@ Last updated: 2026-11-20
 - **Category theme**: only the prompt card gets the category's icon and accent color (e.g. 🌊 waters in blue, 🏜️ landscapes in sand).
 - Responsive for desktop, tablet and smartphone, with full touch support.
 - Playable with the keyboard: Enter on the focused globe places the circle at the center of the view, the arrow keys move the center handle or change the radius on the radius handle.
-- The map data credits (Natural Earth, „© OpenStreetMap-Mitwirkende“) are shown on the map and on the start screen.
+- The map data credits (Natural Earth, „© OpenStreetMap-Mitwirkende“ / "© OpenStreetMap contributors") are shown on the map and on the start screen.
 
 ## 6. Technology
 
 - Static web app **without a backend**: TypeScript, React (Vite), MapLibre GL JS in globe mode, Turf.js.
 - Hosting as a static site on GitHub Pages (https://janiwo.github.io/eingekreist/), deployed automatically from `main`.
-- **Analytics**: cookieless visitor statistics with GoatCounter (https://eingekreist.goatcounter.com/), on the live site only. Besides page views it counts two events: `game-started/<n>-players` and `game-finished/<n>-rounds`. No consent banner and no privacy note yet; both may come later.
+- **Analytics**: cookieless visitor statistics with GoatCounter (https://eingekreist.goatcounter.com/), on the live site only. Besides page views it counts two events, each ending in the UI language: `game-started/<n>-players/<de|en>` and `game-finished/<n>-rounds/<de|en>`. No consent banner and no privacy note yet; both may come later.
 - **Circle size**: true radius on the Earth's surface in km. The circle is rendered as a geodesic circle.
 - **Hit test**: a circle hits if and only if
   - the center lies inside the place **or**
@@ -140,4 +144,4 @@ Last updated: 2026-11-20
 - Difficulty levels
 - Showing the "required" radius during the reveal
 - Accounts and monetization
-- Other languages
+- Languages other than German and English

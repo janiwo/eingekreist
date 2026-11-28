@@ -53,10 +53,12 @@ export function SetupScreen({ state, dispatch, onStart }: SetupScreenProps) {
           start()
         }}
       >
-        <LanguageSwitch className="language-switch--corner" />
         <div className="setup-head">
           <h1 className="brand">{t.appName}</h1>
-          <HowToPlay />
+          <div className="setup-head__links">
+            <HowToPlay />
+            <LanguageSwitch />
+          </div>
         </div>
 
         <section aria-labelledby="setup-players">

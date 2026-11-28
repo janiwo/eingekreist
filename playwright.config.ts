@@ -16,6 +16,8 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
     launchOptions: { args: webglArgs },
+    // The tests click German labels; English has its own test (e2e/language.e2e.ts).
+    locale: 'de-DE',
   },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },

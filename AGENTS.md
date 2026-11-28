@@ -5,7 +5,7 @@ Hotseat geography game: players draw circles on a 3D globe, the smallest circle 
 ## Language
 
 - **Everything is in English**: docs, code, comments, test names, commit messages, branch names, PR titles and descriptions.
-- **Only exception: the app's UI text is German.** It lives exclusively in `src/i18n/de.ts`, never inline, so other languages can be added later.
+- **Only exception: the app's UI text, in German and English.** It lives exclusively in `src/i18n/de.ts` and `src/i18n/en.ts` (same keys, typed as `Strings`), never inline. Components read it through `useI18n()`. Place names come with every language from the place data; English names live in `scripts/places/list/en.ts`.
 
 ## How we work
 

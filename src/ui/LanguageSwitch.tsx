@@ -2,10 +2,10 @@ import { useI18n } from '../i18n/context'
 import { LANGUAGE_NAMES, LOCALES } from '../i18n/locale'
 
 /** "DE | EN": switches the UI language. Each option names its language in that language. */
-export function LanguageSwitch({ className = '' }: { className?: string }) {
+export function LanguageSwitch() {
   const { t, locale, setLocale } = useI18n()
   return (
-    <div className={`language-switch ${className}`.trim()} role="group" aria-label={t.language}>
+    <div className="language-switch" role="group" aria-label={t.language}>
       {LOCALES.map((l) => (
         <button
           key={l}

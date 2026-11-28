@@ -1106,15 +1106,13 @@ button:not(:disabled) {
   color: var(--text);
 }
 
-/* Top right of the setup card, clear of the centered title. */
-.setup {
-  position: relative;
-}
-
-.language-switch--corner {
-  position: absolute;
-  top: 12px;
-  right: 12px;
+/* Under the title, beside "How to play". */
+.setup-head__links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 8px;
 }
 
 .how-to-play__head .language-switch {

@@ -29,7 +29,7 @@ Argument: a milestone number (`M1`, `1`, …). If none is given, take the first 
 
 - Implement in small, coherent commits. Use English commit messages ending with the attribution trailer from the system reminder.
 - Keep the conventions in AGENTS.md:
-  - UI strings only in `src/i18n/de.ts`
+  - UI strings only in `src/i18n/de.ts` and `src/i18n/en.ts`
   - MapLibre only via `src/map/maplibre.ts`
   - injectable RNG
   - generated data only via scripts
