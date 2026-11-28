@@ -167,7 +167,7 @@ An English language option next to German. Place pool unchanged; rebalancing it 
 - UI text:
   - `src/i18n/en.ts`, typed as `Strings`
   - components read the strings through a language context/hook instead of importing `de`
-  - `Intl` formatters and lowercasing follow the active locale
+  - `Intl` formatters follow the active locale; comparing names lowercases without a locale (the same for German and English)
   - MapLibre labels and the OSM credit („© OpenStreetMap contributors“) are translated
 - Default player names are "Player N" in both languages.
 - App name stays "Eingekreist". Distances stay in km.

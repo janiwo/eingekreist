@@ -23,10 +23,17 @@ export function detectLocale(languages: readonly string[]): Locale {
   return languages[0]?.toLowerCase().split('-')[0] === 'de' ? 'de' : 'en'
 }
 
+/** The browser's preferred languages; some browsers only give the one. */
+function browserLanguages(): readonly string[] {
+  const nav = globalThis.navigator
+  if (nav?.languages?.length) return nav.languages
+  return nav?.language ? [nav.language] : []
+}
+
 /** The language the player chose earlier, else the browser's. Never throws. */
 export function loadLocale(
   storage: Pick<Storage, 'getItem'> | undefined = globalThis.localStorage,
-  languages: readonly string[] = globalThis.navigator?.languages ?? [],
+  languages: readonly string[] = browserLanguages(),
 ): Locale {
   try {
     const saved = storage?.getItem(LOCALE_STORAGE_KEY)

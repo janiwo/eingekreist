@@ -53,6 +53,8 @@ test('switches the language on the start screen and in the instructions, and rem
 
   await page.getByRole('button', { name: 'How to play' }).click()
   const dialog = page.getByRole('dialog')
+  // Not the language switch: Enter right away must close, not switch.
+  await expect(dialog.getByRole('button', { name: 'Close' })).toBeFocused()
   await dialog.getByRole('button', { name: 'Deutsch' }).click()
   await expect(dialog.getByRole('heading', { name: 'So wird gespielt' })).toBeVisible()
   await dialog.getByRole('button', { name: 'Verstanden' }).click()

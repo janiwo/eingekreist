@@ -13,6 +13,7 @@ interface HowToPlayProps {
 export function HowToPlay({ compact = false }: HowToPlayProps) {
   const { t } = useI18n()
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const closeRef = useRef<HTMLButtonElement>(null)
   const titleId = useId()
   // Whether the current click started on the backdrop (see onClick).
   const pressedBackdrop = useRef(false)
@@ -24,7 +25,11 @@ export function HowToPlay({ compact = false }: HowToPlayProps) {
         className={compact ? 'icon-button icon-button--small icon-button--panel' : 'link-button how-to-play-link'}
         aria-label={compact ? t.howToPlay.title : undefined}
         title={compact ? t.howToPlay.title : undefined}
-        onClick={() => dialogRef.current?.showModal()}
+        onClick={() => {
+          dialogRef.current?.showModal()
+          // The modal would focus the language switch first; Enter or Space must close, not switch.
+          closeRef.current?.focus()
+        }}
       >
         {compact ? t.howToPlay.openSymbol : t.howToPlay.title}
       </button>
@@ -46,7 +51,7 @@ export function HowToPlay({ compact = false }: HowToPlayProps) {
             <div className="how-to-play__head">
               <h2 id={titleId}>{t.howToPlay.title}</h2>
               <LanguageSwitch />
-              <button className="icon-button" aria-label={t.howToPlay.close}>
+              <button ref={closeRef} className="icon-button" aria-label={t.howToPlay.close}>
                 {t.howToPlay.closeSymbol}
               </button>
             </div>

@@ -150,7 +150,10 @@ export function validatePlaces(places: Place[], json: string, globe?: Globe): Re
     else counts[p.category]++
     for (const locale of LOCALES) {
       const name = p.name[locale]
-      if (!name?.trim()) err(`no ${locale} name`)
+      if (!name?.trim()) {
+        err(`no ${locale} name`)
+        continue
+      }
       // A qualifier exists in every language or in none.
       if (p.qualifier && !p.qualifier[locale]?.trim()) err(`no ${locale} qualifier`)
       const key = `${locale}|${p.category}|${name}|${p.qualifier?.[locale] ?? ''}`
